@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #030a12;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Polar Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #071322;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e3a5f;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00e5ff;
+}
+
+/* Glassmorphic panels */
+.glass-panel {
+  background: rgba(13, 35, 64, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(30, 58, 95, 0.8);
+}
+
+.glass-panel-glow {
+  background: rgba(13, 35, 64, 0.8);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+/* Telemetry number styling */
+.font-mono-data {
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pulse animation for live indicators */
+@keyframes polar-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.live-pulse {
+  animation: polar-pulse 2s infinite ease-in-out;
+}
