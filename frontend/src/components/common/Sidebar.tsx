@@ -30,8 +30,9 @@ export const Sidebar: React.FC = () => {
     { to: `/station/${selectedStationId}/environment`, label: 'Polar Weather', icon: CloudSnow },
     { to: `/station/${selectedStationId}/forecast`, label: 'Predictive Horizons', icon: TrendingUp },
     { to: `/station/${selectedStationId}/risk`, label: 'Risk & Alerts', icon: AlertTriangle },
-    { to: `/station/${selectedStationId}/whatif`, label: 'What-If Engine', icon: FlaskConical, roleRequired: 'operator' },
-    { to: `/station/${selectedStationId}/analytics`, label: 'Actual vs Predicted', icon: LineChart },
+    { to: `/station/${selectedStationId}/optimization`, label: 'RL Optimization', icon: Cpu, roleRequired: 'operator', highlight: true },
+    { to: `/station/${selectedStationId}/whatif`, label: 'What-If & Monte Carlo', icon: FlaskConical, roleRequired: 'operator' },
+    { to: `/station/${selectedStationId}/analytics`, label: 'Analytics & SHAP', icon: LineChart },
     { to: `/station/${selectedStationId}/recommendations`, label: 'AI Decisions', icon: Lightbulb, roleRequired: 'operator' },
     { to: '/admin', label: 'Admin Console', icon: ShieldAlert, roleRequired: 'admin' },
   ];

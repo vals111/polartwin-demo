@@ -26,7 +26,9 @@ from app.routers import (
     scenarios,
     analytics,
     recommendations,
-    admin
+    admin,
+    optimization,
+    monitoring
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -139,6 +141,8 @@ app.include_router(scenarios.router, prefix=api_prefix)
 app.include_router(analytics.router, prefix=api_prefix)
 app.include_router(recommendations.router, prefix=api_prefix)
 app.include_router(admin.router, prefix=api_prefix)
+app.include_router(optimization.router, prefix=api_prefix)
+app.include_router(monitoring.router, prefix=api_prefix)
 
 # WebSocket Endpoint per Section 11
 @app.websocket("/ws/{station_id}")

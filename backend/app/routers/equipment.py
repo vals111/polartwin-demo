@@ -39,3 +39,12 @@ def get_station_equipment(
         "items": state["equipment"]["items"],
         "maintenance": state.get("maintenance", {})
     }
+
+@router.get("/predictive-maintenance/{station_id}")
+def get_predictive_maintenance_analytics(
+    station_id: str,
+    user = Depends(require_viewer)
+):
+    from app.intelligence.predictive_maintenance import compute_predictive_maintenance
+    state = get_current_state(station_id)
+    return compute_predictive_maintenance(state)

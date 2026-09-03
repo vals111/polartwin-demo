@@ -85,6 +85,10 @@ export const equipmentApi = {
   getEquipmentItem: async (assetId: string, stationId = 'maitri'): Promise<EquipmentItem> => {
     const res = await apiClient.get(`/equipment/${assetId}`, { params: { station_id: stationId } });
     return res.data;
+  },
+  getPredictiveMaintenance: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/equipment/predictive-maintenance/${stationId}`);
+    return res.data;
   }
 };
 
@@ -122,6 +126,13 @@ export const anomaliesApi = {
   }
 };
 
+export const recommendationsApi = {
+  list: async (stationId = 'maitri'): Promise<RecommendationItem[]> => {
+    const res = await apiClient.get(`/recommendations/${stationId}`);
+    return res.data;
+  }
+};
+
 // Scenarios & What-If
 export const scenariosApi = {
   getPresets: async (): Promise<WhatIfPreset[]> => {
@@ -135,6 +146,12 @@ export const scenariosApi = {
   getRun: async (id: string): Promise<WhatIfResult> => {
     const res = await apiClient.get(`/scenarios/${id}`);
     return res.data;
+  },
+  runMonteCarlo: async (stationId: string, iterations = 100, horizonDays = 30, scenarioType = 'nominal') => {
+    const res = await apiClient.post(`/scenarios/monte-carlo/${stationId}`, null, {
+      params: { iterations, horizon_days: horizonDays, scenario_type: scenarioType }
+    });
+    return res.data;
   }
 };
 
@@ -143,12 +160,29 @@ export const analyticsApi = {
   get: async (stationId = 'maitri', metric = 'energy_fuel') => {
     const res = await apiClient.get('/analytics', { params: { station_id: stationId, metric } });
     return res.data;
+  },
+  getShap: async (stationId = 'maitri', target = 'risk') => {
+    const res = await apiClient.get(`/analytics/shap/${stationId}`, { params: { target } });
+    return res.data;
   }
 };
 
-export const recommendationsApi = {
-  list: async (stationId = 'maitri'): Promise<RecommendationItem[]> => {
-    const res = await apiClient.get(`/recommendations/${stationId}`);
+// Optimization (RL)
+export const optimizationApi = {
+  getRlDispatch: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/optimization/rl/${stationId}`);
+    return res.data;
+  }
+};
+
+// Monitoring & Logging
+export const monitoringApi = {
+  getHealth: async () => {
+    const res = await apiClient.get('/monitoring/health');
+    return res.data;
+  },
+  getMetrics: async () => {
+    const res = await apiClient.get('/monitoring/metrics');
     return res.data;
   }
 };

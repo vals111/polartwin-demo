@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { equipmentApi } from '../api/client';
 import { EquipmentItem } from '../types';
-import { Wrench, Shield, AlertTriangle, CheckCircle, Activity, Clock, RefreshCw } from 'lucide-react';
+import { Wrench, Shield, AlertTriangle, CheckCircle, Activity, Clock, Timer, HeartPulse, Sparkles } from 'lucide-react';
 
 export const EquipmentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -11,6 +11,7 @@ export const EquipmentPage: React.FC = () => {
   const { liveSnapshot } = useTelemetryStore();
 
   const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
+  const [predictiveMaint, setPredictiveMaint] = useState<any>(null);
   const [maintenance, setMaintenance] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,11 +23,15 @@ export const EquipmentPage: React.FC = () => {
     const fetchEquipment = async () => {
       setLoading(true);
       try {
-        const data = await equipmentApi.getStationEquipment(stationId);
+        const [data, pm] = await Promise.all([
+          equipmentApi.getStationEquipment(stationId),
+          equipmentApi.getPredictiveMaintenance(stationId)
+        ]);
         if (data.items) {
           setEquipmentList(data.items);
           setMaintenance(data.maintenance);
         }
+        setPredictiveMaint(pm);
       } catch (e) {
         console.warn('Failed to load equipment API:', e);
       } finally {
@@ -42,6 +47,15 @@ export const EquipmentPage: React.FC = () => {
     return 'text-red-400 bg-red-500/20 border-red-500/30';
   };
 
+  const getUrgencyBadge = (u: string) => {
+    switch (u) {
+      case 'CRITICAL': return 'bg-red-500/20 text-red-300 border-red-500/40';
+      case 'ACTION_REQUIRED': return 'bg-orange-500/20 text-orange-300 border-orange-500/40';
+      case 'MONITOR': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40';
+      default: return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -50,13 +64,13 @@ export const EquipmentPage: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-cyan-400 uppercase tracking-wider mb-1">
               <Wrench className="w-4 h-4" />
-              <span>Machinery Health & Maintenance Lifecycle</span>
+              <span>Machinery Health & Predictive Maintenance (RUL)</span>
             </div>
             <h1 className="text-2xl font-black text-white capitalize">
-              {stationId} Equipment Fleet Telemetry
+              {stationId} Equipment Fleet Telemetry & Prognostics
             </h1>
             <p className="text-xs text-slate-300 mt-1">
-              Real-time vibration, run hours, thermal stress, and failure risk models for all station generators, pumps, and life-support assets.
+              Real-time vibration, run hours, thermal stress, Weibull hazard curves, and Remaining Useful Life (RUL) models.
             </p>
           </div>
 
@@ -66,18 +80,73 @@ export const EquipmentPage: React.FC = () => {
               <div className="text-lg font-bold text-cyan-300">{avgHealth}%</div>
             </div>
             <div className="border-l border-polar-border pl-4">
-              <div className="text-slate-400 text-[10px]">Active Units</div>
-              <div className="text-lg font-bold text-emerald-400">{items.length} Units</div>
+              <div className="text-slate-400 text-[10px]">Fleet Avg RUL</div>
+              <div className="text-lg font-bold text-emerald-400">
+                {predictiveMaint?.fleet_average_rul_days ?? 124} Days
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Predictive Maintenance & RUL Cards */}
+      {predictiveMaint && (
+        <div className="glass-panel p-6 rounded-2xl border border-cyan-500/40">
+          <div className="flex items-center justify-between pb-4 border-b border-polar-border/60 mb-4">
+            <div className="flex items-center space-x-2">
+              <HeartPulse className="w-5 h-5 text-cyan-400" />
+              <h3 className="text-xs font-bold font-mono tracking-wider text-white uppercase">
+                Predictive Maintenance — Remaining Useful Life (RUL) Prognostics
+              </h3>
+            </div>
+            <span className="text-[11px] font-mono text-cyan-300">Weibull 2-Parameter Hazard Model</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {predictiveMaint.assets?.map((asset: any) => (
+              <div key={asset.id} className="bg-polar-dark/80 p-4 rounded-xl border border-polar-border flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white">{asset.name}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${getUrgencyBadge(asset.urgency)}`}>
+                      {asset.urgency.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 font-mono text-xs my-3">
+                    <div className="flex justify-between text-slate-400">
+                      <span>RUL Prognosis:</span>
+                      <strong className="text-cyan-300">{asset.remaining_useful_life_days} Days</strong>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Operating Hours:</span>
+                      <span className="text-white">{asset.operating_hours.toLocaleString()} hrs</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Weibull Reliability:</span>
+                      <span className="text-emerald-400 font-bold">{asset.weibull_reliability_pct}%</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Hazard Rate h(t):</span>
+                      <span className="text-amber-300">{asset.hazard_rate_per_1k_hrs} /1k hrs</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-polar-border/60 text-[10px] font-mono text-slate-400">
+                  {asset.recommended_maintenance_action}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Equipment Fleet Table */}
       <div className="glass-panel rounded-2xl border border-polar-border overflow-hidden">
         <div className="p-4 border-b border-polar-border/60 flex items-center justify-between">
           <h3 className="text-xs font-bold font-mono tracking-wider text-slate-300 uppercase">
-            Station Critical Machinery Roster
+            Station Critical Machinery Telemetry
           </h3>
           <span className="text-[11px] font-mono text-cyan-400">Continuous Stress Evaluation</span>
         </div>

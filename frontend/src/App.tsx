@@ -15,6 +15,7 @@ import { RiskAlertsPage } from './pages/RiskAlertsPage';
 import { WhatIfPage } from './pages/WhatIfPage';
 import { Twin3DPage } from './pages/Twin3DPage';
 import { RecommendationsPage } from './pages/RecommendationsPage';
+import { OptimizationPage } from './pages/OptimizationPage';
 import { AdminPage } from './pages/AdminPage';
 
 export const App: React.FC = () => {
@@ -45,6 +46,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute minRole="operator">
                 <WhatIfPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/station/:id/optimization"
+            element={
+              <ProtectedRoute minRole="operator">
+                <OptimizationPage />
               </ProtectedRoute>
             }
           />

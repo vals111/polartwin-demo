@@ -70,3 +70,23 @@ def get_scenario_run(
         }
     
     raise HTTPException(status_code=404, detail="Scenario run not found")
+
+@router.post("/monte-carlo/{station_id}")
+def execute_monte_carlo(
+    station_id: str,
+    iterations: int = 100,
+    horizon_days: int = 30,
+    scenario_type: str = "nominal",
+    user = Depends(require_viewer)
+):
+    from app.intelligence.monte_carlo import run_monte_carlo_simulation
+    station_id = station_id.lower()
+    if station_id not in ["maitri", "bharati"]:
+        raise HTTPException(status_code=404, detail="Station not found")
+    
+    return run_monte_carlo_simulation(
+        station_id=station_id,
+        iterations=iterations,
+        horizon_days=horizon_days,
+        scenario_type=scenario_type
+    )

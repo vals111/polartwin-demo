@@ -63,3 +63,13 @@ def get_analytics(
         "history": data,
         "kpis": ml_evaluation
     }
+
+@router.get("/shap/{station_id}")
+def get_shap_values(
+    station_id: str,
+    target: str = "risk",
+    user = Depends(require_viewer)
+):
+    from app.intelligence.shap_engine import compute_shap_explanation
+    state = get_current_state(station_id)
+    return compute_shap_explanation(state, target=target)
