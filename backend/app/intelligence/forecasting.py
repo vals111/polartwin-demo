@@ -3,6 +3,15 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any
 from sklearn.ensemble import RandomForestRegressor
 
+import importlib
+try:
+    _sm = importlib.import_module("statsmodels.tsa.holtwinters")
+    ExponentialSmoothing = getattr(_sm, "ExponentialSmoothing", None)
+    _HAS_STATSMODELS = True
+except Exception:
+    ExponentialSmoothing = None
+    _HAS_STATSMODELS = False
+
 def forecast_domain(
     station_id: str,
     domain: str,

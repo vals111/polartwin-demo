@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { analyticsApi } from '../api/client';
 import { LineChart, CheckCircle2, TrendingUp, BarChart2, ShieldCheck, Activity, BrainCircuit, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { PolarEChartsAnalytics } from '../components/charts/PolarEChartsAnalytics';
 
 export const AnalyticsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -192,6 +193,11 @@ export const AnalyticsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Apache ECharts and D3.js 2D Visualization */}
+      {history.length > 0 && (
+        <PolarEChartsAnalytics telemetryHistory={history} stationName={stationId} />
+      )}
 
       {/* Actual vs Predicted Table */}
       <div className="glass-panel rounded-2xl border border-polar-border overflow-hidden">

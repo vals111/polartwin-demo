@@ -34,6 +34,24 @@ from app.routers import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("polartwin.main")
 
+# Sentry Exception Tracking & Performance Monitoring
+try:
+    import importlib
+    sentry_sdk = importlib.import_module("sentry_sdk")
+    sentry_fastapi = importlib.import_module("sentry_sdk.integrations.fastapi")
+    FastApiIntegration = getattr(sentry_fastapi, "FastApiIntegration", None)
+    sentry_dsn = getattr(settings, "SENTRY_DSN", None)
+    if sentry_dsn and FastApiIntegration:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[FastApiIntegration()],
+            traces_sample_rate=1.0,
+            environment="production"
+        )
+        logger.info("Sentry monitoring initialized successfully.")
+except Exception:
+    pass
+
 scheduler = AsyncIOScheduler()
 
 async def simulation_tick_job():
