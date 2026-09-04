@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
 import { StationHealthGauge } from '../components/dashboard/StationHealthGauge';
 import { CausalGraphViewer } from '../components/charts/CausalGraphViewer';
 import { SparklineChart } from '../components/charts/SparklineChart';
-import { Box, Activity, Shield, Zap, Droplet, Thermometer, ArrowRight, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Zap, Droplet, Thermometer, AlertTriangle } from 'lucide-react';
 
 // ── Animated P&ID Flow Diagram ─────────────────────────────────────────────
 const PIDFlowDiagram: React.FC<{
@@ -153,7 +153,6 @@ const PIDFlowDiagram: React.FC<{
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const StationTwinPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const stationId = id || 'maitri';
   const isMaitri = stationId === 'maitri';
 
@@ -237,35 +236,6 @@ export const StationTwinPage: React.FC = () => {
               <span>Alerts: <strong className="text-amber-300">{stationAlerts.length}</strong> active</span>
             </div>
           </div>
-        </div>
-
-        {/* Action shortcuts */}
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => navigate(`/station/${stationId}/twin3d`)}
-            className="flex items-center gap-2 px-4 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg transition-all hover:scale-[1.02]"
-            style={{ background: `linear-gradient(to right, ${accentColor}cc, ${accentColor})`, boxShadow: `0 0 20px ${accentColor}33` }}
-          >
-            <Box className="w-4 h-4" />
-            <span>3D Twin View</span>
-          </button>
-
-          <button
-            onClick={() => navigate(`/station/${stationId}/whatif`)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-polar-navy hover:bg-polar-border border border-polar-border rounded-xl text-xs font-bold transition-all"
-            style={{ color: accentColor }}
-          >
-            <Activity className="w-4 h-4" />
-            <span>What-If Scenario</span>
-          </button>
-
-          <button
-            onClick={() => navigate(`/station/${stationId}/risk`)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-polar-navy hover:bg-polar-border border border-polar-border text-slate-300 rounded-xl text-xs font-bold transition-all"
-          >
-            <Shield className="w-4 h-4 text-amber-400" />
-            <span>Risk Surveillance</span>
-          </button>
         </div>
       </div>
 
