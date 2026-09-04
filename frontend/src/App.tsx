@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 import { LoginPage } from './pages/LoginPage';
 import { StationTwinPage } from './pages/StationTwinPage';
+import { DomainsPage } from './pages/DomainsPage';
 import { ResourceMonitoringPage } from './pages/ResourceMonitoringPage';
 import { EquipmentPage } from './pages/EquipmentPage';
 import { EnvironmentPage } from './pages/EnvironmentPage';
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
           {/* Station Twin Views */}
           <Route path="/station/:id" element={<StationTwinPage />} />
           <Route path="/station/:id/dashboard" element={<StationTwinPage />} />
+          <Route path="/station/:id/domains" element={<DomainsPage />} />
           <Route path="/station/:id/resources" element={<ResourceMonitoringPage />} />
           <Route path="/station/:id/equipment" element={<EquipmentPage />} />
           <Route path="/station/:id/environment" element={<EnvironmentPage />} />

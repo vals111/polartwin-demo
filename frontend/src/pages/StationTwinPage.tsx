@@ -4,10 +4,9 @@ import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
 import { StationHealthGauge } from '../components/dashboard/StationHealthGauge';
-import { DomainSummaryGrid } from '../components/dashboard/DomainSummaryGrid';
 import { CausalGraphViewer } from '../components/charts/CausalGraphViewer';
 import { SparklineChart } from '../components/charts/SparklineChart';
-import { Box, Activity, Shield, Zap, Droplet, Thermometer, ArrowRight, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Box, Activity, Shield, Zap, Droplet, Thermometer, ArrowRight, ChevronRight, AlertTriangle, Layers } from 'lucide-react';
 
 // ── Animated P&ID Flow Diagram ─────────────────────────────────────────────
 const PIDFlowDiagram: React.FC<{
@@ -323,22 +322,31 @@ export const StationTwinPage: React.FC = () => {
       {/* Causal graph */}
       <CausalGraphViewer snapshot={snapshot} risk={risk} />
 
-      {/* Domain Summary Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold font-mono tracking-wide text-white">
-              16 Interconnected Operational Domains
-            </h2>
-            <span className="text-[10px] font-mono bg-polar-navy border border-polar-border px-2 py-0.5 rounded text-slate-400">
-              Full Spectrum Coverage
-            </span>
+      {/* Direct Link to Dedicated 16 Domain Section */}
+      <div
+        onClick={() => navigate(`/station/${stationId}/domains`)}
+        className="glass-panel p-5 rounded-2xl border border-polar-border hover:border-cyan-400/60 transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group hover:shadow-xl hover:shadow-cyan-950/30"
+      >
+        <div className="flex items-center space-x-3.5">
+          <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 group-hover:scale-110 transition-transform">
+            <Layers className="w-5 h-5" />
           </div>
-          <span className="text-xs font-mono" style={{ color: accentColor }}>
-            Autonomous Multi-Module Orchestration
-          </span>
+          <div>
+            <div className="text-sm font-bold text-white flex items-center gap-2">
+              <span>16 Interconnected Operational Domains</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                Full Spectrum Coverage
+              </span>
+            </div>
+            <div className="text-xs text-slate-400 font-mono mt-0.5">
+              Autonomous multi-physics twin modeling real-time causal cross-coupling across all 16 mission-critical operational layers.
+            </div>
+          </div>
         </div>
-        <DomainSummaryGrid snapshot={snapshot} />
+        <div className="flex items-center space-x-2 text-cyan-400 text-xs font-mono font-bold group-hover:translate-x-1 transition-transform self-end sm:self-auto">
+          <span>Open 16 Domain Section</span>
+          <ArrowRight className="w-4 h-4" />
+        </div>
       </div>
     </div>
   );

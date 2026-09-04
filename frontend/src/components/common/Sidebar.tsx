@@ -20,7 +20,8 @@ import {
   Droplet,
   Flame,
   Waves,
-  Anchor
+  Anchor,
+  Layers
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -49,17 +50,18 @@ export const Sidebar: React.FC = () => {
     return location.pathname === to;
   };
 
-  // Station-specific tailored navigation titles with Dashboard as primary
+  // Station-specific tailored navigation titles with Dashboard & 16 Domain
   const navItems = isMaitri
     ? [
         { to: `/station/maitri`, label: 'Dashboard', icon: LayoutDashboard },
-        { to: `/station/maitri/twin3d`, label: 'Maitri 3D Spatial Twin', icon: Box, highlight: true },
+        { to: `/station/maitri/domains`, label: '16 Domain', icon: Layers, highlight: true },
+        { to: `/station/maitri/twin3d`, label: 'Maitri 3D Spatial Twin', icon: Box },
         { to: `/station/maitri/resources`, label: 'Fuel & Lake Zub Water', icon: Zap },
         { to: `/station/maitri/equipment`, label: '2x Gen & Incinerator Health', icon: Wrench },
         { to: `/station/maitri/environment`, label: 'Schirmacher Polar Weather', icon: CloudSnow },
         { to: `/station/maitri/forecast`, label: 'Predictive Horizons', icon: TrendingUp },
         { to: `/station/maitri/risk`, label: 'Maitri Risk & Alerts', icon: AlertTriangle },
-        { to: `/station/maitri/optimization`, label: 'RL Microgrid Optimization', icon: Cpu, roleRequired: 'operator', highlight: true },
+        { to: `/station/maitri/optimization`, label: 'RL Microgrid Optimization', icon: Cpu, roleRequired: 'operator' },
         { to: `/station/maitri/whatif`, label: 'What-If & Monte Carlo', icon: FlaskConical, roleRequired: 'operator' },
         { to: `/station/maitri/analytics`, label: 'Analytics & SHAP Values', icon: LineChart },
         { to: `/station/maitri/recommendations`, label: 'NCPOR AI Decisions', icon: Lightbulb, roleRequired: 'operator' },
@@ -67,13 +69,14 @@ export const Sidebar: React.FC = () => {
       ]
     : [
         { to: `/station/bharati`, label: 'Dashboard', icon: LayoutDashboard },
-        { to: `/station/bharati/twin3d`, label: 'Bharati 3D Spatial Twin', icon: Box, highlight: true },
+        { to: `/station/bharati/domains`, label: '16 Domain', icon: Layers, highlight: true },
+        { to: `/station/bharati/twin3d`, label: 'Bharati 3D Spatial Twin', icon: Box },
         { to: `/station/bharati/resources`, label: 'Fuel & Quilty Bay RO Desal', icon: Zap },
         { to: `/station/bharati/equipment`, label: '3x CHP Plant & Stilts', icon: Wrench },
         { to: `/station/bharati/environment`, label: 'Larsemann Maritime Weather', icon: CloudSnow },
         { to: `/station/bharati/forecast`, label: 'Predictive Horizons', icon: TrendingUp },
         { to: `/station/bharati/risk`, label: 'Bharati Risk & Sea-Ice Alerts', icon: AlertTriangle },
-        { to: `/station/bharati/optimization`, label: 'RL Microgrid Optimization', icon: Cpu, roleRequired: 'operator', highlight: true },
+        { to: `/station/bharati/optimization`, label: 'RL Microgrid Optimization', icon: Cpu, roleRequired: 'operator' },
         { to: `/station/bharati/whatif`, label: 'What-If & Monte Carlo', icon: FlaskConical, roleRequired: 'operator' },
         { to: `/station/bharati/analytics`, label: 'Analytics & SHAP Values', icon: LineChart },
         { to: `/station/bharati/recommendations`, label: 'NCPOR AI Decisions', icon: Lightbulb, roleRequired: 'operator' },
