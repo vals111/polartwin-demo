@@ -17,10 +17,6 @@ import {
   Lightbulb,
   ShieldAlert,
   ArrowLeftRight,
-  Droplet,
-  Flame,
-  Waves,
-  Anchor,
   Layers
 } from 'lucide-react';
 
@@ -105,43 +101,6 @@ export const Sidebar: React.FC = () => {
             <div className={`text-base font-black tracking-wide ${isMaitri ? 'text-cyan-300' : 'text-blue-300'}`}>
               {isMaitri ? 'MAITRI STATION' : 'BHARATI STATION'}
             </div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-              {isMaitri ? 'Schirmacher Oasis (70°45′S)' : 'Larsemann Hills (69°24′S)'}
-            </div>
-          </div>
-
-          {/* Subsystem Identity Micro-Chips */}
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {isMaitri ? (
-              <>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/50 flex items-center space-x-1">
-                  <Droplet className="w-2.5 h-2.5 text-cyan-400" />
-                  <span>Lake Zub Line</span>
-                </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50 flex items-center space-x-1">
-                  <Flame className="w-2.5 h-2.5 text-amber-400" />
-                  <span>Incinerator</span>
-                </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700/50">
-                  2x100kVA
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-800/50 flex items-center space-x-1">
-                  <Waves className="w-2.5 h-2.5 text-blue-400" />
-                  <span>Quilty Bay RO</span>
-                </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/50 flex items-center space-x-1">
-                  <Zap className="w-2.5 h-2.5 text-emerald-400" />
-                  <span>3x CHP Plant</span>
-                </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-teal-950/60 text-teal-300 border border-teal-800/50 flex items-center space-x-1">
-                  <Anchor className="w-2.5 h-2.5 text-teal-400" />
-                  <span>Sea-Ice Pack</span>
-                </span>
-              </>
-            )}
           </div>
         </div>
 
