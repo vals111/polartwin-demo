@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 # Auth
 class LoginRequest(BaseModel):
@@ -21,64 +21,57 @@ class UserOut(BaseModel):
 
 # Station & Assets
 class StationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     station_id: str
     name: str
     location_type: str
 
-    class Config:
-        from_attributes = True
-
 class AssetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     asset_id: str
     station_id: str
     type: str
     name: str
 
-    class Config:
-        from_attributes = True
-
 class EquipmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     equipment_id: str
     asset_id: str
     health_score: float
     status: Optional[str] = "operational"
 
-    class Config:
-        from_attributes = True
-
 # Telemetry & Resources
 class TelemetryReading(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     timestamp: datetime
     parameter: str
     value: float
 
-    class Config:
-        from_attributes = True
-
 class ResourceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     type: str
     level: float
 
-    class Config:
-        from_attributes = True
-
 class InventoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     item_id: str
     category: str
     quantity: float
 
-    class Config:
-        from_attributes = True
-
 # Alerts & Risks
 class AlertOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     alert_id: str
     severity: str
     message: str
     timestamp: datetime
-
-    class Config:
-        from_attributes = True
 
 class ContributingFactor(BaseModel):
     factor: str

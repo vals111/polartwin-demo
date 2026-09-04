@@ -4,8 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import jose.jwt as jwt
-from jose.exceptions import JWTError
+import jwt
 
 from app.config import settings
 from app.seed import init_db_and_seed
@@ -120,7 +119,7 @@ except RuntimeError as e:
 try:
     init_db_and_seed()
 except Exception as e:
-    logger.warning(f"Initial DB check warning: {e}")
+    logger.error(f"Initial DB check error: {e}", exc_info=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -191,7 +190,7 @@ async def websocket_station_endpoint(
         return
     try:
         jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-    except JWTError as e:
+    except jwt.PyJWTError as e:
         await websocket.close(code=4001)
         logger.warning(f"WS rejected for {station_id}: invalid token — {e}")
         return

@@ -80,7 +80,7 @@ def execute_monte_carlo(
     iterations: int = 100,
     horizon_days: int = 30,
     scenario_type: str = "nominal",
-    user = Depends(require_viewer)
+    user = Depends(require_operator)
 ):
     from app.intelligence.monte_carlo import run_monte_carlo_simulation
     station_id = station_id.lower()
