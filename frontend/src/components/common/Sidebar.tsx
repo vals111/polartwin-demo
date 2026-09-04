@@ -166,7 +166,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Categorized Navigation List */}
-        <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-4 scrollbar-none">
+        <nav className="flex-1 overflow-y-auto px-3 py-1 pb-4 space-y-4 scrollbar-none">
           {navSections.map((section) => {
             // Filter items by RBAC
             const visibleItems = section.items.filter((item) => {
@@ -249,33 +249,6 @@ export const Sidebar: React.FC = () => {
             );
           })}
         </nav>
-
-        {/* Station Telemetry Bottom Dock — Fine finishing */}
-        <div className="p-3 mt-auto border-t border-slate-800/40 bg-[#040810]/70">
-          <div className="rounded-xl p-2.5 bg-slate-900/40 border border-slate-800/40 space-y-2">
-            {/* LEO Polar Satellite Link */}
-            <div className="flex items-center justify-between text-[10px] font-mono">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                LEO Polar Link
-              </span>
-              <span className="text-cyan-400 font-bold">78ms • 99.9%</span>
-            </div>
-            {/* Causal Coupling Engine */}
-            <div className="flex items-center justify-between text-[10px] font-mono">
-              <span className="text-slate-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                Twin Coupling
-              </span>
-              <span className="text-slate-300 font-semibold">16 Domains</span>
-            </div>
-            {/* Treaty Protocol */}
-            <div className="pt-1.5 border-t border-slate-800/30 flex items-center justify-between text-[9px] font-mono text-slate-400">
-              <span>45th ISEA • MoES</span>
-              <span className="text-emerald-400/90 font-semibold">Madrid Protocol</span>
-            </div>
-          </div>
-        </div>
       </div>
     </aside>
   );
