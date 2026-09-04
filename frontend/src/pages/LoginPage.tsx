@@ -56,7 +56,7 @@ export const LoginPage: React.FC = () => {
             Antarctic Research Station Digital Twin Platform
           </p>
           <div className="mt-2 inline-block text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
-            NCPOR • Ministry of Earth Sciences (SIH26060)
+            NCPOR • Ministry of Earth Sciences
           </div>
         </div>
 

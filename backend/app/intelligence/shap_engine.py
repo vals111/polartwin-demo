@@ -1,14 +1,25 @@
 import numpy as np
 from typing import Dict, Any, List
 
-def compute_shap_explanation(station_state: Dict[str, Any], target: str = "risk") -> Dict[str, Any]:
+
+def compute_weighted_contribution_explanation(
+    station_state: Dict[str, Any], target: str = "risk"
+) -> Dict[str, Any]:
     """
-    Computes rigorous SHAP (SHapley Additive exPlanations) values for the digital twin.
-    Decomposes the model output f(x) into:
-        f(x) = E[f(x)] + SUM(phi_i)
-    where:
-        - E[f(x)] is the global expected baseline value (e.g., nominal station risk = 20.0)
-        - phi_i is the exact Shapley marginal contribution of feature i.
+    Weighted Contribution Explainer — decomposes a model output into additive
+    per-feature contributions using a SHAP-inspired formulation:
+
+        f(x) = E[f(x)] + Σ(φᵢ)
+
+    where φᵢ are hand-calibrated weights derived from domain expertise rather
+    than from a tree or kernel SHAP solver.  The decomposition structure is
+    identical to SHAP (base value + additive feature contributions + model
+    output), but the φᵢ values are computed from linear heuristics, not via
+    the Shapley value formula over a trained model.
+
+    Use this for: human-readable, fast, zero-ML-dependency explainability.
+    For rigorous SHAP, train a RandomForest (see forecasting.py) and call
+    shap.TreeExplainer on it after sufficient history accumulates.
     """
     env = station_state.get("environment", {})
     energy = station_state.get("energy", {})
@@ -150,8 +161,17 @@ def compute_shap_explanation(station_state: Dict[str, Any], target: str = "risk"
         "top_positive_driver": next((f for f in features if f["shap_value"] > 0), None),
         "top_negative_driver": next((f for f in features if f["shap_value"] < 0), None),
         "explanation": (
-            f"Model output {model_output} is formed by a baseline of {base_value} adjusted by "
-            f"{len(features)} additive Shapley features. "
-            f"The primary elevating factor is '{features[0]['name']}' (phi = {features[0]['shap_value']:+0.2f})."
-        )
+            f"Output {model_output} = baseline {base_value} adjusted by "
+            f"{len(features)} weighted contributions (φᵢ). "
+            f"Primary driver: '{features[0]['name']}' (φ = {features[0]['shap_value']:+0.2f})."
+        ),
+        "method": "weighted_contribution_explainer",
+        "note": (
+            "Contributions are linear domain-expert weights, not Shapley values from a "
+            "trained model. Rename to shap.TreeExplainer once real model training is enabled."
+        ),
     }
+
+
+# Backwards-compatible alias (used by older router references)
+compute_shap_explanation = compute_weighted_contribution_explanation

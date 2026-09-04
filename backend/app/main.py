@@ -1,9 +1,11 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import jose.jwt as jwt
+from jose.exceptions import JWTError
 
 from app.config import settings
 from app.seed import init_db_and_seed
@@ -103,6 +105,17 @@ async def simulation_tick_job():
         except Exception as e:
             logger.error(f"Error in simulation tick for station {station_id}: {e}")
 
+# Validate JWT secret before anything else
+try:
+    settings.validate_secrets()
+except RuntimeError as e:
+    logger.critical(str(e))
+    # Allow startup in local dev with a generated fallback (warn loudly)
+    import secrets as _secrets
+    _dev_secret = _secrets.token_hex(48)
+    settings.JWT_SECRET = _dev_secret
+    logger.warning(f"DEV MODE: Generated ephemeral JWT_SECRET for this session. Set JWT_SECRET in .env to persist.")
+
 # Ensure database and seeds are initialized
 try:
     init_db_and_seed()
@@ -135,10 +148,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# CORS — no wildcard; credentials requires explicit origin list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=[o for o in settings.CORS_ORIGINS if o != "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -162,14 +175,32 @@ app.include_router(admin.router, prefix=api_prefix)
 app.include_router(optimization.router, prefix=api_prefix)
 app.include_router(monitoring.router, prefix=api_prefix)
 
-# WebSocket Endpoint per Section 11
+# WebSocket Endpoint — requires JWT token query param for authentication
 @app.websocket("/ws/{station_id}")
-async def websocket_station_endpoint(websocket: WebSocket, station_id: str):
+async def websocket_station_endpoint(
+    websocket: WebSocket,
+    station_id: str,
+    token: str = Query(default=""),
+):
+    # ── Authenticate before accept ───────────────────────────────────────────
+    # Pass JWT as query param: /ws/{station_id}?token=<JWT>
+    # Anonymous / missing token connections are rejected with code 4001.
+    if not token:
+        await websocket.close(code=4001)
+        logger.warning(f"WS rejected for {station_id}: no token provided")
+        return
+    try:
+        jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+    except JWTError as e:
+        await websocket.close(code=4001)
+        logger.warning(f"WS rejected for {station_id}: invalid token — {e}")
+        return
+
     await ws_manager.connect(websocket, station_id)
     # Send initial state immediately upon connection
     initial_state = get_current_state(station_id)
     initial_risk = compute_risk(initial_state)
-    
+
     await websocket.send_json({
         "type": "initial_state",
         "station_id": station_id,
@@ -178,10 +209,9 @@ async def websocket_station_endpoint(websocket: WebSocket, station_id: str):
             "risk": initial_risk
         }
     })
-    
+
     try:
         while True:
-            # Listen for client messages / ping / requests
             data = await websocket.receive_text()
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket, station_id)
@@ -190,8 +220,8 @@ async def websocket_station_endpoint(websocket: WebSocket, station_id: str):
         ws_manager.disconnect(websocket, station_id)
 
 @app.websocket("/ws/telemetry/{station_id}")
-async def ws_telemetry(websocket: WebSocket, station_id: str):
-    await websocket_station_endpoint(websocket, station_id)
+async def ws_telemetry(websocket: WebSocket, station_id: str, token: str = Query(default="")):
+    await websocket_station_endpoint(websocket, station_id, token)
 
 @app.get("/")
 def root_status():

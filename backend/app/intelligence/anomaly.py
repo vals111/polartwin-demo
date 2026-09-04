@@ -1,6 +1,6 @@
 import numpy as np
 from datetime import datetime, timezone
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from sklearn.ensemble import IsolationForest
 
 HARD_LIMITS = {
@@ -18,16 +18,58 @@ HARD_LIMITS = {
 # In-memory circular history buffer for telemetry per station
 telemetry_history: Dict[str, Dict[str, List[float]]] = {}
 
+# ── IsolationForest model cache (issue #14 fix) ───────────────────────────────
+# Re-fit only every REFIT_INTERVAL observations (not every single call).
+# This avoids the O(n²) sklearn fit cost on every tick.
+REFIT_INTERVAL = 50  # re-fit after this many new samples
+
+_iso_models: Dict[str, Dict[str, Optional[IsolationForest]]] = {}
+_iso_sample_count: Dict[str, Dict[str, int]] = {}
+_iso_last_fit_count: Dict[str, Dict[str, int]] = {}
+
+
+def _get_or_refit_model(station_id: str, parameter: str, history: List[float]) -> Optional[IsolationForest]:
+    """Return a cached IsolationForest; refit only when enough new data has arrived."""
+    _iso_models.setdefault(station_id, {})
+    _iso_sample_count.setdefault(station_id, {})
+    _iso_last_fit_count.setdefault(station_id, {})
+
+    count = _iso_sample_count[station_id].get(parameter, 0)
+    last_fit = _iso_last_fit_count[station_id].get(parameter, 0)
+    model = _iso_models[station_id].get(parameter, None)
+
+    # Refit if: no model yet, or REFIT_INTERVAL new samples since last fit
+    need_refit = (model is None) or (count - last_fit >= REFIT_INTERVAL)
+
+    if need_refit and len(history) >= 15:
+        try:
+            arr = np.array(history).reshape(-1, 1)
+            new_model = IsolationForest(contamination=0.05, random_state=42)
+            new_model.fit(arr)
+            _iso_models[station_id][parameter] = new_model
+            _iso_last_fit_count[station_id][parameter] = count
+            return new_model
+        except Exception:
+            return model  # keep old model on fit failure
+
+    return model
+
+
 def record_history(station_id: str, parameter: str, value: float, max_len: int = 60):
     if station_id not in telemetry_history:
         telemetry_history[station_id] = {}
     if parameter not in telemetry_history[station_id]:
         telemetry_history[station_id][parameter] = []
-    
+
     buf = telemetry_history[station_id][parameter]
     buf.append(value)
     if len(buf) > max_len:
         buf.pop(0)
+
+    # Increment sample counter for refit scheduling
+    _iso_sample_count.setdefault(station_id, {})
+    _iso_sample_count[station_id][parameter] = _iso_sample_count[station_id].get(parameter, 0) + 1
+
 
 def assess(station_id: str, parameter: str, value: float) -> dict:
     record_history(station_id, parameter, value)
@@ -56,20 +98,18 @@ def assess(station_id: str, parameter: str, value: float) -> dict:
             z_score = float((value - mean) / std)
             statistical_flag = abs(z_score) > 3.0
 
-    # 3. Isolation Forest Check
+    # 3. Isolation Forest Check — uses cached model, NOT re-fit every call
     iso_flag = False
     if len(history) >= 15:
         try:
-            arr = np.array(history).reshape(-1, 1)
-            clf = IsolationForest(contamination=0.05, random_state=42)
-            clf.fit(arr)
-            pred = clf.predict([[value]])[0]
-            iso_flag = (pred == -1)
+            model = _get_or_refit_model(station_id, parameter, history)
+            if model is not None:
+                pred = model.predict([[value]])[0]
+                iso_flag = (pred == -1)
         except Exception:
             iso_flag = False
 
-    # Combined assessment per Section 14:
-    # rule_flag OR (statistical_flag AND iso_flag)
+    # Combined assessment: rule_flag OR (statistical_flag AND iso_flag)
     is_anomaly = rule_flag or (statistical_flag and iso_flag)
 
     if is_anomaly and not explanation:
@@ -88,11 +128,11 @@ def assess(station_id: str, parameter: str, value: float) -> dict:
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+
 def scan_state_anomalies(state: dict) -> List[dict]:
     station_id = state.get("station_id", "maitri")
     anomalies = []
-    
-    # Extract key parameters
+
     checks = [
         ("temperature", state.get("environment", {}).get("temperature")),
         ("wind_speed", state.get("environment", {}).get("wind_speed")),

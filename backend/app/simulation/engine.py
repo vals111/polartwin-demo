@@ -28,6 +28,10 @@ logger = logging.getLogger("polartwin.simulation")
 station_states: Dict[str, Dict[str, Any]] = {}
 current_ticks: Dict[str, int] = {"maitri": 0, "bharati": 0}
 
+# ── IsolationForest cache (issue #14) ────────────────────────────────────────
+# Fitted periodically — not every tick — to avoid re-training overhead.
+_iso_last_fitted: Dict[str, int] = {}  # station_id → tick at last fit
+
 def initialize_station_state(station_id: str) -> dict:
     state = {
         "station_id": station_id,
@@ -64,10 +68,10 @@ def step_all_domains(state: dict, perturbation: dict = None) -> dict:
     Can be run on live state or cloned What-If state!
     """
     s = copy.deepcopy(state)
-    
+
     # 1. Environment (Root external driver)
     s = environment.step(s, perturbation)
-    
+
     # 2. Personnel (Drives base consumption & activity)
     s = personnel.step(s, perturbation)
 
@@ -117,16 +121,72 @@ def step_all_domains(state: dict, perturbation: dict = None) -> dict:
     s["tick"] = s.get("tick", 0) + 1
     return s
 
-def run_tick(station_id: str, db_session = None) -> dict:
+
+# Key telemetry parameters to persist on every tick
+_PERSIST_PARAMS = [
+    ("temperature",      lambda s: s["environment"]["temperature"]),
+    ("wind_speed",       lambda s: s["environment"]["wind_speed"]),
+    ("solar_radiation",  lambda s: s["environment"].get("solar_radiation", 0.0)),
+    ("generator_load",   lambda s: s["energy"]["generator_load"]),
+    ("solar_output",     lambda s: s["energy"]["solar_output"]),
+    ("battery_level",    lambda s: s["energy"].get("battery_level", 0.0)),
+    ("grid_frequency",   lambda s: s["energy"].get("grid_frequency", 50.0)),
+    ("fuel_percentage",  lambda s: s["fuel"]["fuel_percentage"]),
+    ("fuel_level_liters",lambda s: s["fuel"]["current_level"]),
+    ("fuel_burn_rate",   lambda s: s["fuel"]["consumption_rate_l_per_hr"]),
+    ("water_liters",     lambda s: s["water"]["storage_liters"]),
+    ("pipe_temp_c",      lambda s: s["water"].get("pipe_temp_c", 3.0)),
+    ("avg_equip_health", lambda s: s["equipment"].get("avg_health", 90.0)),
+    ("station_readiness",lambda s: s["station_ops"]["overall_readiness"]),
+]
+
+
+def _persist_tick(station_id: str, state: dict) -> None:
     """
-    Runs a live simulation tick for a station, updates database and triggers intelligence.
+    Write one Telemetry row per parameter to the database.
+    Uses a short-lived session — does NOT block the event loop.
+    """
+    from app.database import SessionLocal
+    from app.models.telemetry import Telemetry
+
+    ts = datetime.now(timezone.utc)
+    db = SessionLocal()
+    try:
+        rows = []
+        for param_name, extractor in _PERSIST_PARAMS:
+            try:
+                val = float(extractor(state))
+            except (KeyError, TypeError, ValueError):
+                continue
+            rows.append(Telemetry(
+                station_id=station_id,
+                parameter=param_name,
+                value=val,
+                timestamp=ts,
+            ))
+        db.add_all(rows)
+        db.commit()
+    except Exception as exc:
+        logger.error(f"Failed to persist telemetry tick for {station_id}: {exc}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def run_tick(station_id: str, db_session=None) -> dict:
+    """
+    Runs a live simulation tick for a station, persists telemetry to DB,
+    and returns the updated state dict.
     """
     global station_states, current_ticks
     current_state = get_current_state(station_id)
-    
-    # Step simulation
+
+    # Step simulation across all 16 domains
     next_state = step_all_domains(current_state)
     station_states[station_id] = next_state
     current_ticks[station_id] = next_state["tick"]
+
+    # ── Persist to DB every tick (issue #4 fix) ───────────────────────────────
+    _persist_tick(station_id, next_state)
 
     return next_state

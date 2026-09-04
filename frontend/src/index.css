@@ -13,20 +13,17 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom Polar Scrollbars */
+/* Hide scrollbars globally while preserving full scrolling functionality */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #071322;
-}
-::-webkit-scrollbar-thumb {
-  background: #1e3a5f;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #00e5ff;
+  display: none;             /* Chrome, Safari and Opera */
+  width: 0px;
+  height: 0px;
+  background: transparent;
 }
 
 /* Glassmorphic panels */
@@ -58,4 +55,57 @@ body {
 
 .live-pulse {
   animation: polar-pulse 2s infinite ease-in-out;
+}
+
+/* Fade-in animation for alert feed items */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Hidden scrollbar utility */
+.styled-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.styled-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+/* Font override for readable body text in cards */
+.font-ui {
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.6;
+}
+
+/* Shimmer animation for loading states */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* HL row for selected items in tables */
+tr.selected-row {
+  background: rgba(6, 182, 212, 0.05);
+}
+
+/* Polar color palette helpers */
+:root {
+  --polar-dark: #071322;
+  --polar-darker: #030a12;
+  --polar-navy: #0d2340;
+  --polar-border: rgba(30, 58, 95, 0.8);
+  --accent-maitri: #06b6d4;
+  --accent-bharati: #60a5fa;
 }

@@ -12,15 +12,18 @@ services:
         value: 3.12.0
       - key: DATABASE_URL
         fromDatabase:
-          name: polartwin-supabase-db
+          name: polartwin-render-db   # Render-managed PostgreSQL (not Supabase)
           property: connectionString
       - key: JWT_SECRET
-        generateValue: true
+        generateValue: true           # Render auto-generates a cryptographically random secret
       - key: SIMULATION_TICK_SECONDS
         value: 4
+      - key: FRONTEND_ORIGIN
+        value: "https://polartwin.pages.dev"
       - key: CORS_ORIGINS
-        value: '["https://polartwin.pages.dev","https://polartwin.vercel.app","http://localhost:5173"]'
+        value: '["https://polartwin.pages.dev","http://localhost:5173"]'
 
 databases:
-  - name: polartwin-supabase-db
+  # Render-managed PostgreSQL (renamed from polartwin-supabase-db — it is NOT Supabase)
+  - name: polartwin-render-db
     plan: standard

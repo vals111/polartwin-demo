@@ -66,6 +66,8 @@ export interface TelemetrySnapshot {
     condition: string;
     blizzard_active: boolean;
     humidity: number;
+    pressure?: number;
+    wind_direction?: number;
   };
   energy: {
     total_demand: number;

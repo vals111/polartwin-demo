@@ -1,33 +1,195 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
-import { GlobalAlertBanner } from '../components/dashboard/GlobalAlertBanner';
+import { SparklineChart } from '../components/charts/SparklineChart';
 import {
-  Compass,
-  ArrowRight,
-  Shield,
-  Thermometer,
-  Wind,
-  Zap,
-  Droplet,
-  Flame,
-  Waves,
-  Cpu,
-  Layers,
-  Box,
-  Activity,
-  Anchor,
-  PlaneTakeoff,
-  Gauge
+  Compass, ArrowRight, Thermometer, Wind, Zap, Droplet,
+  Flame, Waves, Cpu, Layers, Box, Activity, Anchor, PlaneTakeoff,
+  Shield, AlertTriangle, TrendingUp, Globe
 } from 'lucide-react';
 
+
+
+
+
+// ── Station Card (Industrial HMI Style) ───────────────────────────────────────
+const StationCard: React.FC<{
+  stationId: string;
+  name: string;
+  subtitle: string;
+  founded: string;
+  locationType: string;
+  coords: string;
+  locDesc: string;
+  desc: string;
+  systems: Array<{ icon: React.ComponentType<any>; title: string; detail: string; color: string }>;
+  telemetry: Array<{ label: string; value: string; color: string }>;
+  riskLevel: string;
+  riskScore: number;
+  alertCount: number;
+  accentColor: string;
+  borderColor: string;
+  shadowColor: string;
+  genHistory: number[];
+  fuelHistory: number[];
+  onLaunch: () => void;
+}> = ({
+  stationId, name, subtitle, founded, locationType, coords, locDesc, desc,
+  systems, telemetry, riskLevel, riskScore, alertCount,
+  accentColor, borderColor, shadowColor, genHistory, fuelHistory, onLaunch,
+}) => {
+  return (
+    <div
+      className="glass-panel rounded-3xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-2xl group"
+      style={{ border: `2px solid ${borderColor}`, boxShadow: `0 0 40px ${shadowColor}` }}
+    >
+      {/* Ambient glow */}
+      <div
+        className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none opacity-15 group-hover:opacity-25 transition-opacity"
+        style={{ background: accentColor }}
+      />
+
+      {/* Top scan line animation */}
+      <div
+        className="absolute top-0 left-0 right-0 h-0.5 opacity-50"
+        style={{ background: `linear-gradient(to right, transparent, ${accentColor}, transparent)`, animation: 'shimmer 3s ease-in-out infinite' }}
+      />
+
+      <div className="p-6 flex flex-col gap-5 flex-1">
+        {/* Identity row */}
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="text-[9px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-md font-bold"
+                style={{ background: `${accentColor}22`, color: accentColor, border: `1px solid ${accentColor}44` }}
+              >
+                {locationType}
+              </span>
+              <span className="text-[9px] font-mono text-slate-500 bg-polar-dark px-2 py-0.5 rounded border border-polar-border">Est. {founded}</span>
+            </div>
+            <h2 className="text-2xl font-black text-white uppercase mt-1 group-hover:text-opacity-90 transition-all" style={{ letterSpacing: '0.05em' }}>
+              {name}
+            </h2>
+            <div className="text-[10px] font-mono mt-0.5 flex items-center gap-1.5" style={{ color: accentColor }}>
+              <span>{coords}</span>
+              <span>•</span>
+              <span>{locDesc}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono" style={{ color: accentColor }}>
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: accentColor }} />
+              <span>LIVE</span>
+            </div>
+            {alertCount > 0 && (
+              <div className="flex items-center gap-1 text-[9px] font-mono text-amber-400">
+                <AlertTriangle className="w-3 h-3" />
+                <span>{alertCount} alerts</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
+
+        {/* Engineering systems */}
+        <div
+          className="p-3.5 rounded-2xl border space-y-2"
+          style={{ background: 'rgba(7,19,34,0.8)', borderColor: `${accentColor}22` }}
+        >
+          <div className="text-[9px] font-mono uppercase tracking-widest text-slate-500 flex justify-between">
+            <span>Engineering Architecture</span>
+            <span style={{ color: accentColor }}>Unique Systems</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {systems.map((sys) => {
+              const Icon = sys.icon;
+              return (
+                <div key={sys.title} className="flex items-center gap-2 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/30">
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: sys.color }} />
+                  <div>
+                    <div className="text-[10px] font-bold text-white leading-tight">{sys.title}</div>
+                    <div className="text-[9px] text-slate-500 leading-tight">{sys.detail}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Live telemetry readout */}
+        <div className="grid grid-cols-2 gap-2">
+          {telemetry.map((t) => (
+            <div
+              key={t.label}
+              className="rounded-xl p-2.5 text-center border"
+              style={{ background: 'rgba(3,10,18,0.9)', borderColor: `${accentColor}20` }}
+            >
+              <div className="text-[9px] text-slate-500 font-mono">{t.label}</div>
+              <div className="text-base font-black font-mono mt-0.5" style={{ color: t.color }}>{t.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Sparkline mini-charts */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="text-[9px] font-mono text-slate-500 mb-1 flex justify-between">
+              <span>Gen Load</span>
+              <span style={{ color: '#f59e0b' }}>{genHistory[genHistory.length - 1]?.toFixed(0)} kW</span>
+            </div>
+            <SparklineChart data={genHistory} color="#f59e0b" height={36} showArea />
+          </div>
+          <div>
+            <div className="text-[9px] font-mono text-slate-500 mb-1 flex justify-between">
+              <span>Fuel Level</span>
+              <span style={{ color: accentColor }}>{fuelHistory[fuelHistory.length - 1]?.toFixed(0)}%</span>
+            </div>
+            <SparklineChart data={fuelHistory} color={accentColor} height={36} showArea />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer action row */}
+      <div
+        className="px-6 py-4 border-t flex items-center justify-between"
+        style={{ borderColor: `${accentColor}20` }}
+      >
+        <div className="text-xs font-mono">
+          <span className="text-slate-500">Risk: </span>
+          <span className="font-bold" style={{ color: riskLevel === 'LOW' ? '#10b981' : riskLevel === 'MEDIUM' ? '#f59e0b' : '#ef4444' }}>
+            {riskLevel}
+          </span>
+          <span className="text-slate-600 ml-1">({riskScore} pts)</span>
+        </div>
+
+        <button
+          onClick={onLaunch}
+          className="flex items-center gap-2 px-5 py-2.5 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all hover:scale-[1.03] active:scale-[0.97]"
+          style={{
+            background: `linear-gradient(to right, ${accentColor}cc, ${accentColor})`,
+            boxShadow: `0 0 24px ${shadowColor}`,
+          }}
+        >
+          <span>Launch Twin</span>
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { selectStation, loadStations } = useStationStore();
   const { liveSnapshot, liveRisk } = useTelemetryStore();
   const { alerts, loadAlerts } = useAlertStore();
+  const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
   useEffect(() => {
     loadStations();
@@ -37,7 +199,7 @@ export const DashboardPage: React.FC = () => {
 
   const activeAlerts = [
     ...(alerts['maitri'] || []),
-    ...(alerts['bharati'] || [])
+    ...(alerts['bharati'] || []),
   ];
 
   const handleLaunchStation = (stationId: string) => {
@@ -50,319 +212,90 @@ export const DashboardPage: React.FC = () => {
   const bharatiSnap = liveSnapshot['bharati'];
   const bharatiRisk = liveRisk['bharati'];
 
+  const genHist = (base: number) =>
+    Array.from({ length: 20 }, () => base + (Math.random() - 0.5) * 15);
+  const fuelHist = (base: number) =>
+    Array.from({ length: 20 }, (_, i) => Math.max(0, base - i * 0.4 + (Math.random() - 0.5))).reverse();
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto py-4">
-      {/* Global Alert Notification Banner */}
-      <GlobalAlertBanner alerts={activeAlerts} />
-
-      {/* Main Command Header & Selector Intro */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono tracking-widest uppercase shadow-sm">
-          <Compass className="w-4 h-4 text-cyan-400" />
-          <span>National Centre for Polar and Ocean Research (NCPOR)</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white uppercase">
-          Select Antarctic Research Base
-        </h1>
-        <p className="text-sm text-slate-300 leading-relaxed">
-          India operates two independent scientific stations in Antarctica with fundamentally different engineering architectures, 
-          resource supply chains, and geographical constraints. Select a base below to launch its dedicated digital twin dashboard.
-        </p>
-      </div>
-
-      {/* Dual Station Portals - Deeply Differentiated Representations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* ======================================================== */}
-        {/* STATION 1: MAITRI INLAND BASE (Schirmacher Oasis)        */}
-        {/* ======================================================== */}
-        <div className="glass-panel rounded-3xl border-2 border-cyan-500/40 hover:border-cyan-400 p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-900/30 group bg-gradient-to-b from-polar-navy/90 to-polar-dark/95">
-          {/* Top Glacial Radial Ambient Glow */}
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none group-hover:bg-cyan-500/25 transition-all" />
-
-          <div>
-            {/* Station Identity Badges */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest px-3 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
-                  Inland Research Base
-                </span>
-                <span className="text-[10px] font-mono text-slate-400 bg-polar-dark px-2 py-1 rounded border border-polar-border">Est. 1989</span>
-              </div>
-              <div className="flex items-center space-x-1.5 text-xs font-mono text-cyan-300">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-                <span>Live Simulation Active</span>
-              </div>
-            </div>
-
-            {/* Station Title & Geographical Specs */}
-            <div className="mt-5">
-              <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-cyan-200 transition-colors">
-                MAITRI STATION
-              </h2>
-              <div className="text-xs font-mono text-cyan-400/90 mt-1 flex items-center space-x-2">
-                <span>70°45′57″S 11°44′09″E</span>
-                <span>•</span>
-                <span>Schirmacher Oasis</span>
-                <span>•</span>
-                <span>Altitude: 130m (~100km Inland)</span>
-              </div>
-              <p className="text-xs text-slate-300 mt-3 leading-relaxed">
-                Situated on rocky ice-free terrain surrounded by the Antarctic continental ice sheet. 
-                Features the heated freshwater pipeline from <strong>Priyadarshini (Zub) Lake</strong>, high-temperature waste incinerators, 
-                and overland tracked convoys navigating blue ice moraines.
-              </p>
-            </div>
-
-            {/* Maitri-Specific Engineering Subsystems */}
-            <div className="mt-6 p-4 rounded-2xl bg-polar-dark/80 border border-polar-border/80 space-y-3">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center justify-between">
-                <span>Distinct Engineering Architecture</span>
-                <span className="text-cyan-400 text-[10px]">Inland Specialized</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-xs font-sans">
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Droplet className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">Lake Zub Pipeline</div>
-                    <div className="text-[10px] text-slate-400">Trace-Heated Overland Water</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Flame className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">Waste Incinerator</div>
-                    <div className="text-[10px] text-slate-400">High-Temp Zero-Discharge</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Zap className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">2x100 kVA Microgrid</div>
-                    <div className="text-[10px] text-slate-400">Primary Diesel & Heat Recovery</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <PlaneTakeoff className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">Blue Ice Runway</div>
-                    <div className="text-[10px] text-slate-400">DROMLAN Aviation Access</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Operational Telemetry Readout */}
-            <div className="grid grid-cols-4 gap-3 my-6">
-              <div className="bg-polar-darker/90 border border-cyan-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Ambient Temp</div>
-                <div className="text-lg font-bold font-mono text-cyan-300 mt-1">
-                  {maitriSnap?.environment?.temperature ?? -25.4}°C
-                </div>
-              </div>
-              <div className="bg-polar-darker/90 border border-cyan-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Katabatic Wind</div>
-                <div className="text-lg font-bold font-mono text-white mt-1">
-                  {maitriSnap?.environment?.wind_speed ?? 34} km/h
-                </div>
-              </div>
-              <div className="bg-polar-darker/90 border border-cyan-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Generator Load</div>
-                <div className="text-lg font-bold font-mono text-amber-300 mt-1">
-                  {maitriSnap?.energy?.generator_load ?? 68} kW
-                </div>
-              </div>
-              <div className="bg-polar-darker/90 border border-cyan-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Fuel Autonomy</div>
-                <div className="text-lg font-bold font-mono text-emerald-300 mt-1">
-                  {maitriSnap?.fuel?.days_remaining ?? 19}d
-                </div>
-              </div>
-            </div>
+    <div className="space-y-0 max-w-7xl mx-auto">
+      <div className="py-6 space-y-8">
+        {/* Command Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono tracking-widest uppercase">
+            <Compass className="w-4 h-4 text-cyan-400" />
+            <span>National Centre for Polar and Ocean Research (NCPOR)</span>
           </div>
-
-          {/* Action Button - Direct Launch to Maitri */}
-          <div className="pt-4 border-t border-polar-border/60 flex items-center justify-between">
-            <div className="text-xs font-mono">
-              <span className="text-slate-400">Risk Assessment: </span>
-              <span className="font-bold text-cyan-300">
-                {maitriRisk?.level || 'LOW'} ({maitriRisk?.score || 18} pts)
-              </span>
-            </div>
-
-            <button
-              onClick={() => handleLaunchStation('maitri')}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 via-cyan-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-cyan-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all group/btn"
-            >
-              <span>Launch Maitri Twin</span>
-              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-            </button>
-          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white uppercase" style={{ letterSpacing: '0.06em' }}>
+            Mission Command Center
+          </h1>
         </div>
 
-        {/* ======================================================== */}
-        {/* STATION 2: BHARATI COASTAL BASE (Larsemann Hills)        */}
-        {/* ======================================================== */}
-        <div className="glass-panel rounded-3xl border-2 border-blue-500/40 hover:border-blue-400 p-8 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-blue-900/30 group bg-gradient-to-b from-polar-navy/90 to-polar-dark/95">
-          {/* Top Marine Oceanic Radial Ambient Glow */}
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl pointer-events-none group-hover:bg-blue-500/25 transition-all" />
+        {/* Station Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <StationCard
+            stationId="maitri"
+            name="Maitri Station"
+            subtitle="Inland Research Base"
+            founded="1989"
+            locationType="Inland Research Base"
+            coords="70°45′57″S 11°44′09″E"
+            locDesc="Schirmacher Oasis · 130m · ~100km Inland"
+            desc="Situated on rocky ice-free terrain surrounded by the Antarctic ice sheet. Features the heated freshwater pipeline from Priyadarshini (Zub) Lake, high-temperature waste incinerators, and overland tracked convoys navigating blue ice moraines."
+            systems={[
+              { icon: Droplet, title: 'Lake Zub Pipeline', detail: 'Trace-Heated Overland', color: '#06b6d4' },
+              { icon: Flame, title: 'Waste Incinerator', detail: 'High-Temp Zero-Discharge', color: '#f59e0b' },
+              { icon: Zap, title: '2×100 kVA Microgrid', detail: 'Diesel + Heat Recovery', color: '#fbbf24' },
+              { icon: PlaneTakeoff, title: 'Blue Ice Runway', detail: 'DROMLAN Aviation', color: '#818cf8' },
+            ]}
+            telemetry={[
+              { label: 'Ambient Temp', value: `${maitriSnap?.environment?.temperature?.toFixed(1) ?? -25.4}°C`, color: '#06b6d4' },
+              { label: 'Katabatic Wind', value: `${maitriSnap?.environment?.wind_speed ?? 34} km/h`, color: '#e2e8f0' },
+              { label: 'Generator Load', value: `${maitriSnap?.energy?.generator_load ?? 68} kW`, color: '#f59e0b' },
+              { label: 'Fuel Autonomy', value: `${maitriSnap?.fuel?.days_remaining ?? 19}d`, color: '#10b981' },
+            ]}
+            riskLevel={maitriRisk?.level || 'LOW'}
+            riskScore={maitriRisk?.score || 18}
+            alertCount={(alerts['maitri'] || []).length}
+            accentColor="#06b6d4"
+            borderColor="rgba(6,182,212,0.4)"
+            shadowColor="rgba(6,182,212,0.12)"
+            genHistory={genHist(maitriSnap?.energy?.generator_load ?? 68)}
+            fuelHistory={fuelHist(maitriSnap?.fuel?.fuel_percentage ?? 77)}
+            onLaunch={() => handleLaunchStation('maitri')}
+          />
 
-          <div>
-            {/* Station Identity Badges */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest px-3 py-1 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/40 font-bold">
-                  Coastal Marine Base
-                </span>
-                <span className="text-[10px] font-mono text-slate-400 bg-polar-dark px-2 py-1 rounded border border-polar-border">Est. 2012</span>
-              </div>
-              <div className="flex items-center space-x-1.5 text-xs font-mono text-blue-300">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse" />
-                <span>Live Simulation Active</span>
-              </div>
-            </div>
-
-            {/* Station Title & Geographical Specs */}
-            <div className="mt-5">
-              <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-blue-200 transition-colors">
-                BHARATI STATION
-              </h2>
-              <div className="text-xs font-mono text-blue-400/90 mt-1 flex items-center space-x-2">
-                <span>69°24′28″S 76°11′14″E</span>
-                <span>•</span>
-                <span>Larsemann Hills</span>
-                <span>•</span>
-                <span>Prydz Bay Promontory</span>
-              </div>
-              <p className="text-xs text-slate-300 mt-3 leading-relaxed">
-                State-of-the-art modular container station raised on aerodynamic hydraulic stilts between Thala Fjord and Quilty Bay. 
-                Features <strong>Quilty Bay Seawater Reverse Osmosis (RO)</strong> desalination, automated 
-                <strong> 3x100 kVA Combined Heat & Power (CHP)</strong>, and marine resupply logistics.
-              </p>
-            </div>
-
-            {/* Bharati-Specific Engineering Subsystems */}
-            <div className="mt-6 p-4 rounded-2xl bg-polar-dark/80 border border-polar-border/80 space-y-3">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold flex items-center justify-between">
-                <span>Distinct Engineering Architecture</span>
-                <span className="text-blue-400 text-[10px]">Maritime Specialized</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-xs font-sans">
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Waves className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">Quilty Bay Seawater RO</div>
-                    <div className="text-[10px] text-slate-400">Desalination Intake Pump</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Cpu className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">3x100 kVA Automated CHP</div>
-                    <div className="text-[10px] text-slate-400">Co-Generation Thermal Plant</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Layers className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">134-Container Stilt Frame</div>
-                    <div className="text-[10px] text-slate-400">Aerodynamic Snow-Drift Lift</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2.5 text-slate-200 bg-polar-navy/40 p-2 rounded-xl border border-polar-border/40">
-                  <Anchor className="w-4 h-4 text-teal-400 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-white">Prydz Bay Sea-Ice Berthing</div>
-                    <div className="text-[10px] text-slate-400">Vessel Resupply Channel</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Operational Telemetry Readout */}
-            <div className="grid grid-cols-4 gap-3 my-6">
-              <div className="bg-polar-darker/90 border border-blue-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Ambient Temp</div>
-                <div className="text-lg font-bold font-mono text-blue-300 mt-1">
-                  {bharatiSnap?.environment?.temperature ?? -18.2}°C
-                </div>
-              </div>
-              <div className="bg-polar-darker/90 border border-blue-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Maritime Wind</div>
-                <div className="text-lg font-bold font-mono text-white mt-1">
-                  {bharatiSnap?.environment?.wind_speed ?? 28} km/h
-                </div>
-              </div>
-              <div className="bg-polar-darker/90 border border-blue-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">CHP Load</div>
-                <div className="text-lg font-bold font-mono text-amber-300 mt-1">
-                  {bharatiSnap?.energy?.generator_load ?? 74} kW
-                </div>
-              </div>
-              <div className="bg-polar-darker/90 border border-blue-500/20 rounded-xl p-3 text-center">
-                <div className="text-[10px] text-slate-400 font-mono">Fuel Autonomy</div>
-                <div className="text-lg font-bold font-mono text-emerald-300 mt-1">
-                  {bharatiSnap?.fuel?.days_remaining ?? 21}d
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Button - Direct Launch to Bharati */}
-          <div className="pt-4 border-t border-polar-border/60 flex items-center justify-between">
-            <div className="text-xs font-mono">
-              <span className="text-slate-400">Risk Assessment: </span>
-              <span className="font-bold text-blue-300">
-                {bharatiRisk?.level || 'LOW'} ({bharatiRisk?.score || 16} pts)
-              </span>
-            </div>
-
-            <button
-              onClick={() => handleLaunchStation('bharati')}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all group/btn"
-            >
-              <span>Launch Bharati Twin</span>
-              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Global Mission Capability Highlights */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border flex items-start space-x-3.5">
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 mt-0.5">
-            <Box className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-white uppercase font-mono">Interactive 3D Spatial Twin</h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Three.js and React Three Fiber rendering accurate station layouts, terrain elevations, daylight sun paths, and asset status beacons.
-            </p>
-          </div>
-        </div>
-
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border flex items-start space-x-3.5">
-          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 mt-0.5">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-white uppercase font-mono">Monte Carlo & What-If Engine</h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Simulate katabatic blizzards and generator outages on isolated cloned states with P10/P50/P90 confidence envelopes.
-            </p>
-          </div>
-        </div>
-
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border flex items-start space-x-3.5">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 mt-0.5">
-            <Cpu className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold text-white uppercase font-mono">RL Operational Optimization</h3>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              Reinforcement Learning microgrid agent optimizing CHP dispatch and fuel burn without risking brownouts or thermal drop.
-            </p>
-          </div>
+          <StationCard
+            stationId="bharati"
+            name="Bharati Station"
+            subtitle="Coastal Marine Base"
+            founded="2012"
+            locationType="Coastal Marine Base"
+            coords="69°24′28″S 76°11′14″E"
+            locDesc="Larsemann Hills · Prydz Bay Promontory"
+            desc="State-of-the-art modular container station raised on aerodynamic hydraulic stilts between Thala Fjord and Quilty Bay. Features seawater RO desalination, automated CHP co-generation, and marine resupply logistics."
+            systems={[
+              { icon: Waves, title: 'Quilty Bay RO Desal', detail: 'Seawater Desalination', color: '#60a5fa' },
+              { icon: Cpu, title: '3×100 kVA Auto CHP', detail: 'Co-Generation Thermal', color: '#10b981' },
+              { icon: Layers, title: '134-Container Frame', detail: 'Aerodynamic Stilt Lift', color: '#818cf8' },
+              { icon: Anchor, title: 'Prydz Bay Berthing', detail: 'Vessel Resupply Channel', color: '#2dd4bf' },
+            ]}
+            telemetry={[
+              { label: 'Ambient Temp', value: `${bharatiSnap?.environment?.temperature?.toFixed(1) ?? -18.2}°C`, color: '#60a5fa' },
+              { label: 'Maritime Wind', value: `${bharatiSnap?.environment?.wind_speed ?? 28} km/h`, color: '#e2e8f0' },
+              { label: 'CHP Load', value: `${bharatiSnap?.energy?.generator_load ?? 74} kW`, color: '#f59e0b' },
+              { label: 'Fuel Autonomy', value: `${bharatiSnap?.fuel?.days_remaining ?? 21}d`, color: '#10b981' },
+            ]}
+            riskLevel={bharatiRisk?.level || 'LOW'}
+            riskScore={bharatiRisk?.score || 16}
+            alertCount={(alerts['bharati'] || []).length}
+            accentColor="#60a5fa"
+            borderColor="rgba(96,165,250,0.4)"
+            shadowColor="rgba(96,165,250,0.12)"
+            genHistory={genHist(bharatiSnap?.energy?.generator_load ?? 74)}
+            fuelHistory={fuelHist(bharatiSnap?.fuel?.fuel_percentage ?? 74)}
+            onLaunch={() => handleLaunchStation('bharati')}
+          />
         </div>
       </div>
     </div>

@@ -2,12 +2,19 @@ import numpy as np
 import random
 from typing import Dict, Any, List
 
-class PolarMicrogridRLOptimizer:
+class RuleBasedDispatchOptimizer:
     """
-    Reinforcement Learning (RL) Microgrid & Energy Dispatch Agent.
-    Implements continuous Q-learning / Policy Gradient optimization to solve:
-        Minimize Fuel Consumption + Equipment Degradation
-        Subject to: Zero Blackout, Habitat Thermal Comfort >= 18.0°C, Life-Support Priority.
+    Rule-Based Microgrid Dispatch Optimizer.
+    Evaluates a fixed set of predefined dispatch presets against a reward function
+    that penalises fuel burn, blackout risk, and thermal comfort violations.
+
+    This is a deterministic scoring heuristic, NOT reinforcement learning.
+    To implement actual RL, install stable-baselines3 + gymnasium and train a
+    PPO policy on the SimPy simulation environment.
+
+    Objective (minimise weighted cost):
+        min  w_fuel * fuel_burn + w_blackout * blackout_penalty + w_thermal * temp_penalty
+    subject to: zero blackout, thermal comfort >= 18.0°C, life-support priority.
     """
 
     def __init__(self):
@@ -77,7 +84,12 @@ class PolarMicrogridRLOptimizer:
 
         return {
             "status": "converged",
-            "algorithm": "Deep Q-Learning / PPO Actor-Critic Microgrid Policy",
+            "algorithm": "Rule-Based Reward Scoring — 5 preset dispatch policies",
+            "algorithm_detail": (
+                "Evaluates 5 predefined dispatch actions against a weighted cost function. "
+                "NOT reinforcement learning. To implement RL, integrate stable-baselines3 PPO "
+                "with the SimPy station environment."
+            ),
             "optimal_action": best_policy["action"]["name"],
             "action_id": best_policy["action"]["id"],
             "generator_1_dispatch_kw": best_policy["action"]["gen1_kw"],
@@ -97,7 +109,7 @@ class PolarMicrogridRLOptimizer:
             )
         }
 
-_optimizer_singleton = PolarMicrogridRLOptimizer()
+_optimizer_singleton = RuleBasedDispatchOptimizer()
 
 def get_rl_optimization(station_state: Dict[str, Any]) -> Dict[str, Any]:
     return _optimizer_singleton.optimize_dispatch(station_state)

@@ -5,8 +5,19 @@ import { telemetryApi, riskApi } from '../api/client';
 
 const WS_BASE = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000';
 
+/** Retrieve the JWT that the auth layer stored after login. */
+function getAuthToken(): string {
+  return (
+    localStorage.getItem('polartwin_token') ||
+    sessionStorage.getItem('polartwin_token') ||
+    ''
+  );
+}
+
 export function useWebSocket(stationId: string) {
   const wsRef = useRef<WebSocket | null>(null);
+  const connectedRef = useRef(false);
+
   const setConnected = useTelemetryStore((s) => s.setConnected);
   const updateTelemetry = useTelemetryStore((s) => s.updateTelemetry);
   const updateRisk = useTelemetryStore((s) => s.updateRisk);
@@ -14,16 +25,47 @@ export function useWebSocket(stationId: string) {
   const addAlert = useAlertStore((s) => s.addAlert);
 
   useEffect(() => {
-    let reconnectTimeout: any = null;
-    let pollInterval: any = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    const startFallbackPolling = () => {
+      if (pollInterval) return; // already running
+      pollInterval = setInterval(async () => {
+        // Only poll when WS is NOT connected (issue #15 fix)
+        if (connectedRef.current) return;
+        try {
+          const snap: any = await telemetryApi.getLiveSnapshot(stationId);
+          if (snap?.telemetry) {
+            updateTelemetry(stationId, snap.telemetry);
+          }
+          const r = await riskApi.get(stationId);
+          if (r) {
+            updateRisk(stationId, r);
+          }
+        } catch {
+          // Backend might be loading — silent retry
+        }
+      }, 4000);
+    };
+
+    const stopFallbackPolling = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    };
 
     const connect = () => {
-      const url = `${WS_BASE}/ws/${stationId}`;
+      // Attach JWT as query param — server validates before accept() (issue #2 fix)
+      const token = getAuthToken();
+      const url = `${WS_BASE}/ws/${stationId}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
       const ws = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {
+        connectedRef.current = true;
         setConnected(true);
+        stopFallbackPolling(); // WS healthy — no need to poll
         console.log(`Connected to POLARTWIN Live Twin WebSocket (${stationId})`);
       };
 
@@ -49,33 +91,22 @@ export function useWebSocket(stationId: string) {
       };
 
       ws.onclose = () => {
+        connectedRef.current = false;
         setConnected(false);
-        // Retry connection in 3 seconds
+        // Start REST fallback while we try to reconnect
+        startFallbackPolling();
         reconnectTimeout = setTimeout(connect, 3000);
       };
     };
 
+    // Kick off the initial connection + start polling as safety net
+    // (polling exits immediately if WS comes up quickly)
+    startFallbackPolling();
     connect();
-
-    // Fallback polling every 4 seconds to guarantee state always refreshes smoothly
-    pollInterval = setInterval(async () => {
-      try {
-        const snap: any = await telemetryApi.getLiveSnapshot(stationId);
-        if (snap && snap.telemetry) {
-          updateTelemetry(stationId, snap.telemetry);
-        }
-        const r = await riskApi.get(stationId);
-        if (r) {
-          updateRisk(stationId, r);
-        }
-      } catch (e) {
-        // Backend might be loading
-      }
-    }, 4000);
 
     return () => {
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (pollInterval) clearInterval(pollInterval);
+      stopFallbackPolling();
       if (wsRef.current) {
         wsRef.current.close();
       }

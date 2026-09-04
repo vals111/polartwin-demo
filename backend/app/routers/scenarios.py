@@ -1,4 +1,5 @@
 import uuid
+import logging
 from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -8,6 +9,7 @@ from app.schemas.all_schemas import ScenarioCreate, ScenarioResponse
 from app.intelligence.whatif_engine import SCENARIO_PRESETS, run_whatif_scenario
 from app.deps import require_viewer, require_operator
 
+logger = logging.getLogger("polartwin.scenarios")
 router = APIRouter(prefix="/scenarios", tags=["Scenarios"])
 
 # In-memory storage for scenario runs
@@ -41,8 +43,9 @@ def execute_scenario(
         )
         db.add(sc)
         db.commit()
-    except Exception:
+    except Exception as exc:
         db.rollback()
+        logger.error(f"Failed to persist scenario {scenario_id} to DB: {exc}")
 
     return {
         "scenario_id": scenario_id,

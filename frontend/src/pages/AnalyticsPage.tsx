@@ -1,8 +1,94 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { analyticsApi } from '../api/client';
 import { LineChart, CheckCircle2, TrendingUp, BarChart2, ShieldCheck, Activity, BrainCircuit, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { PolarEChartsAnalytics } from '../components/charts/PolarEChartsAnalytics';
+import { EChartsLine } from '../components/charts/EChartsLine';
+import * as echarts from 'echarts';
+
+// ── SHAP Waterfall ECharts ────────────────────────────────────────────────────
+const ShapWaterfallChart: React.FC<{ features: any[]; baseValue: number; output: number; accentColor: string }> = ({
+  features, baseValue, output, accentColor,
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inst = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    if (!ref.current || !features?.length) return;
+    if (inst.current) inst.current.dispose();
+    const chart = echarts.init(ref.current, 'dark');
+    inst.current = chart;
+
+    const sorted = [...features].sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value));
+    const names = ['Base', ...sorted.map((f: any) => f.name.substring(0, 16)), 'Output'];
+    const values: (number | [number, number])[] = [];
+    let running = baseValue;
+    values.push(baseValue); // Base bar
+    sorted.forEach((f: any) => {
+      const from = running;
+      running += f.shap_value;
+      values.push([from, running]);
+    });
+    values.push(output); // Final bar
+
+    const colors = sorted.map((f: any) => (f.shap_value > 0 ? '#ef4444' : '#10b981'));
+
+    chart.setOption({
+      backgroundColor: 'transparent',
+      animation: true,
+      animationDuration: 900,
+      grid: { top: 16, bottom: 80, left: 60, right: 24 },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15,23,42,0.95)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 10 },
+      },
+      xAxis: {
+        type: 'category',
+        data: names,
+        axisLabel: { color: '#475569', fontFamily: 'monospace', fontSize: 9, rotate: 30 },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } },
+        axisLabel: { color: '#475569', fontFamily: 'monospace', fontSize: 9 },
+      },
+      series: [
+        {
+          type: 'bar',
+          data: values.map((v, i) => ({
+            value: v,
+            itemStyle: {
+              color: i === 0 ? '#94a3b8' : i === values.length - 1 ? accentColor : colors[i - 1] || accentColor,
+              borderRadius: [4, 4, 0, 0],
+            },
+          })),
+          barMaxWidth: 40,
+          label: {
+            show: true,
+            position: 'top',
+            color: '#94a3b8',
+            fontFamily: 'monospace',
+            fontSize: 8,
+            formatter: (p: any) => {
+              const v = Array.isArray(p.value) ? p.value[1] - p.value[0] : p.value;
+              return `${v > 0 ? '+' : ''}${v.toFixed(1)}`;
+            },
+          },
+        },
+      ],
+    });
+
+    const ro = new ResizeObserver(() => chart.resize());
+    ro.observe(ref.current!);
+    return () => { ro.disconnect(); chart.dispose(); };
+  }, [features, baseValue, output, accentColor]);
+
+  return <div ref={ref} style={{ width: '100%', height: 260 }} />;
+};
 
 export const AnalyticsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -153,35 +239,39 @@ export const AnalyticsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* SHAP Feature Force Waterfall */}
-            <div className="space-y-3">
-              <div className="text-xs font-mono text-slate-300 uppercase font-bold">
-                Marginal Shapley Feature Contributions (φᵢ):
+            {/* SHAP Waterfall ECharts */}
+            <div>
+              <div className="text-xs font-mono text-slate-300 uppercase font-bold mb-2">
+                SHAP Waterfall Chart — Shapley Value Attribution (φᵢ)
               </div>
+              <ShapWaterfallChart
+                features={shapData.features || []}
+                baseValue={parseFloat(shapData.base_value) || 20}
+                output={parseFloat(shapData.model_output) || 35}
+                accentColor="#06b6d4"
+              />
+            </div>
+
+            {/* Feature detail rows */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {shapData.features?.map((f: any, idx: number) => {
                 const isPositive = f.shap_value > 0;
                 return (
-                  <div key={idx} className="p-3 bg-polar-dark/60 rounded-xl border border-polar-border/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-1.5 rounded-lg ${isPositive ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                        {isPositive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                  <div key={idx} className="p-3 bg-polar-dark/60 rounded-xl border border-polar-border/80 flex items-center justify-between gap-2 text-xs font-mono">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1 rounded ${isPositive ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                        {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                       </div>
                       <div>
-                        <div className="font-bold text-white">{f.name}</div>
-                        <div className="text-[10px] text-slate-400">{f.description}</div>
+                        <div className="font-bold text-white text-[11px]">{f.name}</div>
+                        <div className="text-[9px] text-slate-500">Val: {f.feature_value}</div>
                       </div>
                     </div>
-
-                    <div className="flex items-center space-x-4 self-end sm:self-auto">
-                      <span className="text-slate-400 text-[11px] bg-polar-darker px-2 py-0.5 rounded border border-polar-border">
-                        Val: {f.feature_value}
-                      </span>
-                      <span className={`px-2.5 py-1 rounded font-bold text-xs ${
-                        isPositive ? 'bg-red-500/20 text-red-300 border border-red-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      }`}>
-                        {f.shap_value > 0 ? `+${f.shap_value}` : f.shap_value} φ
-                      </span>
-                    </div>
+                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] border ${
+                      isPositive ? 'bg-red-500/20 text-red-300 border-red-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    }`}>
+                      {f.shap_value > 0 ? `+${f.shap_value}` : f.shap_value} φ
+                    </span>
                   </div>
                 );
               })}
@@ -193,6 +283,33 @@ export const AnalyticsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Actual vs Predicted ECharts Line */}
+      {history.length > 0 && (
+        <div className="glass-panel p-5 rounded-2xl border border-polar-border">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-3 font-bold flex items-center justify-between">
+            <span>Actual vs Predicted — Generator Load (kW)</span>
+            <div className="flex items-center gap-4 text-[10px]">
+              <span className="flex items-center gap-1.5 text-cyan-400"><span className="w-4 h-0.5 bg-cyan-400 inline-block" /> Actual</span>
+              <span className="flex items-center gap-1.5 text-amber-400"><span className="w-4 h-0.5 bg-amber-400 border-dashed inline-block border-t-2" /> Predicted</span>
+            </div>
+          </div>
+          <EChartsLine
+            data={history.map((row: any) => ({
+              time: new Date(row.timestamp).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
+              value: row.generator_load_actual,
+              predicted: row.generator_load_predicted,
+            }))}
+            color="#06b6d4"
+            showBaseline
+            baselineLabel="Actual"
+            unit=" kW"
+            height={280}
+            smooth
+            stationId={stationId}
+          />
+        </div>
+      )}
 
       {/* Apache ECharts and D3.js 2D Visualization */}
       {history.length > 0 && (

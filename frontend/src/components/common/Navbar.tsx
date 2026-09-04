@@ -46,23 +46,20 @@ export const Navbar: React.FC = () => {
           <button
             onClick={toggleSidebar}
             title={isSidebarOpen ? "Hide Sidebar (Vanish)" : "Show Sidebar (Appear)"}
-            className={`w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
-              isSidebarOpen ? 'ring-1 ring-cyan-400/50' : 'opacity-80 hover:opacity-100 ring-2 ring-amber-400/80 shadow-amber-500/20'
-            }`}
+            className={`w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${isSidebarOpen ? 'ring-1 ring-cyan-400/50' : 'opacity-80 hover:opacity-100 ring-2 ring-amber-400/80 shadow-amber-500/20'
+              }`}
           >
             <Compass className={`w-6 h-6 text-white transition-transform duration-500 ${isSidebarOpen ? '' : '-rotate-90 text-cyan-200'}`} />
           </button>
 
-          <div 
-            onClick={() => navigate('/')} 
+          <div
+            onClick={() => navigate('/')}
             className="cursor-pointer group select-none"
             title="Go to Mission Overview Dashboard"
           >
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-lg tracking-wider text-white group-hover:text-cyan-300 transition-colors">POLARTWIN</span>
-              <span className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded font-mono">SIH26060</span>
             </div>
-            <div className="text-[11px] text-slate-400 tracking-tight">Antarctic Research Station Digital Twin • NCPOR / MoES</div>
           </div>
         </div>
 
@@ -72,11 +69,10 @@ export const Navbar: React.FC = () => {
             <button
               key={st.station_id}
               onClick={() => handleStationChange(st.station_id)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center space-x-2 ${
-                selectedStationId === st.station_id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center space-x-2 ${selectedStationId === st.station_id
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+                }`}
             >
               <span>{st.name.replace(' Research Station', '').replace(' Antarctic Station', '')}</span>
               <span className="text-[10px] opacity-75 font-mono capitalize">({st.location_type})</span>

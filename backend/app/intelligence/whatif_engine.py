@@ -191,14 +191,39 @@ def run_whatif_scenario(
         }
     }
 
-    # 5. Factor Attribution (worked example matching Section 12/27)
+    # 5. Factor Attribution — computed from real per-domain risk deltas
+    # Compare baseline vs projected across key domains, normalise to 100%.
+    # This replaces the hardcoded illustrative example from the Master Report.
+    domain_deltas = {
+        "Logistics & Resupply": abs(
+            curr_proj["logistics"].get("weather_delay_days", 0)
+            - curr_base["logistics"].get("weather_delay_days", 0)
+        ) * 3.0,
+        "Fuel Depletion Risk": abs(
+            curr_base["fuel"]["fuel_percentage"] - curr_proj["fuel"]["fuel_percentage"]
+        ) * 1.5,
+        "Equipment Stress & Degradation": abs(
+            curr_base["equipment"]["avg_health"] - curr_proj["equipment"]["avg_health"]
+        ) * 2.0,
+        "Weather / Cold Exposure": abs(
+            curr_base["environment"]["temperature"] - curr_proj["environment"]["temperature"]
+        ) * 0.8 + abs(
+            curr_base["environment"]["wind_speed"] - curr_proj["environment"]["wind_speed"]
+        ) * 0.4,
+        "Life Support & Auxiliary Margin": abs(
+            curr_base["station_ops"]["overall_readiness"]
+            - curr_proj["station_ops"]["overall_readiness"]
+        ) * 1.2,
+    }
+    total_delta = sum(domain_deltas.values()) or 1.0  # avoid div by zero
     attribution = [
-        {"factor": "Logistics & Resupply Delay", "impact_pct": 31},
-        {"factor": "Fuel Depletion Risk", "impact_pct": 24},
-        {"factor": "Equipment Stress & Degradation", "impact_pct": 19},
-        {"factor": "Weather / Cold Exposure", "impact_pct": 16},
-        {"factor": "Life Support & Auxiliary Margin", "impact_pct": 10}
+        {"factor": factor, "impact_pct": round(val / total_delta * 100)}
+        for factor, val in sorted(domain_deltas.items(), key=lambda x: -x[1])
     ]
+    # Ensure impact_pct sums to 100 (fix rounding)
+    diff = 100 - sum(a["impact_pct"] for a in attribution)
+    if attribution:
+        attribution[0]["impact_pct"] += diff
 
     return {
         "scenario_id": str(uuid.uuid4()),
