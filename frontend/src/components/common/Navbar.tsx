@@ -38,7 +38,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-polar-navy/90 border-b border-polar-border backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6">
+    <header className="h-16 bg-[#070e1a]/95 border-b border-slate-800/50 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6">
       {/* Brand & Mission Header */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-3">
@@ -64,7 +64,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Station Selector Dropdown / Pills */}
-        <div className="hidden md:flex items-center bg-polar-dark/80 p-1 rounded-lg border border-polar-border ml-4">
+        <div className="hidden md:flex items-center bg-slate-900/80 p-1 rounded-lg border border-slate-800/60 ml-4">
           {stations.map((st) => (
             <button
               key={st.station_id}
@@ -84,7 +84,7 @@ export const Navbar: React.FC = () => {
       {/* Live System Metrics & Connectivity */}
       <div className="flex items-center space-x-4">
         {/* WebSocket Stream Indicator */}
-        <div className="flex items-center space-x-2 bg-polar-dark/60 border border-polar-border px-3 py-1.5 rounded-md">
+        <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/60 px-3 py-1.5 rounded-md">
           <span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 live-pulse' : 'bg-red-500'}`} />
           <span className="text-xs font-mono text-slate-300">
             {isConnected ? 'LIVE TWIN' : 'DISCONNECTED'}
@@ -92,7 +92,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Overall Station Readiness */}
-        <div className="hidden lg:flex items-center space-x-2 bg-polar-dark/60 border border-polar-border px-3 py-1.5 rounded-md">
+        <div className="hidden lg:flex items-center space-x-2 bg-slate-900/60 border border-slate-800/60 px-3 py-1.5 rounded-md">
           <Activity className="w-4 h-4 text-cyan-400" />
           <div className="text-xs">
             <span className="text-slate-400 mr-1.5">Readiness:</span>
@@ -107,7 +107,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* User Role Badge */}
-        <div className="flex items-center space-x-3 pl-2 border-l border-polar-border">
+        <div className="flex items-center space-x-3 pl-2 border-l border-slate-800/60">
           <div className="text-right hidden sm:block">
             <div className="text-xs font-semibold text-white">{user?.email?.split('@')[0] || 'Operator'}</div>
             <div className="text-[10px] font-mono text-cyan-400 uppercase">{role}</div>

@@ -12,11 +12,11 @@ export const Layout: React.FC = () => {
   useWebSocket(selectedStationId);
 
   return (
-    <div className="min-h-screen bg-polar-darker text-slate-100 flex flex-col font-ui">
+    <div className="h-screen w-screen bg-[#040812] text-slate-100 flex flex-col font-ui overflow-hidden">
       <Navbar />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden relative">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-polar-dark to-polar-darker p-6">
+        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-[#060c18] via-[#040812] to-[#020509] p-6 relative">
           <Outlet />
         </main>
       </div>

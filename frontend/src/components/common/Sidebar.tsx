@@ -119,7 +119,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className={`bg-[#060b13]/95 border-r border-slate-800/40 flex flex-col h-[calc(100vh-4rem)] sticky top-16 select-none transition-all duration-300 ease-in-out overflow-hidden z-40 shadow-[4px_0_30px_rgba(0,0,0,0.6)] ${
+      className={`bg-[#050a14] border-r border-slate-800/40 flex flex-col h-full flex-shrink-0 select-none transition-all duration-300 ease-in-out overflow-hidden z-30 shadow-[4px_0_24px_rgba(0,0,0,0.5)] ${
         isSidebarOpen ? 'w-64 opacity-100' : 'w-0 opacity-0 pointer-events-none'
       }`}
     >
@@ -250,12 +250,30 @@ export const Sidebar: React.FC = () => {
           })}
         </nav>
 
-        {/* Ultra-subtle bottom aesthetic gradient - no harsh lines */}
-        <div className="p-3 mt-auto">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-800/40 to-transparent mb-2" />
-          <div className="flex items-center justify-center space-x-1.5 text-[9px] font-mono text-slate-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-pulse" />
-            <span>DIGITAL TWIN LIVE SYNC</span>
+        {/* Station Telemetry Bottom Dock — Fine finishing */}
+        <div className="p-3 mt-auto border-t border-slate-800/40 bg-[#040810]/70">
+          <div className="rounded-xl p-2.5 bg-slate-900/40 border border-slate-800/40 space-y-2">
+            {/* LEO Polar Satellite Link */}
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                LEO Polar Link
+              </span>
+              <span className="text-cyan-400 font-bold">78ms • 99.9%</span>
+            </div>
+            {/* Causal Coupling Engine */}
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                Twin Coupling
+              </span>
+              <span className="text-slate-300 font-semibold">16 Domains</span>
+            </div>
+            {/* Treaty Protocol */}
+            <div className="pt-1.5 border-t border-slate-800/30 flex items-center justify-between text-[9px] font-mono text-slate-400">
+              <span>45th ISEA • MoES</span>
+              <span className="text-emerald-400/90 font-semibold">Madrid Protocol</span>
+            </div>
           </div>
         </div>
       </div>
