@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
+import { useUiStore } from '../../store/uiStore';
 import { Shield, Radio, Activity, Compass, LogOut, ChevronDown } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -11,6 +12,7 @@ export const Navbar: React.FC = () => {
   const { selectedStationId, selectStation, stations } = useStationStore();
   const { user, role, logout } = useAuthStore();
   const { isConnected, liveRisk, liveSnapshot } = useTelemetryStore();
+  const { isSidebarOpen, toggleSidebar } = useUiStore();
 
   const currentRisk = liveRisk[selectedStationId];
   const currentSnap = liveSnapshot[selectedStationId];
@@ -39,16 +41,25 @@ export const Navbar: React.FC = () => {
     <header className="h-16 bg-polar-navy/90 border-b border-polar-border backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6">
       {/* Brand & Mission Header */}
       <div className="flex items-center space-x-4">
-        <div 
-          onClick={() => navigate('/')} 
-          className="flex items-center space-x-3 cursor-pointer group"
-        >
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-            <Compass className="w-6 h-6 text-white" />
-          </div>
-          <div>
+        <div className="flex items-center space-x-3">
+          {/* Compass Logo Button - Toggles Sidebar Vanish/Appear */}
+          <button
+            onClick={toggleSidebar}
+            title={isSidebarOpen ? "Hide Sidebar (Vanish)" : "Show Sidebar (Appear)"}
+            className={`w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
+              isSidebarOpen ? 'ring-1 ring-cyan-400/50' : 'opacity-80 hover:opacity-100 ring-2 ring-amber-400/80 shadow-amber-500/20'
+            }`}
+          >
+            <Compass className={`w-6 h-6 text-white transition-transform duration-500 ${isSidebarOpen ? '' : '-rotate-90 text-cyan-200'}`} />
+          </button>
+
+          <div 
+            onClick={() => navigate('/')} 
+            className="cursor-pointer group select-none"
+            title="Go to Mission Overview Dashboard"
+          >
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-lg tracking-wider text-white">POLARTWIN</span>
+              <span className="font-extrabold text-lg tracking-wider text-white group-hover:text-cyan-300 transition-colors">POLARTWIN</span>
               <span className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded font-mono">SIH26060</span>
             </div>
             <div className="text-[11px] text-slate-400 tracking-tight">Antarctic Research Station Digital Twin • NCPOR / MoES</div>

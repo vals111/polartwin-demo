@@ -77,7 +77,11 @@ export const StationTwinPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => navigate(`/station/${stationId}/twin3d`)}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all"
+            className={`flex items-center space-x-2 px-4 py-2.5 text-white rounded-xl text-xs font-bold shadow-lg transition-all ${
+              stationId === 'maitri'
+                ? 'bg-gradient-to-r from-blue-600 via-cyan-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 shadow-cyan-600/20'
+                : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-blue-500 hover:from-indigo-500 hover:to-blue-400 shadow-blue-600/20'
+            }`}
           >
             <Box className="w-4 h-4" />
             <span>Interactive 3D Twin</span>
@@ -91,6 +95,99 @@ export const StationTwinPage: React.FC = () => {
             <span>Run What-If Scenario</span>
           </button>
         </div>
+      </div>
+
+      {/* Unique Station Hardware Architecture Showcase */}
+      <div className={`glass-panel p-5 rounded-2xl border ${stationId === 'maitri' ? 'border-cyan-500/30 bg-cyan-950/10' : 'border-blue-500/30 bg-blue-950/10'}`}>
+        <div className="flex items-center justify-between pb-3 border-b border-polar-border/60 mb-3">
+          <div className="flex items-center space-x-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${stationId === 'maitri' ? 'bg-cyan-400' : 'bg-blue-400'}`} />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-white">
+              {stationId === 'maitri' ? 'Maitri Inland Specialized Systems' : 'Bharati Coastal Marine Systems'}
+            </h3>
+          </div>
+          <span className="text-[10px] font-mono text-slate-400">
+            {stationId === 'maitri' ? 'Schirmacher Oasis Engineering' : 'Larsemann Promontory Engineering'}
+          </span>
+        </div>
+
+        {stationId === 'maitri' ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-cyan-500/20">
+              <div className="text-cyan-400 font-bold mb-1 flex items-center justify-between">
+                <span>Lake Zub Pipeline</span>
+                <span className="text-[10px] text-emerald-400">HEATED</span>
+              </div>
+              <p className="text-[11px] text-slate-300">250m trace-heated line from Priyadarshini Lake with freeze-prevention thermostat</p>
+              <div className="mt-2 text-[10px] text-slate-400">Flow: ~140 L/h • Intake: +1.8°C</div>
+            </div>
+
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-cyan-500/20">
+              <div className="text-amber-400 font-bold mb-1 flex items-center justify-between">
+                <span>Waste Incinerator</span>
+                <span className="text-[10px] text-cyan-400">ACTIVE</span>
+              </div>
+              <p className="text-[11px] text-slate-300">High-temp dual chamber for solid & biological waste to meet Madrid Protocol zero-dumping</p>
+              <div className="mt-2 text-[10px] text-slate-400">Temp: 850°C • Ash: Inert</div>
+            </div>
+
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-cyan-500/20">
+              <div className="text-yellow-400 font-bold mb-1 flex items-center justify-between">
+                <span>2x100 kVA Microgrid</span>
+                <span className="text-[10px] text-emerald-400">N+1 REDUNDANT</span>
+              </div>
+              <p className="text-[11px] text-slate-300">Diesel generator gensets with liquid coolant heat exchanger heating habitat water</p>
+              <div className="mt-2 text-[10px] text-slate-400">Primary: Gen-1 • Backup: Gen-2</div>
+            </div>
+
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-cyan-500/20">
+              <div className="text-indigo-400 font-bold mb-1 flex items-center justify-between">
+                <span>Blue Ice Traverse</span>
+                <span className="text-[10px] text-slate-300">DROMLAN</span>
+              </div>
+              <p className="text-[11px] text-slate-300">Tracked PistenBully convoy link to inland blue ice airstrip and ice shelf barrier</p>
+              <div className="mt-2 text-[10px] text-slate-400">Shelf Dist: 100km • Snowcat: Ready</div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-blue-500/20">
+              <div className="text-blue-400 font-bold mb-1 flex items-center justify-between">
+                <span>Quilty Bay RO Desal</span>
+                <span className="text-[10px] text-emerald-400">OPERATIONAL</span>
+              </div>
+              <p className="text-[11px] text-slate-300">High-pressure seawater reverse osmosis filtration with saline rejection and heat exchangers</p>
+              <div className="mt-2 text-[10px] text-slate-400">Output: 180 L/h • Salinity: &lt;50 ppm</div>
+            </div>
+
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-blue-500/20">
+              <div className="text-emerald-400 font-bold mb-1 flex items-center justify-between">
+                <span>3x CHP Microgrid</span>
+                <span className="text-[10px] text-emerald-400">AUTO-SYNC</span>
+              </div>
+              <p className="text-[11px] text-slate-300">Computerized Combined Heat and Power with automated dynamic load dispatch and heat loops</p>
+              <div className="mt-2 text-[10px] text-slate-400">Gen-1: 38kW • Gen-2: 36kW • Gen-3: Standby</div>
+            </div>
+
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-blue-500/20">
+              <div className="text-indigo-400 font-bold mb-1 flex items-center justify-between">
+                <span>134-Container Frame</span>
+                <span className="text-[10px] text-cyan-400">HYDRAULIC STILTS</span>
+              </div>
+              <p className="text-[11px] text-slate-300">Elevated multi-layer aerodynamic facade allowing 150 km/h blizzards to pass beneath</p>
+              <div className="mt-2 text-[10px] text-slate-400">Clearance: 3.5m • Drift Risk: 0%</div>
+            </div>
+
+            <div className="bg-polar-dark/90 p-3 rounded-xl border border-blue-500/20">
+              <div className="text-teal-400 font-bold mb-1 flex items-center justify-between">
+                <span>Prydz Bay Sea-Ice</span>
+                <span className="text-[10px] text-amber-400">MONITORED</span>
+              </div>
+              <p className="text-[11px] text-slate-300">Marine satellite telemetry monitoring coastal fast-ice thickness for expedition vessel docking</p>
+              <div className="mt-2 text-[10px] text-slate-400">Ice Thickness: 1.8m • Berth: Clear</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Flagship Causal Propagation Graph */}
