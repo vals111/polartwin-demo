@@ -48,8 +48,8 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-md glass-panel p-8 rounded-2xl border border-polar-border relative z-10 shadow-2xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-700 text-white mb-4 shadow-lg shadow-cyan-500/20">
-            <Compass className="w-8 h-8" />
+          <div className="inline-flex p-2 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 text-white mb-4 shadow-xl shadow-cyan-500/20">
+            <img src="/logo.png" alt="POLARTWIN Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.6)]" />
           </div>
           <h1 className="text-2xl font-black tracking-wider text-white">POLARTWIN</h1>
           <p className="text-xs text-slate-400 mt-1">
