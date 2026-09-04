@@ -53,9 +53,9 @@ export const Navbar: React.FC = () => {
           </button>
 
           <div
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/station/${selectedStationId}`)}
             className="cursor-pointer group select-none"
-            title="Go to Mission Overview Dashboard"
+            title="Go to Station Dashboard"
           >
             <div className="flex items-center space-x-2">
               <span className="font-extrabold text-lg tracking-wider text-white group-hover:text-cyan-300 transition-colors">POLARTWIN</span>

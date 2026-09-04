@@ -4,7 +4,6 @@ import { Layout } from './components/common/Layout';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
 import { StationTwinPage } from './pages/StationTwinPage';
 import { ResourceMonitoringPage } from './pages/ResourceMonitoringPage';
 import { EquipmentPage } from './pages/EquipmentPage';
@@ -27,11 +26,12 @@ export const App: React.FC = () => {
 
         {/* Protected Application Frame */}
         <Route element={<Layout />}>
-          {/* Main Dashboard */}
-          <Route path="/" element={<DashboardPage />} />
+          {/* Main Station Dashboard & Redirect */}
+          <Route path="/" element={<Navigate to="/station/maitri" replace />} />
 
           {/* Station Twin Views */}
           <Route path="/station/:id" element={<StationTwinPage />} />
+          <Route path="/station/:id/dashboard" element={<StationTwinPage />} />
           <Route path="/station/:id/resources" element={<ResourceMonitoringPage />} />
           <Route path="/station/:id/equipment" element={<EquipmentPage />} />
           <Route path="/station/:id/environment" element={<EnvironmentPage />} />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
@@ -17,7 +17,6 @@ import {
   Lightbulb,
   ShieldAlert,
   ArrowLeftRight,
-  ArrowLeft,
   Droplet,
   Flame,
   Waves,
@@ -26,6 +25,7 @@ import {
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { selectedStationId, selectStation } = useStationStore();
   const { role } = useAuthStore();
   const { isSidebarOpen } = useUiStore();
@@ -38,11 +38,21 @@ export const Sidebar: React.FC = () => {
     navigate(`/station/${nextStation}`);
   };
 
-  // Station-specific tailored navigation titles
+  const isPathActive = (to: string) => {
+    if (to === `/station/${selectedStationId}`) {
+      return (
+        location.pathname === `/station/${selectedStationId}` ||
+        location.pathname === `/station/${selectedStationId}/` ||
+        location.pathname === `/station/${selectedStationId}/dashboard`
+      );
+    }
+    return location.pathname === to;
+  };
+
+  // Station-specific tailored navigation titles with Dashboard as primary
   const navItems = isMaitri
     ? [
-        { to: '/', label: 'Base Selector', icon: LayoutDashboard },
-        { to: `/station/maitri`, label: 'Maitri 16-Domain Twin', icon: Cpu },
+        { to: `/station/maitri`, label: 'Dashboard', icon: LayoutDashboard },
         { to: `/station/maitri/twin3d`, label: 'Maitri 3D Spatial Twin', icon: Box, highlight: true },
         { to: `/station/maitri/resources`, label: 'Fuel & Lake Zub Water', icon: Zap },
         { to: `/station/maitri/equipment`, label: '2x Gen & Incinerator Health', icon: Wrench },
@@ -56,8 +66,7 @@ export const Sidebar: React.FC = () => {
         { to: '/admin', label: 'Station Admin Console', icon: ShieldAlert, roleRequired: 'admin' },
       ]
     : [
-        { to: '/', label: 'Base Selector', icon: LayoutDashboard },
-        { to: `/station/bharati`, label: 'Bharati 16-Domain Twin', icon: Cpu },
+        { to: `/station/bharati`, label: 'Dashboard', icon: LayoutDashboard },
         { to: `/station/bharati/twin3d`, label: 'Bharati 3D Spatial Twin', icon: Box, highlight: true },
         { to: `/station/bharati/resources`, label: 'Fuel & Quilty Bay RO Desal', icon: Zap },
         { to: `/station/bharati/equipment`, label: '3x CHP Plant & Stilts', icon: Wrench },
@@ -141,15 +150,15 @@ export const Sidebar: React.FC = () => {
             if (item.roleRequired === 'operator' && role === 'viewer') return null;
 
             const Icon = item.icon;
+            const isItemActive = isPathActive(item.to);
 
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.to === '/' || item.to === `/station/${selectedStationId}`}
-                className={({ isActive }) =>
+                className={() =>
                   `flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                    isActive
+                    isItemActive
                       ? isMaitri
                         ? 'bg-gradient-to-r from-cyan-900/60 to-blue-900/40 text-cyan-200 border border-cyan-500/40 shadow-sm shadow-cyan-900/50 font-bold'
                         : 'bg-gradient-to-r from-blue-900/70 to-indigo-900/40 text-blue-200 border border-blue-500/40 shadow-sm shadow-blue-900/50 font-bold'
@@ -191,15 +200,7 @@ export const Sidebar: React.FC = () => {
             <span className="text-[10px] opacity-75">→</span>
           </button>
 
-          {/* Return to Base Selector */}
-          <button
-            onClick={() => navigate('/')}
-            className="w-full flex items-center justify-center space-x-2 px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-400 hover:text-white hover:bg-polar-navy/50 transition-colors"
-          >
-            <ArrowLeft className="w-3 h-3" />
-            <span>Return to Base Selector</span>
-          </button>
-
+          {/* Station Switching Actions in Sidebar Footer */}
           <div className="pt-1 text-center text-[9px] text-slate-500 font-mono">
             NCPOR • MoES Digital Twin System
           </div>
