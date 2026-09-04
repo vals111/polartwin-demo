@@ -6,7 +6,7 @@ import { useAlertStore } from '../store/alertStore';
 import { StationHealthGauge } from '../components/dashboard/StationHealthGauge';
 import { CausalGraphViewer } from '../components/charts/CausalGraphViewer';
 import { SparklineChart } from '../components/charts/SparklineChart';
-import { Zap, Droplet, Thermometer, AlertTriangle } from 'lucide-react';
+import { Zap, Droplet, Thermometer, AlertTriangle, Activity, Shield } from 'lucide-react';
 
 // ── Animated P&ID Flow Diagram ─────────────────────────────────────────────
 const PIDFlowDiagram: React.FC<{
@@ -196,26 +196,86 @@ export const StationTwinPage: React.FC = () => {
           style={{ background: accentColor }}
         />
 
-        <div className="flex items-center gap-6">
-          <StationHealthGauge
-            score={readiness}
-            size={140}
-            statusBand={statusBand}
-            label="Station Readiness"
-          />
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full relative z-10">
+          {/* Station Gauge & Title */}
+          <div className="flex items-center gap-6">
+            <StationHealthGauge
+              score={readiness}
+              size={135}
+              statusBand={statusBand}
+              label="Station Readiness"
+            />
 
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-black text-white">{station.name}</h1>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMaitri ? 'bg-cyan-400' : 'bg-blue-400'}`} />
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${isMaitri ? 'bg-cyan-400' : 'bg-blue-400'}`} />
+                </span>
+                <span className="text-[10px] font-mono tracking-widest uppercase text-slate-400">
+                  {isMaitri ? 'Inland Research Facility • 70°45′S' : 'Coastal Research Facility • 69°24′S'}
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wide">{station.name}</h1>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-4 mt-3 text-xs font-mono text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Tick Loop Active ({lastTickTime[stationId] || 'Syncing…'})
-              </span>
-              <span>•</span>
-              <span>Risk: <strong style={{ color: accentColor }}>{risk?.level || 'LOW'}</strong> ({risk?.score || 18} pts)</span>
-              <span>•</span>
-              <span>Alerts: <strong className="text-amber-300">{stationAlerts.length}</strong> active</span>
+          {/* 3 Individual Cards: Tick Loop, Risk, Alerts */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Card 1: Tick Loop Active */}
+            <div className="bg-[#091526]/85 border border-cyan-500/25 rounded-2xl p-3.5 shadow-[0_0_15px_rgba(6,182,212,0.08)] flex items-center gap-3.5 min-w-[190px] hover:border-cyan-400/40 transition-colors">
+              <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                <Activity className="w-4 h-4 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Engine Status</div>
+                <div className="text-xs font-bold font-mono text-emerald-300 truncate flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  Tick Loop Active
+                </div>
+                <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                  {lastTickTime[stationId] ? `Sync: ${lastTickTime[stationId]}` : 'Syncing…'}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Risk: LOW (18 pts) */}
+            <div className="bg-[#091526]/85 border border-slate-700/50 rounded-2xl p-3.5 shadow-[0_0_15px_rgba(0,0,0,0.3)] flex items-center gap-3.5 min-w-[190px] hover:border-slate-600/60 transition-colors">
+              <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex-shrink-0">
+                <Shield className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Risk Level</div>
+                <div className="text-xs font-bold font-mono text-cyan-300 truncate mt-0.5 flex items-center gap-1.5">
+                  <span className="font-black" style={{ color: accentColor }}>{risk?.level || 'LOW'}</span>
+                  <span className="text-[10px] font-normal text-slate-400">({risk?.score || 18} pts)</span>
+                </div>
+                <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                  Composite Risk Score
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Alerts: 0 active */}
+            <div className="bg-[#091526]/85 border border-slate-700/50 rounded-2xl p-3.5 shadow-[0_0_15px_rgba(0,0,0,0.3)] flex items-center gap-3.5 min-w-[190px] hover:border-slate-600/60 transition-colors">
+              <div className={`p-2.5 rounded-xl flex-shrink-0 border ${
+                stationAlerts.length > 0
+                  ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                  : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+              }`}>
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Incident Feed</div>
+                <div className={`text-xs font-bold font-mono truncate mt-0.5 ${
+                  stationAlerts.length > 0 ? 'text-amber-300' : 'text-emerald-300'
+                }`}>
+                  {stationAlerts.length} Active {stationAlerts.length === 1 ? 'Alert' : 'Alerts'}
+                </div>
+                <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                  {stationAlerts.length === 0 ? 'All Nodes Nominal' : 'Action Required'}
+                </div>
+              </div>
             </div>
           </div>
         </div>
