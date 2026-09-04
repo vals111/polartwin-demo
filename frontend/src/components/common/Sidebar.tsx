@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
@@ -16,24 +16,16 @@ import {
   Box,
   Lightbulb,
   ShieldAlert,
-  ArrowLeftRight,
   Layers
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { selectedStationId, selectStation } = useStationStore();
+  const { selectedStationId } = useStationStore();
   const { role } = useAuthStore();
   const { isSidebarOpen } = useUiStore();
 
   const isMaitri = selectedStationId === 'maitri';
-
-  const handleSwitchStation = () => {
-    const nextStation = isMaitri ? 'bharati' : 'maitri';
-    selectStation(nextStation);
-    navigate(`/station/${nextStation}`);
-  };
 
   const isPathActive = (to: string) => {
     if (to === `/station/${selectedStationId}`) {
@@ -143,30 +135,6 @@ export const Sidebar: React.FC = () => {
             );
           })}
         </nav>
-
-        {/* Station Switching Actions in Sidebar Footer */}
-        <div className="p-3 border-t border-polar-border/60 bg-polar-dark/90 space-y-2">
-          {/* Direct Switcher to Counterpart Station */}
-          <button
-            onClick={handleSwitchStation}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-mono font-bold transition-all border ${
-              isMaitri
-                ? 'bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border-blue-500/30'
-                : 'bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border-cyan-500/30'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <ArrowLeftRight className="w-3.5 h-3.5" />
-              <span>Switch to {isMaitri ? 'Bharati' : 'Maitri'}</span>
-            </div>
-            <span className="text-[10px] opacity-75">→</span>
-          </button>
-
-          {/* Station Switching Actions in Sidebar Footer */}
-          <div className="pt-1 text-center text-[9px] text-slate-500 font-mono">
-            NCPOR • MoES Digital Twin System
-          </div>
-        </div>
       </div>
     </aside>
   );
