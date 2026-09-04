@@ -205,25 +205,7 @@ export const StationTwinPage: React.FC = () => {
           />
 
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-widest" style={{ color: accentColor }}>
-                Digital Twin Live Instance
-              </span>
-              <span
-                className="text-[10px] px-2 py-0.5 rounded font-mono capitalize border"
-                style={{ background: `${accentColor}18`, color: accentColor, borderColor: `${accentColor}44` }}
-              >
-                {station.location_type} Facility
-              </span>
-            </div>
-
-            <h1 className="text-2xl lg:text-3xl font-black text-white mt-1">{station.name}</h1>
-
-            <p className="text-xs text-slate-300 mt-1 max-w-xl">
-              {isMaitri
-                ? 'Operating since 1989 in Schirmacher Oasis (~100 km inland). Freshwater from Priyadarshini (Zub) Lake via heated overland line.'
-                : 'Commissioned 2012 in Larsemann Hills on Prydz Bay. Modular 134-container architecture with 3×100 kVA CHP and Quilty Bay seawater RO.'}
-            </p>
+            <h1 className="text-2xl lg:text-3xl font-black text-white">{station.name}</h1>
 
             <div className="flex items-center gap-4 mt-3 text-xs font-mono text-slate-400">
               <span className="flex items-center gap-1.5">
