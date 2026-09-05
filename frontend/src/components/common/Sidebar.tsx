@@ -60,7 +60,7 @@ export const Sidebar: React.FC = () => {
         { to: `/station/${selectedStationId}`, label: 'Dashboard', icon: LayoutDashboard },
         {
           to: `/station/${selectedStationId}/domains`,
-          label: '16 Operational Domains',
+          label: 'Domains',
           icon: Layers,
           badge: '16 LIVE',
           badgeColor: isMaitri ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
