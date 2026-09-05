@@ -45,7 +45,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'energy',
       category: 'critical',
-      name: 'Energy & Power',
+      name: 'Power & Energy',
       icon: Zap,
       metric: `${eng?.generator_load ?? 68} kW`,
       submetric: 'Active: Gen #1 (8,420h) • Standby: Gen #2 (Hot Ready)',
@@ -67,7 +67,7 @@ export const DomainsPage: React.FC = () => {
         ? 'Dual 100kVA Kirloskar diesel generators (1989 manual switchgear) with 22 kW roof PV and 92% battery reserve.'
         : 'Triple 100kVA Combined Heat and Power (CHP) automation plant with intelligent thermal recovery and battery reserve.',
       link: `/station/${stationId}/resources`,
-      linkLabel: 'View Energy Telemetry',
+      linkLabel: 'Power & Fuel',
       specs: [
         { label: 'Active/Standby', value: 'Gen #1 / Gen #2' },
         { label: 'Efficiency', value: '3.88 kWh/L' },
@@ -77,7 +77,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'fuel',
       category: 'critical',
-      name: 'Fuel Depot & AGO',
+      name: 'Fuel Storage',
       icon: Fuel,
       metric: `${fuel?.fuel_percentage?.toFixed(1) ?? 78}%`,
       submetric: `${fuel?.current_level?.toLocaleString() ?? '142,000'} L • ${fuel?.days_remaining ?? 18}d remaining`,
@@ -105,7 +105,7 @@ export const DomainsPage: React.FC = () => {
         ? 'Manual bunded Antarctic Grade Low-Freeze Diesel (AGO) tanks with temperature-stabilized line preheaters.'
         : 'Automated SCADA fuel farm with valve routing matrix and temperature-stabilized fuel preheaters.',
       link: `/station/${stationId}/resources`,
-      linkLabel: 'View Fuel Depot',
+      linkLabel: 'Power & Fuel',
       specs: [
         { label: 'Burn Rate', value: '17.5 L/hr' },
         { label: 'Resupply Gap', value: '-70 Days' },
@@ -115,7 +115,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'water',
       category: 'critical',
-      name: isMaitri ? 'Water Intake & Lake Zub' : 'Quilty Bay RO Desalination',
+      name: 'Water Supply',
       icon: Droplet,
       metric: `${water?.storage_liters?.toLocaleString() ?? '18,500'} L`,
       submetric: `${water?.pipe_temp_c ?? 3.8}°C • Trace Draw: 4.2 kW continuous`,
@@ -139,7 +139,7 @@ export const DomainsPage: React.FC = () => {
         ? 'Heated surface water conduit drawing fresh glacial meltwater from Priyadarshini (Lake Zub) 800m away.'
         : 'High-pressure seawater Reverse Osmosis (SWRO) desalination membranes drawing below coastal sea-ice pack.',
       link: `/station/${stationId}/resources`,
-      linkLabel: 'View Water Systems',
+      linkLabel: 'Power & Fuel',
       specs: [
         { label: 'Process Stage', value: isMaitri ? 'Lake Zub Melt' : 'SWRO Desal' },
         { label: 'Trace Draw', value: '4.2 kW' },
@@ -149,7 +149,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'environment',
       category: 'operations',
-      name: 'Polar Environment',
+      name: 'Weather & Environment',
       icon: CloudSnow,
       metric: `${env?.temperature?.toFixed(1) ?? -25.2}°C`,
       submetric: `Wind: ${env?.wind_speed ?? 32} km/h • Vis: ${env?.visibility ?? 18} km`,
@@ -171,7 +171,7 @@ export const DomainsPage: React.FC = () => {
         ? 'Schirmacher Oasis micro-climate with extreme katabatic winds and rapid barometric pressure drops.'
         : 'Larsemann Hills coastal maritime polar climate influenced by Prydz Bay storm systems and blizzard fronts.',
       link: `/station/${stationId}/environment`,
-      linkLabel: 'View Environment Lab',
+      linkLabel: 'Weather & Environment',
       specs: [
         { label: 'Storm Index', value: '0.28 (Mild)' },
         { label: 'Sun Elevation', value: '+14.2°' },
@@ -201,7 +201,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
       description: 'Continuous condition monitoring on generators, HVAC blowers, air handlers, and fuel transfer pumps.',
       link: `/station/${stationId}/equipment`,
-      linkLabel: 'View Machine Health',
+      linkLabel: 'Equipment & Machinery',
       specs: [
         { label: 'Lowest Unit', value: 'Draft Blower 72%' },
         { label: 'Fleet Status', value: '5 Nom / 1 Watch' },
@@ -231,7 +231,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
       description: 'VESDA laser smoke detection, FM-200 gas suppression, and life-critical atmospheric scrubbers.',
       link: `/station/${stationId}/risk`,
-      linkLabel: 'View Safety Protocols',
+      linkLabel: 'Risk & Alerts',
       specs: [
         { label: 'CO2 Band', value: '<1000 ppm' },
         { label: 'O2 Band', value: '20.8% Safe' },
@@ -261,7 +261,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-teal-500/10 text-teal-300 border-teal-500/30',
       description: 'Voyage planning, ice-strengthened cargo vessels, helicopter sling payloads, and overland convoys.',
       link: `/station/${stationId}/forecast`,
-      linkLabel: 'View Resupply Tracking',
+      linkLabel: 'Forecasting',
       specs: [
         { label: 'Weather Delay', value: '+4.5 days' },
         { label: 'Fuel Gap', value: '-70 Days' },
@@ -271,7 +271,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'communication',
       category: 'infrastructure',
-      name: 'Satellite Communications',
+      name: 'Communications',
       icon: Radio,
       metric: '120 Mbps',
       submetric: 'LEO Polar link • Latency 78ms • 99.9% Up',
@@ -291,7 +291,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
       description: 'Radome enclosed C-band/Ku-band tracking dishes and high-throughput LEO satellite constellation.',
       link: `/station/${stationId}/analytics`,
-      linkLabel: 'View Comms Telemetry',
+      linkLabel: 'Analytics',
       specs: [
         { label: 'QoS Priority', value: 'Safety Tier-1' },
         { label: 'Packet Loss', value: '< 0.05%' },
@@ -301,7 +301,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'personnel',
       category: 'operations',
-      name: 'Personnel & Crew Welfare',
+      name: 'Crew & Personnel',
       icon: Users,
       metric: '25 Personnel',
       submetric: 'Day 142 of 45th ISEA • 10 Sci, 10 Tech, 1 Doc, 4 Ops',
@@ -321,7 +321,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-purple-500/10 text-purple-300 border-purple-500/30',
       description: 'Expedition winter-over crew status, circadian tracking, medical triage, and isolation shift rotation.',
       link: `/station/${stationId}/analytics`,
-      linkLabel: 'View Crew Roster',
+      linkLabel: 'Analytics',
       specs: [
         { label: 'Expedition', value: 'Day 142 ISEA' },
         { label: 'Rest Alert', value: '1 Flagged (<4.5h)' },
@@ -331,7 +331,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'research',
       category: 'operations',
-      name: 'Scientific Labs & Payload',
+      name: 'Science & Research',
       icon: Microscope,
       metric: '4 Active Labs',
       submetric: '16.5 kW load • 48.2 GB/day scientific output',
@@ -351,7 +351,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-pink-500/10 text-pink-300 border-pink-500/30',
       description: 'Meteorology, seismology, atmospheric chemistry, geomagnetism, and glaciology ice core chambers.',
       link: `/station/${stationId}/analytics`,
-      linkLabel: 'View Science Metrics',
+      linkLabel: 'Analytics',
       specs: [
         { label: 'Power Load', value: '16.5 kW (24%)' },
         { label: 'Daily Data', value: '48.2 GB/day' },
@@ -361,7 +361,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'infrastructure',
       category: 'infrastructure',
-      name: 'Habitat & Thermal Envelope',
+      name: 'Habitat & Structure',
       icon: Home,
       metric: '18% Stress',
       submetric: 'Indoor 21.5°C • Exterior insulation nominal',
@@ -385,7 +385,7 @@ export const DomainsPage: React.FC = () => {
         ? 'Main structural living module on bedrock footings with heated inter-block access corridors.'
         : 'Aerodynamic steel frame on elevated pilings to allow drifting snow to scour harmlessly underneath.',
       link: `/station/${stationId}/twin3d`,
-      linkLabel: 'View 3D Spatial Envelope',
+      linkLabel: '3D Spatial View',
       specs: [
         { label: 'Construction', value: isMaitri ? 'Bedrock Stilt' : 'Modular Pod' },
         { label: 'Indoor Temp', value: '21.5°C' },
@@ -395,7 +395,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'waste',
       category: 'operations',
-      name: isMaitri ? 'Waste & 850°C Incinerator' : 'WWTP & Waste Autoclave',
+      name: 'Waste Management',
       icon: Trash2,
       metric: '16.8% Bin Fill',
       submetric: 'Madrid Protocol Annex III • 0 Discharge',
@@ -415,7 +415,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-lime-500/10 text-lime-300 border-lime-500/30',
       description: 'Antarctic Environmental Protocol Annex III zero-harm waste segregation, shredding, and return to mainland.',
       link: `/station/${stationId}/resources`,
-      linkLabel: 'View Waste Handling',
+      linkLabel: 'Power & Fuel',
       specs: [
         { label: 'Burn Chamber', value: '850°C (Org)' },
         { label: 'Hazardous', value: '0% Burn (Sealed)' },
@@ -425,7 +425,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'supplies',
       category: 'critical',
-      name: 'Rations & Cold Storage',
+      name: 'Food & Supplies',
       icon: Apple,
       metric: '185 Days Stock',
       submetric: 'Deep freeze -21°C • Dry storage 15°C',
@@ -445,7 +445,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
       description: 'Calibrated long-duration dry grains, vacuum sealed proteins, freeze-dried rations, and vitamin stores.',
       link: `/station/${stationId}/resources`,
-      linkLabel: 'View Rations Depot',
+      linkLabel: 'Power & Fuel',
       specs: [
         { label: 'Fresh Stock', value: '14 Days' },
         { label: 'Dry Rations', value: '185 Days' },
@@ -455,7 +455,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'maintenance',
       category: 'infrastructure',
-      name: 'Maintenance Queue',
+      name: 'Maintenance',
       icon: CalendarCheck,
       metric: '2 Active Tasks',
       submetric: '1 in-progress • 1 scheduled preventive check',
@@ -475,7 +475,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
       description: 'Computerized Maintenance Management System (CMMS) scheduling filter replacements and valve checks.',
       link: `/station/${stationId}/equipment`,
-      linkLabel: 'View Maintenance Log',
+      linkLabel: 'Equipment & Machinery',
       specs: [
         { label: 'Trigger Asset', value: 'Blower (72%)' },
         { label: 'Spares Status', value: '100% In Stock' },
@@ -485,7 +485,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'inventory',
       category: 'infrastructure',
-      name: 'Critical Spares Inventory',
+      name: 'Spares Inventory',
       icon: Archive,
       metric: '0 Stockouts',
       submetric: '1,420 SKUs • 184 critical items in stock',
@@ -505,7 +505,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
       description: 'Categorized spare parts container store with RFID tagging and automated re-order thresholds.',
       link: `/station/${stationId}/resources`,
-      linkLabel: 'View Inventory Store',
+      linkLabel: 'Power & Fuel',
       specs: [
         { label: 'Job Parts', value: '100% Stocked' },
         { label: 'Critical SKUs', value: '184 units' },
@@ -515,7 +515,7 @@ export const DomainsPage: React.FC = () => {
     {
       id: 'station_ops',
       category: 'critical',
-      name: 'Station Synthesis & Readiness',
+      name: 'Station Overview',
       icon: Activity,
       metric: `${ops?.overall_readiness ?? 92.5}% Readiness`,
       submetric: '45th Indian Scientific Expedition • Full Coupling',
@@ -535,7 +535,7 @@ export const DomainsPage: React.FC = () => {
       tagColor: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30',
       description: 'Composite multi-domain health index calculated across all 16 domains with cross-propagation weights.',
       link: `/station/${stationId}`,
-      linkLabel: 'Open Station Twin Dashboard',
+      linkLabel: 'Dashboard',
       specs: [
         { label: 'Top Risk Driver', value: 'Resupply Gap' },
         { label: 'Risk Score', value: `${risk?.score ?? 18}/100` },

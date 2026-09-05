@@ -53,67 +53,49 @@ export const Sidebar: React.FC = () => {
     return location.pathname === to;
   };
 
-  const navSections: NavSection[] = isMaitri
-    ? [
+  const navSections: NavSection[] = [
+    {
+      title: 'Mission Control',
+      items: [
+        { to: `/station/${selectedStationId}`, label: 'Dashboard', icon: LayoutDashboard },
         {
-          title: 'Mission Control',
-          items: [
-            { to: `/station/maitri`, label: 'Dashboard', icon: LayoutDashboard },
-            { to: `/station/maitri/domains`, label: '16 Domain Twin', icon: Layers, badge: '16 LIVE', badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
-            { to: `/station/maitri/twin3d`, label: '3D Spatial Twin', icon: Box },
-          ]
+          to: `/station/${selectedStationId}/domains`,
+          label: '16 Operational Domains',
+          icon: Layers,
+          badge: '16 LIVE',
+          badgeColor: isMaitri ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
         },
-        {
-          title: 'Base Subsystems',
-          items: [
-            { to: `/station/maitri/resources`, label: 'Fuel & Lake Zub Water', icon: Zap },
-            { to: `/station/maitri/equipment`, label: '2x Gen & Incinerator Health', icon: Wrench },
-            { to: `/station/maitri/environment`, label: 'Schirmacher Polar Weather', icon: CloudSnow },
-          ]
-        },
-        {
-          title: 'Intelligence & Ops',
-          items: [
-            { to: `/station/maitri/forecast`, label: 'Predictive Horizons', icon: TrendingUp },
-            { to: `/station/maitri/risk`, label: 'Maitri Risk & Alerts', icon: AlertTriangle },
-            { to: `/station/maitri/optimization`, label: 'RL Microgrid Optimization', icon: Cpu, badge: 'AI', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', roleRequired: 'operator' },
-            { to: `/station/maitri/whatif`, label: 'What-If & Monte Carlo', icon: FlaskConical, roleRequired: 'operator' },
-            { to: `/station/maitri/analytics`, label: 'Analytics & SHAP Values', icon: LineChart },
-            { to: `/station/maitri/recommendations`, label: 'NCPOR AI Decisions', icon: Lightbulb, roleRequired: 'operator' },
-            { to: '/admin', label: 'Station Admin Console', icon: ShieldAlert, roleRequired: 'admin' },
-          ]
-        }
+        { to: `/station/${selectedStationId}/twin3d`, label: '3D Spatial View', icon: Box },
       ]
-    : [
+    },
+    {
+      title: 'Station Subsystems',
+      items: [
+        { to: `/station/${selectedStationId}/resources`, label: 'Power & Fuel', icon: Zap },
+        { to: `/station/${selectedStationId}/equipment`, label: 'Equipment & Machinery', icon: Wrench },
+        { to: `/station/${selectedStationId}/environment`, label: 'Weather & Environment', icon: CloudSnow },
+      ]
+    },
+    {
+      title: 'Operations & Intelligence',
+      items: [
+        { to: `/station/${selectedStationId}/forecast`, label: 'Forecasting', icon: TrendingUp },
+        { to: `/station/${selectedStationId}/risk`, label: 'Risk & Alerts', icon: AlertTriangle },
         {
-          title: 'Mission Control',
-          items: [
-            { to: `/station/bharati`, label: 'Dashboard', icon: LayoutDashboard },
-            { to: `/station/bharati/domains`, label: '16 Domain Twin', icon: Layers, badge: '16 LIVE', badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-            { to: `/station/bharati/twin3d`, label: '3D Spatial Twin', icon: Box },
-          ]
+          to: `/station/${selectedStationId}/optimization`,
+          label: 'Power Optimization',
+          icon: Cpu,
+          badge: 'AI',
+          badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+          roleRequired: 'operator'
         },
-        {
-          title: 'Base Subsystems',
-          items: [
-            { to: `/station/bharati/resources`, label: 'Fuel & Quilty Bay RO Desal', icon: Zap },
-            { to: `/station/bharati/equipment`, label: '3x CHP Plant & Stilts', icon: Wrench },
-            { to: `/station/bharati/environment`, label: 'Larsemann Maritime Weather', icon: CloudSnow },
-          ]
-        },
-        {
-          title: 'Intelligence & Ops',
-          items: [
-            { to: `/station/bharati/forecast`, label: 'Predictive Horizons', icon: TrendingUp },
-            { to: `/station/bharati/risk`, label: 'Bharati Risk & Sea-Ice Alerts', icon: AlertTriangle },
-            { to: `/station/bharati/optimization`, label: 'RL Microgrid Optimization', icon: Cpu, badge: 'AI', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', roleRequired: 'operator' },
-            { to: `/station/bharati/whatif`, label: 'What-If & Monte Carlo', icon: FlaskConical, roleRequired: 'operator' },
-            { to: `/station/bharati/analytics`, label: 'Analytics & SHAP Values', icon: LineChart },
-            { to: `/station/bharati/recommendations`, label: 'NCPOR AI Decisions', icon: Lightbulb, roleRequired: 'operator' },
-            { to: '/admin', label: 'Station Admin Console', icon: ShieldAlert, roleRequired: 'admin' },
-          ]
-        }
-      ];
+        { to: `/station/${selectedStationId}/whatif`, label: 'What-If Simulation', icon: FlaskConical, roleRequired: 'operator' },
+        { to: `/station/${selectedStationId}/analytics`, label: 'Analytics', icon: LineChart },
+        { to: `/station/${selectedStationId}/recommendations`, label: 'AI Recommendations', icon: Lightbulb, roleRequired: 'operator' },
+        { to: '/admin', label: 'Admin Console', icon: ShieldAlert, roleRequired: 'admin' },
+      ]
+    }
+  ];
 
   const accentGlow = isMaitri ? 'rgba(6, 182, 212, 0.12)' : 'rgba(59, 130, 246, 0.12)';
 
