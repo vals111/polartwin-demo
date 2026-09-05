@@ -6,8 +6,8 @@ import { useAlertStore } from '../store/alertStore';
 import {
   Zap, Fuel, Droplet, Trash2, Apple, Home, Wrench,
   Truck, CloudSnow, Radio, Users, Microscope, ShieldAlert,
-  CalendarCheck, Archive, Activity, Layers, Search, Filter,
-  ArrowRight, CheckCircle2, AlertTriangle, Cpu, ExternalLink
+  CalendarCheck, Archive, Activity, Layers,
+  CheckCircle2, AlertTriangle, Cpu, ExternalLink
 } from 'lucide-react';
 
 export const DomainsPage: React.FC = () => {
@@ -30,8 +30,6 @@ export const DomainsPage: React.FC = () => {
   const risk = liveRisk[stationId];
   const stationAlerts = alerts[stationId] || [];
 
-  const [activeCategory, setActiveCategory] = useState<'all' | 'critical' | 'infrastructure' | 'operations'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
 
   const env = snapshot?.environment;
@@ -390,15 +388,6 @@ export const DomainsPage: React.FC = () => {
     }
   ];
 
-  const filteredDomains = allDomains.filter((dom) => {
-    if (activeCategory !== 'all' && dom.category !== activeCategory) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return dom.name.toLowerCase().includes(q) || dom.description.toLowerCase().includes(q);
-    }
-    return true;
-  });
-
   const avgReadiness = Math.round(
     allDomains.reduce((acc, d) => acc + d.score, 0) / allDomains.length
   );
@@ -406,7 +395,7 @@ export const DomainsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
       {/* Top Banner & Context Header */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden">
         <div
           className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-20"
           style={{ background: accentColor }}
@@ -430,12 +419,6 @@ export const DomainsPage: React.FC = () => {
             16 Interconnected Operational Domains
           </h1>
 
-          <p className="text-xs text-slate-300 mt-2 max-w-2xl leading-relaxed">
-            Every simulation tick models real-time physics and causal propagation across all 16 domains.
-            Parameters are tightly coupled — weather conditions alter energy demand, influencing generator fuel burn,
-            which in turn shifts logistics resupply thresholds and composite station risk.
-          </p>
-
           <div className="flex flex-wrap items-center gap-4 mt-4 text-xs font-mono text-slate-400">
             <span className="flex items-center gap-1.5 text-emerald-400">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -449,66 +432,11 @@ export const DomainsPage: React.FC = () => {
             <span>Alerts: <strong className="text-amber-300">{stationAlerts.length}</strong> active</span>
           </div>
         </div>
-
-        {/* Quick KPI Summary Box */}
-        <div className="flex lg:flex-col items-center justify-between lg:justify-center gap-4 bg-polar-navy/60 border border-polar-border p-4 rounded-xl">
-          <div className="text-center">
-            <div className="text-[10px] font-mono text-slate-400 uppercase">Composite Twin Score</div>
-            <div className="text-3xl font-black font-mono mt-1" style={{ color: accentColor }}>
-              {ops?.overall_readiness ?? 92.5}%
-            </div>
-            <div className="text-[10px] text-emerald-400 font-mono mt-0.5">NOMINAL BAND</div>
-          </div>
-          <button
-            onClick={() => navigate(`/station/${stationId}`)}
-            className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-polar-dark hover:bg-polar-darker border border-polar-border text-slate-200 hover:text-white transition-colors flex items-center gap-1.5"
-          >
-            <span>Back to Dashboard</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className="glass-panel p-4 rounded-xl border border-polar-border flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Category Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { id: 'all', label: 'All 16 Domains (16)' },
-            { id: 'critical', label: 'Critical Core (Power, Fuel, Water, Life)' },
-            { id: 'infrastructure', label: 'Infrastructure & Machinery' },
-            { id: 'operations', label: 'Operations & Science' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveCategory(tab.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium font-mono transition-all ${
-                activeCategory === tab.id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md'
-                  : 'bg-polar-dark/60 text-slate-400 hover:text-slate-200 border border-polar-border/60'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Input */}
-        <div className="relative w-full md:w-64">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search domain or keyword..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-polar-dark/80 border border-polar-border rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
-          />
-        </div>
       </div>
 
       {/* 16 Domains Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filteredDomains.map((dom) => {
+        {allDomains.map((dom) => {
           const Icon = dom.icon;
           const isSelected = selectedDomainId === dom.id;
 
