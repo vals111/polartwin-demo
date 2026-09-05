@@ -469,9 +469,6 @@ export const DomainsPage: React.FC = () => {
                       <div className="text-xs font-bold text-slate-100 group-hover:text-white truncate">
                         {dom.name}
                       </div>
-                      <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">
-                        Domain #{allDomains.findIndex(d => d.id === dom.id) + 1}
-                      </div>
                     </div>
                   </div>
                   <div className="text-right">
