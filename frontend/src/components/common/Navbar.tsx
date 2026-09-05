@@ -4,7 +4,7 @@ import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import { useUiStore } from '../../store/uiStore';
-import { Shield, Radio, Activity, Compass, LogOut, ChevronDown } from 'lucide-react';
+import { Shield, Radio, Activity, LogOut, ChevronDown } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -42,37 +42,34 @@ export const Navbar: React.FC = () => {
       {/* Brand & Mission Header */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-3">
-        {/* POLARTWIN Brand Logo */}
-        <div
-          onClick={() => navigate(`/station/${selectedStationId}`)}
-          className="cursor-pointer group select-none flex items-center space-x-3"
-          title="Go to Station Dashboard"
-        >
-          <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 group-hover:border-cyan-400 group-hover:shadow-cyan-500/30 transition-all duration-300 p-1">
+          {/* POLARTWIN Brand Logo Button - Toggles Sidebar Vanish/Appear */}
+          <button
+            onClick={toggleSidebar}
+            title={isSidebarOpen ? "Hide Sidebar (Vanish)" : "Show Sidebar (Appear)"}
+            className={`cursor-pointer group select-none relative flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border shadow-lg transition-all duration-300 p-1 focus:outline-none hover:scale-105 active:scale-95 ${
+              isSidebarOpen
+                ? 'border-cyan-500/40 shadow-cyan-500/15 hover:border-cyan-400 hover:shadow-cyan-500/30'
+                : 'border-amber-500/60 shadow-amber-500/20 ring-1 ring-amber-400/40 opacity-90 hover:opacity-100'
+            }`}
+          >
             <img
               src="/logo.png"
               alt="POLARTWIN Logo"
               className="h-full w-full object-contain rounded-lg drop-shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-transform duration-300 group-hover:scale-110"
             />
-          </div>
-          <div className="flex items-center space-x-1.5">
+          </button>
+
+          {/* POLARTWIN Brand Title (navigates to dashboard) */}
+          <div
+            onClick={() => navigate(`/station/${selectedStationId}`)}
+            className="cursor-pointer group select-none flex items-center space-x-1.5"
+            title="Go to Station Dashboard"
+          >
             <span className="font-extrabold text-lg tracking-wider text-white group-hover:text-cyan-300 transition-colors">
               POLARTWIN
             </span>
           </div>
         </div>
-
-        {/* Compass Sidebar Toggle Button */}
-        <button
-          onClick={toggleSidebar}
-          title={isSidebarOpen ? "Hide Sidebar (Vanish)" : "Show Sidebar (Appear)"}
-          className={`h-9 w-9 rounded-lg bg-slate-900/80 border border-slate-700/60 hover:border-cyan-500/50 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none ml-1 ${
-            isSidebarOpen ? 'text-slate-400 hover:text-cyan-300' : 'text-amber-400 border-amber-500/60 shadow-sm shadow-amber-500/20'
-          }`}
-        >
-          <Compass className={`w-4 h-4 transition-transform duration-300 ${isSidebarOpen ? '' : '-rotate-90'}`} />
-        </button>
-      </div>
 
         {/* Station Selector Dropdown / Pills */}
         <div className="hidden md:flex items-center bg-slate-900/80 p-1 rounded-lg border border-slate-800/60 ml-4">
