@@ -4,7 +4,7 @@ import { useTelemetryStore } from '../store/telemetryStore';
 import { WindCompass } from '../components/charts/WindCompass';
 import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
-import { CloudSnow, Thermometer, Eye, Sun, AlertTriangle, ShieldCheck, Wind, Waves } from 'lucide-react';
+import { Thermometer, Eye, Sun, AlertTriangle, ShieldCheck, Wind, Waves } from 'lucide-react';
 
 // ─── Animated Mercury Thermometer ───────────────────────────────────────────
 const MercuryThermometer: React.FC<{ tempC: number }> = ({ tempC }) => {
@@ -177,31 +177,12 @@ export const EnvironmentPage: React.FC = () => {
         )}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-mono text-cyan-400 uppercase tracking-wider mb-1">
-              <CloudSnow className="w-4 h-4" />
-              <span>Meteorological HMI — Environmental Driver (Domain 9)</span>
-            </div>
             <h1 className="text-2xl font-black text-white capitalize">
               {stationId} Antarctic Microclimate
             </h1>
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-              {isMaitri
-                ? 'Schirmacher Oasis (~100 km inland): fierce katabatic winds draining from the polar ice cap plateau.'
-                : 'Larsemann Hills (Coastal Prydz Bay): maritime polar climate with extreme coastal blizzards and fast-ice dynamics.'}
-            </p>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Weather status pill */}
-            <div className={`px-4 py-2 rounded-xl border text-xs font-mono font-bold flex items-center space-x-2 ${
-              isBlizzard
-                ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse'
-                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${isBlizzard ? 'bg-red-400' : 'bg-emerald-400'}`} />
-              <span>{isBlizzard ? 'BLIZZARD LOCKDOWN' : 'NOMINAL ENVELOPE'}</span>
-            </div>
-
             {/* Quick readout */}
             <div className="bg-polar-darker border border-polar-border rounded-xl px-4 py-2 text-xs font-mono">
               <div className="text-slate-500 text-[9px] uppercase tracking-wider">Condition</div>
