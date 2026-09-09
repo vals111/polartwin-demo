@@ -5,7 +5,7 @@ import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
   ExternalLink, Activity, Shield, GitCommit, ChevronRight,
-  Sparkles, RefreshCw, Eye
+  Sparkles, RefreshCw, Eye, Layers, GitCompare
 } from 'lucide-react';
 
 export interface TreeNode {
@@ -193,13 +193,17 @@ const TREE_EDGES: TreeEdge[] = [
   { from: 'water', to: 'personnel', label: 'Potable water hydration' }
 ];
 
-export const CrossDomainCausalTree: React.FC<{ stationId?: string }> = ({ stationId: propStationId }) => {
+export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare?: () => void }> = ({
+  stationId: propStationId,
+  onOpenCompare
+}) => {
   const navigate = useNavigate();
   const { selectedStationId } = useStationStore();
   const { liveSnapshot } = useTelemetryStore();
 
   const currentStationId = propStationId || selectedStationId || 'maitri';
   const isMaitri = currentStationId === 'maitri';
+  const accentColor = isMaitri ? '#06b6d4' : '#60a5fa';
   const snapshot = liveSnapshot[currentStationId];
 
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -287,10 +291,71 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string }> = ({ statio
 
   return (
     <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden bg-gradient-to-b from-[#071326]/90 to-[#030914]/95 shadow-2xl">
-      {/* Header Bar */}
+      <div
+        className="absolute -top-24 -right-24 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-20"
+        style={{ background: accentColor }}
+      />
+
+      {/* Top Station Context & Control Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-polar-border/40 mb-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-polar-dark/80 text-slate-300 border border-polar-border">
+              {isMaitri ? '70°45′S 11°44′E • Inland Schirmacher' : '69°24′S 76°11′E • Coastal Larsemann'}
+            </span>
+          </div>
+
+          <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
+            <Layers className="w-7 h-7" style={{ color: accentColor }} />
+            9 Interconnected Operational Domains
+          </h1>
+        </div>
+
+        {/* Right Action Controls: Station Switcher & Compare Stations */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Station Switcher Pills */}
+          <div className="bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center">
+            <button
+              onClick={() => navigate('/station/maitri/domains')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                isMaitri
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Maitri</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40">Inland</span>
+            </button>
+            <button
+              onClick={() => navigate('/station/bharati/domains')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                !isMaitri
+                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Bharati</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-blue-950/80 text-blue-400 border border-blue-800/40">Coastal</span>
+            </button>
+          </div>
+
+          {/* Compare Stations Button */}
+          {onOpenCompare && (
+            <button
+              onClick={onOpenCompare}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all shadow-md group"
+            >
+              <GitCompare className="w-4 h-4 text-cyan-400 group-hover:rotate-180 transition-transform duration-500" />
+              <span>Compare Stations</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Subheader: Inter-Domain Causal Propagation Architecture */}
       <div className="flex items-center justify-between pb-1">
-        <h2 className="text-lg lg:text-xl font-black text-white flex items-center gap-2.5">
-          <GitCommit className="w-5 h-5 text-cyan-400" />
+        <h2 className="text-base lg:text-lg font-bold text-slate-300 flex items-center gap-2">
+          <GitCommit className="w-4 h-4 text-cyan-400" />
           Inter-Domain Causal Propagation Architecture
         </h2>
       </div>
