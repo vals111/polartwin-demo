@@ -76,20 +76,17 @@ const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ 
     ? {
         label: 'SEVERE',
         color: '#ef4444',
-        desc: 'High gale blizzard. Lockdown active.',
         badge: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse',
       }
     : score >= 40
     ? {
         label: 'MODERATE',
         color: '#f59e0b',
-        desc: 'Strong gusts. Caution on exterior operations.',
         badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       }
     : {
         label: 'CALM',
         color: '#10b981',
-        desc: 'Nominal conditions. Safe for all operations.',
         badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
       };
 
@@ -145,12 +142,6 @@ const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ 
           <span className={score >= 40 && score < 70 ? 'text-amber-400 font-bold' : ''}>Moderate (40-70)</span>
           <span className={score >= 70 ? 'text-red-400 font-bold' : ''}>Severe (70+)</span>
         </div>
-      </div>
-
-      {/* Plain English 1-Line Status */}
-      <div className="text-[10px] text-slate-400 border-t border-slate-800/60 pt-2 flex items-center justify-between">
-        <span>{status.desc}</span>
-        <span className="text-slate-500 text-[9px]">{isBlizzard ? 'Blizzard Active' : 'Nominal'}</span>
       </div>
     </div>
   );
