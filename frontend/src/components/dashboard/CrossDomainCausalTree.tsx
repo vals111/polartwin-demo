@@ -511,31 +511,31 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         </div>
 
         {/* Right Action Controls: 2D/3D View Mode Toggle & Compare Stations Toolbar */}
-        <div className="flex items-center gap-2.5 flex-nowrap overflow-x-auto flex-shrink-0">
+        <div className="flex items-center gap-3 flex-nowrap overflow-x-auto flex-shrink-0">
           {/* 2D / 3D Mode Toggle */}
-          <div className="h-9 bg-polar-dark/90 p-0.5 rounded-xl border border-polar-border flex items-center shadow-md flex-shrink-0">
+          <div className="h-10 bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center shadow-md flex-shrink-0">
             <button
               onClick={() => setViewMode('2d')}
               title="2D Topological DAG"
-              className={`h-8 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+              className={`h-full px-3.5 rounded-lg text-sm font-mono font-bold transition-all flex items-center gap-2 ${
                 viewMode === '2d'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
-              <GitCommit className="w-3.5 h-3.5 text-cyan-400" />
+              <GitCommit className="w-4 h-4 text-cyan-400" />
               <span>2D</span>
             </button>
             <button
               onClick={() => setViewMode('3d')}
               title="3D Spatial Constellation"
-              className={`h-8 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+              className={`h-full px-3.5 rounded-lg text-sm font-mono font-bold transition-all flex items-center gap-2 ${
                 viewMode === '3d'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
-              <Box className="w-3.5 h-3.5 text-cyan-400" />
+              <Box className="w-4 h-4 text-cyan-400" />
               <span>3D</span>
             </button>
           </div>
@@ -544,9 +544,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           {onOpenCompare && (
             <button
               onClick={onOpenCompare}
-              className="h-9 px-3.5 rounded-xl text-xs font-mono font-bold bg-polar-dark/90 hover:bg-cyan-950/40 border border-polar-border hover:border-cyan-400/50 text-slate-300 hover:text-white flex items-center gap-2 transition-all shadow-md group flex-shrink-0"
+              className="h-10 px-4 rounded-xl text-sm font-mono font-bold bg-polar-dark/90 hover:bg-cyan-950/40 border border-polar-border hover:border-cyan-400/50 text-slate-300 hover:text-white flex items-center gap-2.5 transition-all shadow-md group flex-shrink-0"
             >
-              <GitCompare className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-180 transition-transform duration-500" />
+              <GitCompare className="w-4 h-4 text-cyan-400 group-hover:rotate-180 transition-transform duration-500" />
               <span>Compare Stations</span>
             </button>
           )}
