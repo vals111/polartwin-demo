@@ -504,9 +504,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             </span>
           </div>
 
-          <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
-            <Layers className="w-7 h-7" style={{ color: accentColor }} />
-            9 Interconnected Operational Domains
+          <h1 className="text-lg lg:text-xl font-bold text-white flex items-center gap-2.5">
+            <Layers className="w-5 h-5" style={{ color: accentColor }} />
+            <span>9 Interconnected Operational Domains</span>
           </h1>
         </div>
 
