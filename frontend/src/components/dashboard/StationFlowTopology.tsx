@@ -7,7 +7,7 @@ import {
   Activity, Shield, AlertTriangle, Droplet, Zap, Thermometer,
   ArrowRight, Radio, RefreshCw, Layers, HelpCircle, GitCommit,
   CheckCircle2, AlertOctagon, Info, ChevronRight, Gauge,
-  Sliders, BatteryCharging, Flame, Cpu, Eye, ExternalLink
+  Sliders, BatteryCharging, Flame, Cpu, Eye, ExternalLink, X
 } from 'lucide-react';
 import { SparklineChart } from '../charts/SparklineChart';
 
@@ -69,13 +69,22 @@ export const StationFlowTopology: React.FC<{
   const currentStationId = propStationId || selectedStationId || 'maitri';
   const isMaitri = currentStationId === 'maitri';
 
-  // Interaction States
-  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | null>('microgrid_bus');
+  // Interaction States: null by default so only clicked rectangle concept appears below
+  const [selectedNodeId, setSelectedNodeId] = useState<NodeId | null>(null);
   const [isImpactTraceActive, setIsImpactTraceActive] = useState<boolean>(false);
   const [tracedNodeId, setTracedNodeId] = useState<NodeId | null>(null);
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
   const [isWhyDrawerOpen, setIsWhyDrawerOpen] = useState<boolean>(false);
   const [activeWhyTopic, setActiveWhyTopic] = useState<'gen' | 'fuel' | 'heat' | 'risk'>('gen');
+
+  // Reset View Handler: restores neutral overview state
+  const handleResetView = () => {
+    setSelectedNodeId(null);
+    setIsImpactTraceActive(false);
+    setTracedNodeId(null);
+    setIsCompareMode(false);
+    setIsWhyDrawerOpen(false);
+  };
 
   // Handle station change
   const handleStationSwitch = (stId: string) => {
@@ -575,6 +584,20 @@ export const StationFlowTopology: React.FC<{
             <span>Impact Trace</span>
             {isImpactTraceActive && <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/30 font-bold">ACTIVE</span>}
           </button>
+
+          {/* Reset View Button */}
+          <button
+            onClick={handleResetView}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+              selectedNodeId || isImpactTraceActive || isCompareMode || isWhyDrawerOpen
+                ? 'bg-slate-800 text-cyan-300 border-cyan-500/50 hover:bg-slate-700 shadow-md shadow-cyan-500/10'
+                : 'bg-slate-900/70 text-slate-400 border-slate-800 hover:text-slate-200'
+            }`}
+            title="Reset P&ID Flow Topology to neutral overview"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${selectedNodeId || isImpactTraceActive ? 'text-cyan-400' : ''}`} />
+            <span>Reset View</span>
+          </button>
         </div>
       </div>
 
@@ -895,9 +918,12 @@ export const StationFlowTopology: React.FC<{
                 key={node.id}
                 transform={`translate(${node.x}, ${node.y})`}
                 onClick={() => {
-                  setSelectedNodeId(node.id);
+                  const nextId = selectedNodeId === node.id ? null : node.id;
+                  setSelectedNodeId(nextId);
+                  setIsWhyDrawerOpen(false);
+                  setIsCompareMode(false);
                   if (isImpactTraceActive) {
-                    setTracedNodeId(node.id);
+                    setTracedNodeId(nextId);
                   }
                 }}
                 className="cursor-pointer transition-all duration-300"
@@ -1079,7 +1105,7 @@ export const StationFlowTopology: React.FC<{
               </div>
             </div>
 
-            {/* Quick Action: Trace this node */}
+            {/* Quick Action: Trace, Reset View & Close */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
@@ -1090,6 +1116,23 @@ export const StationFlowTopology: React.FC<{
               >
                 <GitCommit className="w-3.5 h-3.5" />
                 <span>Trace Impact Path</span>
+              </button>
+
+              <button
+                onClick={handleResetView}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-mono transition-colors flex items-center gap-1.5"
+                title="Reset View"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Reset View</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedNodeId(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                title="Close concept card"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
