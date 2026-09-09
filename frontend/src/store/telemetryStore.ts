@@ -92,8 +92,19 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
           percentage: 82,
           days_remaining: 15,
         },
-        equipment: prevSnap.equipment || { overall_health: 94 },
-        station_ops: prevSnap.station_ops || { overall_readiness: 96, status_band: 'GREEN' },
+        equipment: prevSnap.equipment || { items: [], avg_health: 94 },
+        station_ops: prevSnap.station_ops || {
+          overall_readiness: 96,
+          status_band: 'GREEN',
+          domain_readiness: {
+            energy: 95,
+            fuel: 94,
+            water: 96,
+            equipment: 94,
+            station_ops: 96,
+            environment: 92,
+          },
+        },
       };
 
       return {
@@ -105,7 +116,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
 
   updateTelemetry: (stationId: string, data: any) => {
     set((state) => {
-      const prevSnap = state.liveSnapshot[stationId] || {};
+      const prevSnap: Partial<TelemetrySnapshot> = state.liveSnapshot[stationId] || {};
 
       // Parse environment whether nested under data.environment or provided flat
       let environment = data.environment;
