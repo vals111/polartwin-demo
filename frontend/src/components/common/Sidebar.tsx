@@ -62,7 +62,7 @@ export const Sidebar: React.FC = () => {
           to: `/station/${selectedStationId}/domains`,
           label: 'Domains',
           icon: Layers,
-          badge: '16 LIVE',
+          badge: '9 LIVE',
           badgeColor: isMaitri ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
         },
         { to: `/station/${selectedStationId}/twin3d`, label: '3D Spatial View', icon: Box },
