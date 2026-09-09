@@ -7,7 +7,7 @@ import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Thermometer, Eye, Sun, AlertTriangle, ShieldCheck,
-  Wind, Waves, Satellite, Compass, Droplets, Gauge
+  Wind, Waves, Droplets, Gauge
 } from 'lucide-react';
 
 // ─── Animated Mercury Thermometer ───────────────────────────────────────────
@@ -150,10 +150,6 @@ export const EnvironmentPage: React.FC = () => {
   // Live MET Norway API state
   const [metWeather, setMetWeather] = useState<any>(null);
 
-  // Station Geographic & Elevation Coordinates
-  const stationCoords = isMaitri
-    ? { lat: '-70.766667', lon: '11.731944', name: 'Maitri Station', region: 'Schirmacher Oasis', elevation: '117m' }
-    : { lat: '-69.408030', lon: '76.187361', name: 'Bharati Station', region: 'Larsemann Hills', elevation: '35m' };
 
   // Automatic live sync every 3 seconds
   useEffect(() => {
@@ -227,18 +223,6 @@ export const EnvironmentPage: React.FC = () => {
             <h1 className="text-xl font-black text-white capitalize">
               {stationId} Antarctic Microclimate
             </h1>
-            {/* Live Auto-Sync Indicator */}
-            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-mono text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <Satellite className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="font-bold tracking-wider uppercase text-[10px]">Auto-Sync (3s)</span>
-            </div>
-            {/* Coordinates */}
-            <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
-              <Compass className="w-3.5 h-3.5 text-cyan-400" />
-              <span>LAT {stationCoords.lat}° • LON {stationCoords.lon}°</span>
-              <span className="text-slate-500">({stationCoords.region}, {stationCoords.elevation})</span>
-            </span>
           </div>
 
           {/* Clean condition readouts */}
