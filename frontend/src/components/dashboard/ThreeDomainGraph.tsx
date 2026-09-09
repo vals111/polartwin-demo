@@ -247,12 +247,12 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       haloMesh.rotation.x = Math.PI / 3;
       group.add(haloMesh);
 
-      // Inner pulsating core ring
+      // Inner pulsating core ring matching domain signature color
       const innerHaloGeo = new THREE.TorusGeometry(26, 0.9, 16, 64);
       const innerHaloMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
+        color: new THREE.Color(dom.color),
         transparent: true,
-        opacity: 0.45
+        opacity: 0.55
       });
       const innerHaloMesh = new THREE.Mesh(innerHaloGeo, innerHaloMat);
       innerHaloMesh.rotation.y = Math.PI / 4;

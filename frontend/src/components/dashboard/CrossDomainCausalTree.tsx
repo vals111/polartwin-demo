@@ -507,7 +507,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       />
 
       {/* ── TOP INTEGRATED HEADER & MISSION CONTROLS ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-polar-border/40 mb-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-3 mb-3">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-polar-dark/80 text-slate-300 border border-polar-border shadow-inner">
