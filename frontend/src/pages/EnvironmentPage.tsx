@@ -640,13 +640,13 @@ export const EnvironmentPage: React.FC = () => {
                   icon: '🚛',
                 },
               ].map((item) => (
-                <div key={item.title} className="bg-polar-dark/80 p-2.5 rounded-xl border border-polar-border flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5">
-                    <span>{item.icon}</span>
-                    <span className="font-semibold text-white text-[11px]">{item.title}</span>
+                <div key={item.title} className="bg-polar-dark/80 p-3 rounded-xl border border-polar-border flex flex-col items-center justify-center text-center gap-1.5 hover:border-cyan-500/30 transition-all">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="text-sm">{item.icon}</span>
+                    <span className="font-semibold text-white text-[11px] tracking-wide">{item.title}</span>
                   </div>
-                  <div className={`text-base font-black font-mono ${item.color}`}>{item.val}</div>
-                  <div className="text-[10px] text-slate-500">{item.desc}</div>
+                  <div className={`text-lg font-black font-mono tracking-tight ${item.color}`}>{item.val}</div>
+                  <div className="text-[10px] text-slate-400 font-mono">{item.desc}</div>
                 </div>
               ))}
             </div>
