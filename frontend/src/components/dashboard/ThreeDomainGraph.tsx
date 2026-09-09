@@ -744,11 +744,6 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
             <span className="text-[11px] text-amber-200 font-bold">Outgoing Impacts</span>
           </div>
         </div>
-
-        <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-500/40 flex items-center gap-2 shadow-lg backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span>Hover domain node to inspect conduits</span>
-        </span>
       </div>
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">

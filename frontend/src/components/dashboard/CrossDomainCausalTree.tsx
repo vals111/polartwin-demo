@@ -553,13 +553,15 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── HOVER GUIDANCE CALLOUT ── */}
-      <div className="flex items-center justify-end pb-3">
-        <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center gap-2 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span>Hover over any domain to reveal its causal links</span>
-        </span>
-      </div>
+      {/* ── HOVER GUIDANCE CALLOUT (2D ONLY) ── */}
+      {viewMode === '2d' && (
+        <div className="flex items-center justify-end pb-3">
+          <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center gap-2 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span>Hover over any domain to reveal its causal links</span>
+          </span>
+        </div>
+      )}
 
       {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
       {viewMode === '3d' ? (
