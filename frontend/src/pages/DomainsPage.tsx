@@ -2,10 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
-import { useAlertStore } from '../store/alertStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  Layers, RefreshCw, GitCompare, X, Clock
+  Layers, RefreshCw, GitCompare, X
 } from 'lucide-react';
 import { CrossDomainCausalTree } from '../components/dashboard/CrossDomainCausalTree';
 
@@ -153,8 +152,7 @@ export const DomainsPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime } = useTelemetryStore();
-  const { alerts } = useAlertStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   const [compareModalOpen, setCompareModalOpen] = useState<boolean>(false);
 
@@ -173,9 +171,6 @@ export const DomainsPage: React.FC = () => {
 
   const snapshot = liveSnapshot[stationId];
   const otherSnapshot = liveSnapshot[otherStationId];
-  const risk = liveRisk[stationId];
-  const otherRisk = liveRisk[otherStationId];
-  const stationAlerts = alerts[stationId] || [];
 
   const accentColor = isMaitri ? '#06b6d4' : '#60a5fa';
 
@@ -460,11 +455,6 @@ export const DomainsPage: React.FC = () => {
   const currentData = useMemo(() => getDomainData(stationId), [stationId, snapshot]);
   const otherData = useMemo(() => getDomainData(otherStationId), [otherStationId, otherSnapshot]);
 
-  // Average readiness computed across strictly the 9 active domains
-  const avgReadiness = Math.round(
-    NINE_DOMAINS.reduce((acc, d) => acc + ((currentData as any)[d.id]?.score ?? 90), 0) / NINE_DOMAINS.length
-  );
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Station Context & Control Bar */}
@@ -477,18 +467,8 @@ export const DomainsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span
-                className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold border"
-                style={{ background: `${accentColor}18`, color: accentColor, borderColor: `${accentColor}44` }}
-              >
-                9-Domain Digital Architecture
-              </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-polar-dark/80 text-slate-300 border border-polar-border">
                 {isMaitri ? '70°45′S 11°44′E • Inland Schirmacher' : '69°24′S 76°11′E • Coastal Larsemann'}
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                9/9 Domains Live Synchronized
               </span>
             </div>
 
@@ -496,10 +476,6 @@ export const DomainsPage: React.FC = () => {
               <Layers className="w-7 h-7" style={{ color: accentColor }} />
               9 Interconnected Operational Domains
             </h1>
-
-            <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl">
-              Antarctic station operations modeled as a tightly coupled system. Click any domain to inspect live telemetry, causal drivers, cross-domain dependencies, and operational projections.
-            </p>
           </div>
 
           {/* Right Action Controls: Station Switcher & Compare Stations */}
@@ -541,39 +517,6 @@ export const DomainsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Global Summary KPI Bar */}
-        <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t border-polar-border/50 text-xs font-mono text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">Active Station:</span>
-            <span className="font-bold text-white">{currentStation.name}</span>
-          </div>
-          <span>•</span>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">Average Readiness:</span>
-            <span className="font-bold text-cyan-300">{avgReadiness}%</span>
-          </div>
-          <span>•</span>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">Composite Risk:</span>
-            <span className="font-bold" style={{ color: accentColor }}>
-              {risk?.level || 'LOW'} ({risk?.score || 18} pts)
-            </span>
-          </div>
-          <span>•</span>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">Active Alerts:</span>
-            <span className="font-bold text-amber-300">{stationAlerts.length}</span>
-          </div>
-          {lastTickTime[stationId] && (
-            <>
-              <span>•</span>
-              <div className="flex items-center gap-1.5 text-slate-500">
-                <Clock className="w-3 h-3" />
-                <span>Last Telemetry Sync: {lastTickTime[stationId]}</span>
-              </div>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Cross-Domain Causal Propagation Tree Graph */}

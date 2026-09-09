@@ -4,7 +4,7 @@ import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  ArrowRight, ExternalLink, Activity, Shield, GitCommit, ChevronRight,
+  ExternalLink, Activity, Shield, GitCommit, ChevronRight,
   Sparkles, RefreshCw, Eye
 } from 'lucide-react';
 
@@ -288,30 +288,11 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string }> = ({ statio
   return (
     <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden bg-gradient-to-b from-[#071326]/90 to-[#030914]/95 shadow-2xl">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-4 border-b border-polar-border/60">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-              Cross-Domain Causal Propagation Tree
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">
-              {isMaitri ? 'Maitri Inland Model' : 'Bharati Coastal Model'} • 9 Interconnected Domains
-            </span>
-          </div>
-          <h2 className="text-lg lg:text-xl font-black text-white flex items-center gap-2.5">
-            <GitCommit className="w-5 h-5 text-cyan-400" />
-            Inter-Domain Causal Propagation Architecture
-          </h2>
-          <p className="text-xs font-mono text-slate-400 mt-1">
-            Hierarchical causal dependencies linking weather, logistics, reserves, equipment, and microgrid power. <span className="text-cyan-300 font-bold">Click any domain node to navigate directly to its dedicated feature page.</span>
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
-            Hover to trace causality • Click to open page
-          </span>
-        </div>
+      <div className="flex items-center justify-between pb-3 border-b border-polar-border/60">
+        <h2 className="text-lg lg:text-xl font-black text-white flex items-center gap-2.5">
+          <GitCommit className="w-5 h-5 text-cyan-400" />
+          Inter-Domain Causal Propagation Architecture
+        </h2>
       </div>
 
       {/* SVG Canvas for Tree Nodes & Animated Causal Edges */}
@@ -477,34 +458,6 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string }> = ({ statio
         </div>
       </div>
 
-      {/* Interactive Footer Legend & Guidance */}
-      <div className="mt-2 pt-3 border-t border-polar-border/50 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-400">
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-indigo-400" /> Tier 1: Climate
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-teal-400" /> Tier 2: Resupply
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-amber-400" /> Tier 3: Reserves
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-emerald-400" /> Tier 4: Machinery
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-yellow-400" /> Tier 5: Microgrid
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-purple-400" /> Tier 6: Life Support
-          </span>
-        </div>
-
-        <div className="text-[11px] text-cyan-300 font-bold flex items-center gap-1">
-          <span>Click any node to navigate to its feature page</span>
-          <ArrowRight className="w-3 h-3" />
-        </div>
-      </div>
     </div>
   );
 };
