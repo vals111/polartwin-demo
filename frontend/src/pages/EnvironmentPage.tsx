@@ -95,16 +95,16 @@ const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ 
       {/* Header with Title and Large Clear Score */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CloudLightning className="w-4 h-4" style={{ color: status.color }} />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+          <CloudLightning className="w-4 h-4 flex-shrink-0" style={{ color: status.color }} />
+          <span className="text-sm font-bold uppercase tracking-wider text-slate-100">
             Storm Index
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-base font-black tracking-tight" style={{ color: status.color }}>
-            {score}<span className="text-xs text-slate-500 font-normal">/100</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg font-black tracking-tight" style={{ color: status.color }}>
+            {score}<span className="text-xs text-slate-400 font-semibold">/100</span>
           </span>
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${status.badge}`}>
+          <span className={`px-2.5 py-0.5 rounded-md text-xs font-bold border ${status.badge}`}>
             {status.label}
           </span>
         </div>
@@ -137,10 +137,10 @@ const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ 
         </div>
 
         {/* Intuitive 3-Stage Labels */}
-        <div className="flex justify-between text-[9px] text-slate-500 px-0.5">
-          <span className={score < 40 ? 'text-emerald-400 font-bold' : ''}>Calm (0-40)</span>
-          <span className={score >= 40 && score < 70 ? 'text-amber-400 font-bold' : ''}>Moderate (40-70)</span>
-          <span className={score >= 70 ? 'text-red-400 font-bold' : ''}>Severe (70+)</span>
+        <div className="flex justify-between text-[11px] px-0.5 pt-0.5">
+          <span className={score < 40 ? 'text-emerald-400 font-bold' : 'text-slate-500'}>Calm (0-40)</span>
+          <span className={score >= 40 && score < 70 ? 'text-amber-400 font-bold' : 'text-slate-500'}>Moderate (40-70)</span>
+          <span className={score >= 70 ? 'text-red-400 font-bold' : 'text-slate-500'}>Severe (70+)</span>
         </div>
       </div>
     </div>
@@ -478,11 +478,11 @@ export const EnvironmentPage: React.FC = () => {
           {/* Polar Atmospheric Flow Dynamics */}
           <div className="w-full bg-gradient-to-br from-cyan-950/20 via-polar-dark/95 to-polar-darker/95 p-3 rounded-xl border border-cyan-500/20 shadow-md space-y-2 font-mono">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider text-cyan-400 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-cyan-400 font-bold">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
                 <span>Katabatic Dynamics</span>
               </div>
-              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                 wind > 50 
                   ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse' 
                   : wind > 30 
@@ -494,13 +494,17 @@ export const EnvironmentPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
-              <div className="bg-slate-900/60 p-2 rounded-lg border border-polar-border/40">
-                <div className="text-[8px] text-slate-400 uppercase">Polar Air Density</div>
-                <div className="text-xs font-bold text-white mt-0.5">1.39 <span className="text-[9px] text-slate-400 font-normal">kg/m³</span></div>
+              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-polar-border/40">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide">Polar Air Density</div>
+                <div className="text-base sm:text-lg font-black font-mono text-white mt-0.5">
+                  1.39 <span className="text-xs text-slate-400 font-medium">kg/m³</span>
+                </div>
               </div>
-              <div className="bg-slate-900/60 p-2 rounded-lg border border-polar-border/40">
-                <div className="text-[8px] text-slate-400 uppercase">Wind Velocity</div>
-                <div className="text-xs font-bold text-cyan-300 mt-0.5">{windMs.toFixed(1)} <span className="text-[9px] text-slate-400 font-normal">m/s</span></div>
+              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-polar-border/40">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide">Wind Velocity</div>
+                <div className="text-base sm:text-lg font-black font-mono text-cyan-300 mt-0.5">
+                  {windMs.toFixed(1)} <span className="text-xs text-slate-400 font-medium">m/s</span>
+                </div>
               </div>
             </div>
           </div>
