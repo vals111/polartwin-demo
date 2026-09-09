@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
+import { telemetryApi } from '../api/client';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Compass, ArrowRight, Thermometer, Wind, Zap, Droplet,
@@ -187,7 +188,7 @@ const StationCard: React.FC<{
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { selectStation, loadStations } = useStationStore();
-  const { liveSnapshot, liveRisk } = useTelemetryStore();
+  const { liveSnapshot, liveRisk, updateLiveWeather } = useTelemetryStore();
   const { alerts, loadAlerts } = useAlertStore();
   const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
@@ -195,7 +196,16 @@ export const DashboardPage: React.FC = () => {
     loadStations();
     loadAlerts('maitri');
     loadAlerts('bharati');
-  }, [loadStations, loadAlerts]);
+
+    // Instantly fetch live weather for both stations on dashboard mount
+    telemetryApi.getWeather('maitri')
+      .then((data) => data && updateLiveWeather('maitri', data))
+      .catch((err) => console.warn('Maitri initial weather load error:', err));
+
+    telemetryApi.getWeather('bharati')
+      .then((data) => data && updateLiveWeather('bharati', data))
+      .catch((err) => console.warn('Bharati initial weather load error:', err));
+  }, [loadStations, loadAlerts, updateLiveWeather]);
 
   const activeAlerts = [
     ...(alerts['maitri'] || []),
@@ -249,8 +259,8 @@ export const DashboardPage: React.FC = () => {
               { icon: PlaneTakeoff, title: 'Blue Ice Runway', detail: 'DROMLAN Aviation', color: '#818cf8' },
             ]}
             telemetry={[
-              { label: 'Ambient Temp', value: `${maitriSnap?.environment?.temperature?.toFixed(1) ?? -25.4}°C`, color: '#06b6d4' },
-              { label: 'Katabatic Wind', value: `${maitriSnap?.environment?.wind_speed ?? 34} km/h`, color: '#e2e8f0' },
+              { label: 'Ambient Temp', value: `${maitriSnap?.environment?.temperature?.toFixed(1) ?? -22.4}°C`, color: '#06b6d4' },
+              { label: 'Katabatic Wind', value: `${maitriSnap?.environment?.wind_speed ?? 28} km/h`, color: '#e2e8f0' },
               { label: 'Generator Load', value: `${maitriSnap?.energy?.generator_load ?? 68} kW`, color: '#f59e0b' },
               { label: 'Fuel Autonomy', value: `${maitriSnap?.fuel?.days_remaining ?? 19}d`, color: '#10b981' },
             ]}
@@ -281,8 +291,8 @@ export const DashboardPage: React.FC = () => {
               { icon: Anchor, title: 'Prydz Bay Berthing', detail: 'Vessel Resupply Channel', color: '#2dd4bf' },
             ]}
             telemetry={[
-              { label: 'Ambient Temp', value: `${bharatiSnap?.environment?.temperature?.toFixed(1) ?? -18.2}°C`, color: '#60a5fa' },
-              { label: 'Maritime Wind', value: `${bharatiSnap?.environment?.wind_speed ?? 28} km/h`, color: '#e2e8f0' },
+              { label: 'Ambient Temp', value: `${bharatiSnap?.environment?.temperature?.toFixed(1) ?? -19.6}°C`, color: '#60a5fa' },
+              { label: 'Maritime Wind', value: `${bharatiSnap?.environment?.wind_speed ?? 14} km/h`, color: '#e2e8f0' },
               { label: 'CHP Load', value: `${bharatiSnap?.energy?.generator_load ?? 74} kW`, color: '#f59e0b' },
               { label: 'Fuel Autonomy', value: `${bharatiSnap?.fuel?.days_remaining ?? 21}d`, color: '#10b981' },
             ]}

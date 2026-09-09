@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { telemetryApi } from '../api/client';
@@ -195,45 +195,47 @@ const ForecastArchiveCard: React.FC<{
   data: number[];
   color: string;
   unit: string;
-  current: number;
   timestamps?: string[];
-}> = ({ label, data, color, unit, current, timestamps }) => {
+}> = ({ label, data, color, unit, timestamps }) => {
   const [hovered, setHovered] = useState<{ val: number; time: string } | null>(null);
-  const min = data.length ? Math.min(...data) : current;
-  const max = data.length ? Math.max(...data) : current;
+
+  const handleHover = useCallback((val: number | null, time: string | null) => {
+    if (val !== null && time !== null) {
+      setHovered({ val, time });
+    } else {
+      setHovered(null);
+    }
+  }, []);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900/80 via-polar-dark/95 to-slate-950/90 p-2.5 rounded-xl border border-polar-border/60 hover:border-cyan-500/40 transition-all flex flex-col justify-between h-full shadow-sm group">
-      {/* Top Header */}
+    <div className="bg-gradient-to-br from-slate-900/80 via-polar-dark/95 to-slate-950/90 p-3 rounded-xl border border-polar-border/60 hover:border-cyan-500/40 transition-all flex flex-col justify-between h-full shadow-sm group">
+      {/* Top Header: ONLY single graph name + hover-activated readout */}
       <div className="flex items-center justify-between text-xs font-mono mb-1">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">{label}</span>
-          <span className="text-[8px] text-slate-500 hidden sm:inline">
-            ({min.toFixed(0)} ~ {max.toFixed(0)} {unit})
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2 h-2 rounded-full flex-shrink-0 transition-all group-hover:scale-125"
+            style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}88` }}
+          />
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-200">
+            {label}
           </span>
         </div>
-        <div className="text-right">
-          {hovered ? (
-            <div className="flex items-baseline gap-1">
-              <span className="text-[8px] text-cyan-400 uppercase font-bold">{hovered.time}:</span>
-              <span className="text-xs font-black font-mono text-white tracking-tight">
-                {hovered.val.toFixed(1)} {unit}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-baseline gap-1">
-              <span className="text-[8px] text-slate-500 uppercase">Live:</span>
-              <span className="text-xs font-black font-mono" style={{ color }}>
-                {current.toFixed(1)} {unit}
+
+        {/* Hover-only data readout (zero layout shift in default state) */}
+        <div className="text-right min-h-[16px] flex items-center justify-end">
+          {hovered && (
+            <div className="flex items-baseline gap-1.5 font-mono">
+              <span className="text-[9px] text-slate-400 font-semibold">{hovered.time}</span>
+              <span className="text-xs font-black text-white">
+                {hovered.val.toFixed(1)} <span className="text-[10px] text-slate-400 font-normal">{unit}</span>
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Chart Canvas filling available height */}
-      <div className="flex-1 w-full min-h-[48px]">
+      {/* Pure graph canvas filling available card space with zero clutter */}
+      <div className="flex-1 w-full min-h-[56px] relative">
         <SparklineChart
           data={data}
           color={color}
@@ -243,23 +245,8 @@ const ForecastArchiveCard: React.FC<{
           unit={unit}
           label={label}
           timestamps={timestamps}
-          onHover={(val, time) => {
-            if (val !== null && time !== null) {
-              setHovered({ val, time });
-            } else {
-              setHovered(null);
-            }
-          }}
+          onHover={handleHover}
         />
-      </div>
-
-      {/* Timeline labels at the bottom of each graph */}
-      <div className="flex justify-between text-[8px] font-mono text-slate-500 pt-0.5 border-t border-slate-800/60 px-0.5">
-        <span>-24h</span>
-        <span>-18h</span>
-        <span>-12h</span>
-        <span>-6h</span>
-        <span className="text-cyan-400 font-bold">Now</span>
       </div>
     </div>
   );
@@ -673,10 +660,10 @@ export const EnvironmentPage: React.FC = () => {
           {/* Evenly Spaced 4 Archive Trend Graphs Filling Empty Space */}
           <div className="grid grid-rows-4 gap-2.5 flex-1 min-h-[400px]">
             {[
-              { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C', current: temp },
-              { label: 'Wind Velocity', data: windHistory, color: '#818cf8', unit: 'km/h', current: wind },
-              { label: 'Solar Radiation', data: solarHistory, color: '#f59e0b', unit: 'W/m²', current: solar },
-              { label: 'Barometric Pressure', data: pressureHistory, color: '#a78bfa', unit: 'hPa', current: pressure },
+              { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C' },
+              { label: 'Wind Velocity', data: windHistory, color: '#818cf8', unit: 'km/h' },
+              { label: 'Solar Radiation', data: solarHistory, color: '#f59e0b', unit: 'W/m²' },
+              { label: 'Barometric Pressure', data: pressureHistory, color: '#a78bfa', unit: 'hPa' },
             ].map((trend) => (
               <ForecastArchiveCard
                 key={trend.label}
@@ -684,7 +671,6 @@ export const EnvironmentPage: React.FC = () => {
                 data={trend.data}
                 color={trend.color}
                 unit={trend.unit}
-                current={trend.current}
                 timestamps={forecastTimestamps}
               />
             ))}

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import * as echarts from 'echarts';
 
 interface SparklineChartProps {
@@ -27,11 +27,48 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
   const ref = useRef<HTMLDivElement>(null);
   const inst = useRef<echarts.ECharts | null>(null);
 
+  const onHoverRef = useRef(onHover);
+  onHoverRef.current = onHover;
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const timeLabelsRef = useRef<string[]>([]);
+
+  // 1. One-time ECharts instance lifecycle
   useEffect(() => {
     if (!ref.current) return;
-    if (inst.current) inst.current.dispose();
     const chart = echarts.init(ref.current, 'dark');
     inst.current = chart;
+
+    if (interactive) {
+      chart.on('showTip', (params: any) => {
+        const idx = params?.dataIndexInside ?? params?.dataIndex;
+        if (idx !== undefined && dataRef.current[idx] !== undefined) {
+          onHoverRef.current?.(dataRef.current[idx], timeLabelsRef.current[idx] || '');
+        }
+      });
+
+      chart.on('globalout', () => {
+        onHoverRef.current?.(null, null);
+      });
+    }
+
+    const ro = new ResizeObserver(() => {
+      chart.resize();
+    });
+    ro.observe(ref.current);
+
+    return () => {
+      ro.disconnect();
+      chart.dispose();
+      inst.current = null;
+    };
+  }, [interactive]);
+
+  // 2. High-performance option update without disposing or flickering
+  useEffect(() => {
+    if (!inst.current) return;
 
     const timeLabels = timestamps && timestamps.length === data.length
       ? timestamps
@@ -39,12 +76,12 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
           const hoursAgo = data.length - 1 - i;
           return hoursAgo === 0 ? 'Now' : `-${hoursAgo}h`;
         });
+    timeLabelsRef.current = timeLabels;
 
-    chart.setOption({
+    inst.current.setOption({
       backgroundColor: 'transparent',
-      animation: true,
-      animationDuration: 400,
-      grid: { top: 4, bottom: interactive ? 6 : 2, left: 4, right: 4 },
+      animation: false, // Prevents any flash or jitter on updates
+      grid: { top: 6, bottom: 4, left: 4, right: 4 },
       xAxis: {
         type: 'category',
         show: false,
@@ -60,10 +97,12 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
         ? {
             show: true,
             trigger: 'axis',
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            borderColor: color,
+            confine: true,
+            transitionDuration: 0, // Instant tooltip tracking without lagging cursor
+            backgroundColor: 'rgba(5, 13, 24, 0.95)',
+            borderColor: `${color}99`,
             borderWidth: 1.5,
-            padding: [6, 10],
+            padding: [5, 9],
             textStyle: {
               color: '#f8fafc',
               fontFamily: 'monospace',
@@ -72,7 +111,7 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
             axisPointer: {
               type: 'line',
               lineStyle: {
-                color: 'rgba(255, 255, 255, 0.45)',
+                color: `${color}88`,
                 width: 1.5,
                 type: 'dashed',
               },
@@ -82,11 +121,8 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
               const p = params[0];
               const val = typeof p.value === 'number' ? p.value.toFixed(1) : p.value;
               const time = p.name || '';
-              return `<div style="font-weight:bold;color:${color};font-size:10px;text-transform:uppercase">${label} Archive</div>` +
-                     `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:2px;">` +
-                     `<span style="color:#94a3b8;font-size:10px">${time}</span>` +
-                     `<span style="font-weight:900;color:#ffffff;font-size:12px">${val} ${unit}</span>` +
-                     `</div>`;
+              return `<div style="font-family:monospace;font-size:10px;color:#94a3b8;font-weight:600">${time}</div>` +
+                     `<div style="font-family:monospace;font-size:13px;font-weight:900;color:${color};margin-top:1px">${val} <span style="font-size:10px;font-weight:normal;color:#94a3b8">${unit}</span></div>`;
             },
           }
         : { show: false },
@@ -108,7 +144,7 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
           areaStyle: showArea
             ? {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                  { offset: 0, color: `${color}55` },
+                  { offset: 0, color: `${color}45` },
                   { offset: 1, color: `${color}02` },
                 ]),
               }
@@ -116,26 +152,7 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
         },
       ],
     });
-
-    if (interactive && onHover) {
-      chart.on('showTip', (params: any) => {
-        if (params?.dataIndexInside !== undefined && data[params.dataIndexInside] !== undefined) {
-          const idx = params.dataIndexInside;
-          onHover(data[idx], timeLabels[idx]);
-        }
-      });
-      chart.on('globalout', () => {
-        onHover(null, null);
-      });
-    }
-
-    const ro = new ResizeObserver(() => chart.resize());
-    ro.observe(ref.current!);
-    return () => {
-      ro.disconnect();
-      chart.dispose();
-    };
-  }, [data, color, height, interactive, unit, label, showArea, timestamps, onHover]);
+  }, [data, color, unit, label, showArea, timestamps, interactive]);
 
   return <div ref={ref} style={{ width: '100%', height: height || '100%' }} />;
 };

@@ -77,6 +77,12 @@ def get_live_telemetry_snapshot(
         "station_id": station_id,
         "timestamp": state.get("timestamp"),
         "tick": state.get("tick"),
+        "environment": state.get("environment"),
+        "energy": state.get("energy"),
+        "fuel": state.get("fuel"),
+        "water": state.get("water"),
+        "equipment": state.get("equipment"),
+        "station_ops": state.get("station_ops"),
         "telemetry": {
             "temperature": state["environment"]["temperature"],
             "wind_speed": state["environment"]["wind_speed"],
