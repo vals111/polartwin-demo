@@ -62,6 +62,14 @@ export const telemetryApi = {
   getLiveSnapshot: async (stationId = 'maitri'): Promise<TelemetrySnapshot> => {
     const res = await apiClient.get(`/telemetry/live/${stationId}`);
     return res.data;
+  },
+  getWeather: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/telemetry/weather/${stationId}`);
+    return res.data;
+  },
+  refreshWeather: async (stationId = 'maitri') => {
+    const res = await apiClient.post(`/telemetry/weather/${stationId}/refresh`);
+    return res.data;
   }
 };
 

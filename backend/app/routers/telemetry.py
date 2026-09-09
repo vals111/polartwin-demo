@@ -7,6 +7,9 @@ from app.models.telemetry import Telemetry
 from app.schemas.all_schemas import TelemetryReading
 from app.simulation.engine import get_current_state
 from app.deps import require_viewer
+from app.services.weather_service import fetch_live_met_weather
+from app.simulation.environment import apply_live_weather
+from app.simulation import engine
 
 router = APIRouter(prefix="/telemetry", tags=["Telemetry"])
 
@@ -99,3 +102,33 @@ def get_live_telemetry_snapshot(
             "status_band": state["station_ops"]["status_band"]
         }
     }
+
+@router.get("/weather/{station_id}")
+def get_station_weather(
+    station_id: str,
+    user = Depends(require_viewer)
+):
+    """
+    Fetches real-time weather and 24h forecast from MET Norway API
+    for Antarctic research stations (Maitri and Bharati).
+    Attribution: Weather data from the Norwegian Meteorological Institute
+    """
+    data = fetch_live_met_weather(station_id)
+    if station_id in engine.station_states:
+        engine.station_states[station_id] = apply_live_weather(engine.station_states[station_id], data)
+    return data
+
+@router.post("/weather/{station_id}/refresh")
+def refresh_station_weather(
+    station_id: str,
+    user = Depends(require_viewer)
+):
+    """
+    Forces a fresh fetch from the MET Norway API (respecting fair-use limits)
+    and propagates live temperature, wind, and pressure through the simulation cascade.
+    """
+    data = fetch_live_met_weather(station_id, force_refresh=True)
+    if station_id in engine.station_states:
+        engine.station_states[station_id] = apply_live_weather(engine.station_states[station_id], data)
+    return data
+

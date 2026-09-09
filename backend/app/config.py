@@ -1,7 +1,10 @@
 import os
 import logging
 from typing import List
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+load_dotenv()
 
 logger = logging.getLogger("polartwin.config")
 
@@ -55,7 +58,7 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
     FRONTEND_ORIGIN: str = os.getenv("FRONTEND_ORIGIN", "https://polartwin.pages.dev")
 
-    model_config = SettingsConfigDict(case_sensitive=True, extra="allow")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="allow")
 
     def validate_secrets(self) -> None:
         """Call at startup — raises immediately if JWT_SECRET is not set."""

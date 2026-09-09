@@ -121,6 +121,24 @@ try:
 except Exception as e:
     logger.error(f"Initial DB check error: {e}", exc_info=True)
 
+async def weather_sync_job():
+    """
+    Syncs live real-time Antarctic weather from Norwegian Meteorological Institute (MET Norway)
+    every 10 minutes, cascading live temperature, wind, and solar into the simulation engine.
+    """
+    from app.services.weather_service import fetch_live_met_weather
+    from app.simulation.environment import apply_live_weather
+    from app.simulation import engine
+
+    for st_id in ["maitri", "bharati"]:
+        try:
+            weather_data = fetch_live_met_weather(st_id)
+            if st_id in engine.station_states:
+                engine.station_states[st_id] = apply_live_weather(engine.station_states[st_id], weather_data)
+                logger.info(f"Synchronized {st_id} state with live MET Norway weather: {weather_data['current']['temperature']}°C")
+        except Exception as e:
+            logger.warning(f"Error syncing MET Norway weather for {st_id}: {e}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing POLARTWIN Database and Domain Models...")
@@ -130,9 +148,13 @@ async def lifespan(app: FastAPI):
     get_current_state("maitri")
     get_current_state("bharati")
 
-    # Start simulation scheduler
+    # Initial MET Norway live weather synchronization
+    await weather_sync_job()
+
+    # Start simulation scheduler (4s tick) and weather sync (10m interval)
     logger.info(f"Starting Simulation Engine (Interval: {settings.SIMULATION_TICK_SECONDS}s)...")
     scheduler.add_job(simulation_tick_job, "interval", seconds=settings.SIMULATION_TICK_SECONDS)
+    scheduler.add_job(weather_sync_job, "interval", minutes=10)
     scheduler.start()
     
     yield

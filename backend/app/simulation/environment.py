@@ -82,3 +82,29 @@ def step(state: dict, perturbation: dict = None) -> dict:
 
     state["environment"] = env
     return state
+
+def apply_live_weather(state: dict, live_weather: dict) -> dict:
+    """
+    Feeds real live weather from MET Norway API into the Environment state.
+    Directly cascades into Energy (heating demand), Fuel (genset load),
+    Water (freeze risk), and Logistics (traverse feasibility).
+    """
+    env = dict(state.get("environment", {}))
+    curr = live_weather.get("current", {})
+    if curr:
+        env["temperature"] = float(curr.get("temperature", env.get("temperature", -25.0)))
+        env["wind_speed"] = float(curr.get("wind_speed_kmh", env.get("wind_speed", 30.0)))
+        env["wind_gust"] = float(curr.get("wind_gust_kmh", env.get("wind_gust", 45.0)))
+        env["humidity"] = float(curr.get("humidity", env.get("humidity", 65.0)))
+        env["pressure"] = float(curr.get("pressure", env.get("pressure", 985.0)))
+        env["wind_direction"] = float(curr.get("wind_direction", env.get("wind_direction", 180.0)))
+        env["solar_radiation"] = float(curr.get("solar_radiation", env.get("solar_radiation", 180.0)))
+        env["cloud_cover"] = float(curr.get("cloud_cover", 30.0))
+        env["condition"] = str(curr.get("condition", env.get("condition", "Partly Cloudy")))
+        env["blizzard_active"] = bool(curr.get("blizzard_active", False))
+        env["weather_source"] = live_weather.get("source", "live_met_norway")
+        env["weather_attribution"] = live_weather.get("attribution", "Weather data from the Norwegian Meteorological Institute")
+        env["weather_updated_at"] = live_weather.get("updated_at")
+    state["environment"] = env
+    return state
+
