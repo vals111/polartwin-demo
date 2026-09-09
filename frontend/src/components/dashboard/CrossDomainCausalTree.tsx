@@ -324,128 +324,167 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
     );
   };
 
-  // Helper to compute clean non-overlapping Bézier paths
-  const getEdgePath = (edge: TreeEdgeDef) => {
+  // Helper to compute clean non-overlapping Bézier paths with exact border anchors
+  const getEdgeConnection = (edge: TreeEdgeDef) => {
     const fromNode = TREE_NODES.find((n) => n.id === edge.from);
     const toNode = TREE_NODES.find((n) => n.id === edge.to);
-    if (!fromNode || !toNode) return '';
+    if (!fromNode || !toNode) return null;
 
-    // Specific port coordinates engineered to avoid card collisions
     let sx = fromNode.x + fromNode.w / 2;
     let sy = fromNode.y + fromNode.h;
     let tx = toNode.x + toNode.w / 2;
     let ty = toNode.y;
 
-    // Custom non-colliding anchor assignments
     switch (edge.id) {
       case 'env-log':
-        // Horizontal connection across Tier 1 with gentle upward arc
+        // Environment right border to Logistics left border
         sx = fromNode.x + fromNode.w;
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 70} ${sy - 28}, ${tx - 70} ${ty - 28}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 60} ${sy - 28}, ${tx - 60} ${ty - 28}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'env-wat':
-        // Curves from Env bottom-right across Tier 2 gap down to Water top
-        sx = fromNode.x + fromNode.w - 40;
+        // Environment bottom border to Water top border
+        sx = fromNode.x + 220;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + 40;
+        tx = toNode.x + 70;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 50}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 45}, ${tx} ${ty - 45}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'env-eng':
-        // Smooth corridor between Fuel and Inventory directly into Energy
-        sx = fromNode.x + 180;
+        // Environment bottom border directly into Energy top border
+        sx = fromNode.x + 150;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x + 60;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 120}, ${tx} ${ty - 80}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 120}, ${tx} ${ty - 80}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'log-fl':
-        // Logistics down-left over to Fuel
+        // Logistics bottom border down-left to Fuel top border
         sx = fromNode.x + 50;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x + toNode.w - 40;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 50}, ${tx} ${ty - 50}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 50}, ${tx} ${ty - 50}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'log-inv':
-        // Logistics down-center to Inventory
+        // Logistics bottom border down-center to Inventory top border
         sx = fromNode.x + 145;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x + toNode.w - 50;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 45}, ${tx} ${ty - 45}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'fl-eng':
-        // Fuel bottom-right into Energy left
-        sx = fromNode.x + fromNode.w - 30;
-        sy = fromNode.y + fromNode.h;
+        // Fuel right border into Energy left border
+        sx = fromNode.x + fromNode.w;
+        sy = fromNode.y + 44;
         tx = toNode.x;
-        ty = toNode.y + 30;
-        return `M ${sx} ${sy} C ${sx} ${sy + 70}, ${tx - 90} ${ty}, ${tx} ${ty}`;
+        ty = toNode.y + 35;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 120} ${sy}, ${tx - 120} ${ty}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'inv-eq':
-        // Inventory bottom-left into Equipment top
+        // Inventory bottom border into Equipment top border
         sx = fromNode.x + 60;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x + toNode.w - 60;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 45}, ${tx} ${ty - 45}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'eq-eng':
-        // Generator power bridge with gentle upward arc
+        // Equipment right border into Energy left border
         sx = fromNode.x + fromNode.w;
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 60} ${sy - 25}, ${tx - 60} ${ty - 25}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 60} ${sy - 26}, ${tx - 60} ${ty - 26}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'eng-wat':
-        // Trace line heating loop: Energy top-right up into Water bottom
-        sx = fromNode.x + fromNode.w - 30;
+        // Energy top border up into Water bottom border
+        sx = fromNode.x + toNode.w - 80;
         sy = fromNode.y;
-        tx = toNode.x + 100;
+        tx = toNode.x + 140;
         ty = toNode.y + toNode.h;
-        return `M ${sx} ${sy} C ${sx + 40} ${sy - 30}, ${tx} ${ty + 40}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 40} ${sy - 40}, ${tx} ${ty + 40}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'eng-pers':
-        // Energy bottom-left into Personnel top-right
+        // Energy bottom border into Personnel top border
         sx = fromNode.x + 50;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + toNode.w - 50;
+        tx = toNode.x + toNode.w - 60;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 45}, ${tx} ${ty - 45}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'eng-comm':
-        // Energy bottom-right into Communication top with slight S-curve
-        sx = fromNode.x + fromNode.w - 50;
+        // Energy bottom border into Communication top border
+        sx = fromNode.x + fromNode.w - 60;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + toNode.w - 50;
+        tx = toNode.x + toNode.w - 60;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx + 35} ${sy + 35}, ${tx + 35} ${ty - 35}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 35} ${sy + 35}, ${tx + 35} ${ty - 35}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'wat-pers':
-        // Water bottom down around into Personnel
+        // Water bottom border down around into Personnel right border
         sx = fromNode.x + 50;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x + toNode.w;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx} ${sy + 100}, ${tx + 80} ${ty}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + 100}, ${tx + 80} ${ty}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       case 'pers-comm':
-        // Horizontal human-comms command bridge with gentle upward arc
+        // Personnel right border into Communication left border
         sx = fromNode.x + fromNode.w;
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 60} ${sy - 25}, ${tx - 60} ${ty - 25}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 60} ${sy - 26}, ${tx - 60} ${ty - 26}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
 
       default:
-        // Default clean vertical S-curve
         const dy = ty - sy;
-        return `M ${sx} ${sy} C ${sx} ${sy + dy * 0.5}, ${tx} ${ty - dy * 0.5}, ${tx} ${ty}`;
+        return {
+          path: `M ${sx} ${sy} C ${sx} ${sy + dy * 0.5}, ${tx} ${ty - dy * 0.5}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
     }
   };
 
@@ -532,108 +571,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       ) : (
         <div className="relative overflow-x-auto mt-2 py-2 rounded-2xl bg-polar-dark/60 border border-polar-border/50">
           <div className="min-w-[1180px] h-[720px] relative">
-            {/* SVG Canvas for High-Precision Causal Conduits */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1180 720">
-              <defs>
-                <filter id="neonGlowCyan" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
-                  <feMerge>
-                    <feMergeNode in="blur2" />
-                    <feMergeNode in="blur1" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="neonGlowAmber" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
-                  <feMerge>
-                    <feMergeNode in="blur2" />
-                    <feMergeNode in="blur1" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Render Directed Causal Edges ONLY when a domain is hovered */}
-              {hoveredNodeId && TREE_EDGES.map((edge) => {
-                const isIncoming = edge.to === hoveredNodeId;
-                const isOutgoing = edge.from === hoveredNodeId;
-                if (!isIncoming && !isOutgoing) return null;
-
-                const pathData = getEdgePath(edge);
-                if (!pathData) return null;
-
-                // Perfectly calibrated ultra-bright neon colors with equal perceived luminance and high saturation
-                const strokeColor = isIncoming ? '#00f2fe' : '#fbbf24';
-                const auraColor = isIncoming ? '#00c6ff' : '#f59e0b';
-                const haloColor = isIncoming ? '#0284c7' : '#d97706';
-                const coreColor = isIncoming ? '#e0faff' : '#fffbeb';
-
-                return (
-                  <g
-                    key={edge.id}
-                    className="transition-all duration-300"
-                    style={{
-                      filter: isIncoming
-                        ? 'drop-shadow(0 0 6px rgba(0, 242, 254, 0.75)) drop-shadow(0 0 14px rgba(0, 198, 255, 0.45))'
-                        : 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.75)) drop-shadow(0 0 14px rgba(245, 158, 11, 0.45))'
-                    }}
-                  >
-                    {/* Layer 1: Wide Deep Neon Halo Aura */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke={haloColor}
-                      strokeWidth={14}
-                      strokeOpacity={0.3}
-                      strokeLinecap="round"
-                    />
-
-                    {/* Layer 2: Medium Saturating Neon Aura */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke={auraColor}
-                      strokeWidth={8}
-                      strokeOpacity={0.6}
-                      strokeLinecap="round"
-                    />
-
-                    {/* Layer 3: Solid Vivid Saturated Neon Conduit Beam */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth={3.5}
-                      strokeOpacity={1.0}
-                      strokeLinecap="round"
-                    />
-
-                    {/* Layer 4: Luminous High-Intensity Energy Core */}
-                    <path
-                      d={pathData}
-                      fill="none"
-                      stroke={coreColor}
-                      strokeWidth={1.2}
-                      strokeOpacity={0.95}
-                      strokeLinecap="round"
-                    />
-
-                    {/* Layer 5: Live Fast-Traveling Energized Photon Bead */}
-                    <circle r={5} fill={coreColor} stroke={strokeColor} strokeWidth={2.5}>
-                      <animateMotion
-                        dur="1.6s"
-                        repeatCount="indefinite"
-                        path={pathData}
-                      />
-                    </circle>
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* ── HTML NODE CARDS (High-Legibility, Full Titles, Zero Truncation) ── */}
+            {/* ── HTML NODE CARDS (High-Legibility, Full Titles, Zero Truncation, Fixed Non-Distorting Geometry) ── */}
             {TREE_NODES.map((node) => {
               const Icon = node.icon;
               const live = (nodeLiveKpi as any)[node.id] || { kpi: '--', sub: 'Nominal', status: 'Online' };
@@ -654,16 +592,16 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                     width: `${node.w}px`,
                     height: `${node.h}px`,
                   }}
-                  className={`absolute rounded-xl p-3.5 cursor-pointer select-none transition-all duration-300 flex flex-col justify-between group ${
+                  className={`absolute rounded-xl p-3.5 cursor-pointer select-none transition-all duration-200 flex flex-col justify-between group ${
                     isHovered
-                      ? 'bg-polar-navy/95 border-2 shadow-2xl scale-[1.03] z-30'
+                      ? 'bg-polar-navy/95 border-2 shadow-2xl z-20'
                       : isUpstream
-                      ? 'bg-cyan-950/40 border-2 border-cyan-400/80 shadow-lg shadow-cyan-500/20 z-20'
+                      ? 'bg-cyan-950/40 border-2 border-cyan-400/80 shadow-lg shadow-cyan-500/20 z-10'
                       : isDownstream
-                      ? 'bg-amber-950/40 border-2 border-amber-400/80 shadow-lg shadow-amber-500/20 z-20'
+                      ? 'bg-amber-950/40 border-2 border-amber-400/80 shadow-lg shadow-amber-500/20 z-10'
                       : isDimmed
-                      ? 'opacity-25 bg-polar-dark/40 border border-polar-border/40 z-10'
-                      : 'bg-polar-dark/90 hover:bg-polar-navy/80 border border-polar-border/80 hover:border-cyan-500/50 shadow-md z-10'
+                      ? 'opacity-25 bg-polar-dark/40 border border-polar-border/40 z-0'
+                      : 'bg-polar-dark/90 hover:bg-polar-navy/80 border border-polar-border/80 hover:border-cyan-500/50 shadow-md z-0'
                   }`}
                 >
                   {/* Glowing Outline & Corner Accents */}
@@ -742,6 +680,125 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                 </div>
               );
             })}
+
+            {/* SVG Canvas for High-Precision Causal Conduits & Border Terminal Pins */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" viewBox="0 0 1180 720">
+              <defs>
+                <filter id="neonGlowCyan" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
+                  <feMerge>
+                    <feMergeNode in="blur2" />
+                    <feMergeNode in="blur1" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+                <filter id="neonGlowAmber" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
+                  <feMerge>
+                    <feMergeNode in="blur2" />
+                    <feMergeNode in="blur1" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Render Directed Causal Edges ONLY when a domain is hovered */}
+              {hoveredNodeId && TREE_EDGES.map((edge) => {
+                const isIncoming = edge.to === hoveredNodeId;
+                const isOutgoing = edge.from === hoveredNodeId;
+                if (!isIncoming && !isOutgoing) return null;
+
+                const conn = getEdgeConnection(edge);
+                if (!conn) return null;
+
+                // Perfectly calibrated ultra-bright neon colors with equal perceived luminance and high saturation
+                const strokeColor = isIncoming ? '#00f2fe' : '#fbbf24';
+                const auraColor = isIncoming ? '#00c6ff' : '#f59e0b';
+                const haloColor = isIncoming ? '#0284c7' : '#d97706';
+                const coreColor = isIncoming ? '#e0faff' : '#fffbeb';
+
+                return (
+                  <g
+                    key={edge.id}
+                    className="transition-all duration-300"
+                    style={{
+                      filter: isIncoming
+                        ? 'drop-shadow(0 0 6px rgba(0, 242, 254, 0.75)) drop-shadow(0 0 14px rgba(0, 198, 255, 0.45))'
+                        : 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.75)) drop-shadow(0 0 14px rgba(245, 158, 11, 0.45))'
+                    }}
+                  >
+                    {/* Layer 1: Wide Deep Neon Halo Aura */}
+                    <path
+                      d={conn.path}
+                      fill="none"
+                      stroke={haloColor}
+                      strokeWidth={14}
+                      strokeOpacity={0.3}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Layer 2: Medium Saturating Neon Aura */}
+                    <path
+                      d={conn.path}
+                      fill="none"
+                      stroke={auraColor}
+                      strokeWidth={8}
+                      strokeOpacity={0.6}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Layer 3: Solid Vivid Saturated Neon Conduit Beam */}
+                    <path
+                      d={conn.path}
+                      fill="none"
+                      stroke={strokeColor}
+                      strokeWidth={3.5}
+                      strokeOpacity={1.0}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Layer 4: Luminous High-Intensity Energy Core */}
+                    <path
+                      d={conn.path}
+                      fill="none"
+                      stroke={coreColor}
+                      strokeWidth={1.2}
+                      strokeOpacity={0.95}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Layer 5: Precision Terminal Port Pins attached directly onto Card Borders */}
+                    <circle
+                      cx={conn.sx}
+                      cy={conn.sy}
+                      r={4.5}
+                      fill={coreColor}
+                      stroke={strokeColor}
+                      strokeWidth={2.5}
+                    />
+                    <circle
+                      cx={conn.tx}
+                      cy={conn.ty}
+                      r={4.5}
+                      fill={coreColor}
+                      stroke={strokeColor}
+                      strokeWidth={2.5}
+                    />
+
+                    {/* Layer 6: Live Fast-Traveling Energized Photon Bead */}
+                    <circle r={5} fill={coreColor} stroke={strokeColor} strokeWidth={2.5}>
+                      <animateMotion
+                        dur="1.6s"
+                        repeatCount="indefinite"
+                        path={conn.path}
+                      />
+                    </circle>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
         </div>
       )}
