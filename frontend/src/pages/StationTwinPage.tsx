@@ -5,7 +5,6 @@ import { useTelemetryStore } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
 import { StationHealthGauge } from '../components/dashboard/StationHealthGauge';
 import { StationFlowTopology } from '../components/dashboard/StationFlowTopology';
-import { CausalGraphViewer } from '../components/charts/CausalGraphViewer';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import { Zap, Droplet, Thermometer, AlertTriangle, Activity, Shield } from 'lucide-react';
 
@@ -190,9 +189,6 @@ export const StationTwinPage: React.FC = () => {
 
       {/* POLARTWIN Two-Station Dynamic P&ID Flow Topology */}
       <StationFlowTopology stationId={stationId} />
-
-      {/* Causal graph */}
-      <CausalGraphViewer snapshot={snapshot} risk={risk} stationId={stationId} />
     </div>
   );
 };
