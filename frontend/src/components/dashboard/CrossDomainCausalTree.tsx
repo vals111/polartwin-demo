@@ -516,6 +516,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           <div className="h-9 bg-polar-dark/90 p-0.5 rounded-xl border border-polar-border flex items-center shadow-md flex-shrink-0">
             <button
               onClick={() => setViewMode('2d')}
+              title="2D Topological DAG"
               className={`h-8 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
                 viewMode === '2d'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
@@ -523,10 +524,11 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
               }`}
             >
               <GitCommit className="w-3.5 h-3.5 text-cyan-400" />
-              <span>2D Topological DAG</span>
+              <span>2D</span>
             </button>
             <button
               onClick={() => setViewMode('3d')}
+              title="3D Spatial Constellation"
               className={`h-8 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
                 viewMode === '3d'
                   ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
@@ -534,7 +536,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
               }`}
             >
               <Box className="w-3.5 h-3.5 text-cyan-400" />
-              <span>3D Spatial Constellation</span>
+              <span>3D</span>
             </button>
           </div>
 
