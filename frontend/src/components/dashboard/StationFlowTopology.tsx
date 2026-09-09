@@ -74,8 +74,6 @@ export const StationFlowTopology: React.FC<{
   const [isImpactTraceActive, setIsImpactTraceActive] = useState<boolean>(false);
   const [tracedNodeId, setTracedNodeId] = useState<NodeId | null>(null);
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
-  const [isWhyDrawerOpen, setIsWhyDrawerOpen] = useState<boolean>(false);
-  const [activeWhyTopic, setActiveWhyTopic] = useState<'gen' | 'fuel' | 'heat' | 'risk'>('gen');
 
   // Reset View Handler: restores neutral overview state
   const handleResetView = () => {
@@ -83,7 +81,6 @@ export const StationFlowTopology: React.FC<{
     setIsImpactTraceActive(false);
     setTracedNodeId(null);
     setIsCompareMode(false);
-    setIsWhyDrawerOpen(false);
   };
 
   // Handle station change
@@ -501,39 +498,10 @@ export const StationFlowTopology: React.FC<{
               {isMaitri ? '70°45′S • 11°44′E (Schirmacher Moraine)' : '69°24′S • 76°11′E (Larsemann Hills)'}
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Dynamic two-station digital twin flow topology with interconnected physical flows, operational influence, and downstream impact tracing.
-          </p>
         </div>
 
-        {/* Station Switcher & Mode Toggles */}
+        {/* Mode Toggles & Controls */}
         <div className="flex items-center flex-wrap gap-2">
-          {/* Station Pills */}
-          <div className="inline-flex p-1 rounded-xl bg-slate-900/90 border border-slate-800 shadow-inner">
-            <button
-              onClick={() => handleStationSwitch('maitri')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
-                isMaitri
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${isMaitri ? 'bg-cyan-300 animate-pulse' : 'bg-slate-500'}`} />
-              Maitri (Inland)
-            </button>
-            <button
-              onClick={() => handleStationSwitch('bharati')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
-                !isMaitri
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${!isMaitri ? 'bg-blue-300 animate-pulse' : 'bg-slate-500'}`} />
-              Bharati (Coastal)
-            </button>
-          </div>
-
           {/* Compare Stations Mode Toggle */}
           <button
             onClick={() => setIsCompareMode(!isCompareMode)}
@@ -547,19 +515,6 @@ export const StationFlowTopology: React.FC<{
             <Layers className="w-3.5 h-3.5" />
             <span>Compare Stations</span>
             {isCompareMode && <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/30 font-bold">ON</span>}
-          </button>
-
-          {/* "Why?" Operational Intelligence Toggle */}
-          <button
-            onClick={() => setIsWhyDrawerOpen(!isWhyDrawerOpen)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
-              isWhyDrawerOpen
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-lg shadow-cyan-500/10'
-                : 'bg-slate-900/70 text-slate-300 border-slate-800 hover:border-slate-700'
-            }`}
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>"Why?" Explanation</span>
           </button>
 
           {/* Impact Trace Toggle */}
@@ -589,7 +544,7 @@ export const StationFlowTopology: React.FC<{
           <button
             onClick={handleResetView}
             className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
-              selectedNodeId || isImpactTraceActive || isCompareMode || isWhyDrawerOpen
+              selectedNodeId || isImpactTraceActive || isCompareMode
                 ? 'bg-slate-800 text-cyan-300 border-cyan-500/50 hover:bg-slate-700 shadow-md shadow-cyan-500/10'
                 : 'bg-slate-900/70 text-slate-400 border-slate-800 hover:text-slate-200'
             }`}
@@ -920,7 +875,6 @@ export const StationFlowTopology: React.FC<{
                 onClick={() => {
                   const nextId = selectedNodeId === node.id ? null : node.id;
                   setSelectedNodeId(nextId);
-                  setIsWhyDrawerOpen(false);
                   setIsCompareMode(false);
                   if (isImpactTraceActive) {
                     setTracedNodeId(nextId);
@@ -1221,111 +1175,7 @@ export const StationFlowTopology: React.FC<{
         </div>
       )}
 
-      {/* ── "WHY?" OPERATIONAL INTELLIGENCE DRAWER ────────────────────────── */}
-      {isWhyDrawerOpen && (
-        <div className="p-4 rounded-xl bg-gradient-to-br from-[#061224] to-[#040a16] border border-cyan-500/40 space-y-4 animate-fade-in shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                <HelpCircle className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-white font-mono">
-                  Operational "Why?" Root Cause Intelligence — {isMaitri ? 'Maitri' : 'Bharati'}
-                </h4>
-                <p className="text-xs text-slate-400">
-                  Cross-domain physical causal explanations connecting weather, equipment degradation, and operational consumption.
-                </p>
-              </div>
-            </div>
 
-            {/* Topic Selector Tabs */}
-            <div className="flex items-center gap-1.5 font-mono text-xs">
-              {[
-                { id: 'gen', label: 'Generator Load', icon: Zap },
-                { id: 'fuel', label: 'Fuel Burn Rate', icon: Droplet },
-                { id: 'heat', label: 'Heating Demand', icon: Thermometer },
-                { id: 'risk', label: 'Composite Risk', icon: Shield },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveWhyTopic(tab.id as any)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] transition-colors flex items-center gap-1 ${
-                    activeWhyTopic === tab.id
-                      ? 'bg-cyan-600 text-white font-bold shadow-sm'
-                      : 'bg-slate-900/60 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <tab.icon className="w-3 h-3" />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Explanation Content Grounded in Cross-Domain Physics */}
-          <div className="p-3.5 rounded-xl bg-[#020712] border border-slate-800 text-xs font-mono space-y-2">
-            {activeWhyTopic === 'gen' && (
-              <>
-                <div className="text-cyan-300 font-bold flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-cyan-400" />
-                  <span>Why is {isMaitri ? 'Maitri' : 'Bharati'} Generator Load at {activeMetrics.genLoad.toFixed(1)} kW?</span>
-                </div>
-                <p className="text-slate-300 leading-relaxed">
-                  {isMaitri
-                    ? `Maitri generator load is driven by the base station load (35 kW), HVAC heating load (32 kW due to -25.4°C ambient cold), and research instrumentation (12 kW), offset by +${activeMetrics.solarOutput.toFixed(0)} kW of bifacial solar PV generation. Because Unit A is the sole active generator, it operates at a healthy 68% of its 100kVA rating with Unit B on warm standby.`
-                    : `Bharati generator load is 84 kW produced across its automated 3×100kVA CHP array. High demand is driven by the tracking earth station satellite dish (18 kW), RO desalination intake trace-heating (9 kW), and habitat HVAC (38 kW). The CHP units capture 64 kWt of jacket heat directly into the living module radiators, preventing electrical booster spikes.`}
-                </p>
-                <div className="p-2 rounded bg-slate-900 text-slate-400 text-[11px]">
-                  Causal Formula: <span className="text-cyan-300 font-bold">Total Demand ({isMaitri ? '85' : '110'} kW) - Solar Contribution ({activeMetrics.solarOutput.toFixed(0)} kW) = {activeMetrics.genLoad.toFixed(0)} kW Net Generation</span>.
-                </div>
-              </>
-            )}
-
-            {activeWhyTopic === 'fuel' && (
-              <>
-                <div className="text-amber-300 font-bold flex items-center gap-2">
-                  <Droplet className="w-4 h-4 text-amber-400" />
-                  <span>Why is Fuel Burn Rate at {activeMetrics.fuelBurnRate.toFixed(2)} L/hr?</span>
-                </div>
-                <p className="text-slate-300 leading-relaxed">
-                  {isMaitri
-                    ? `Maitri burns Arctic Gas Oil (AGO) at 0.26 L/kWh. With generator load stabilized at ${activeMetrics.genLoad.toFixed(0)} kW, hourly consumption is ${activeMetrics.fuelBurnRate.toFixed(2)} L/hr (~424 L/day). The 138,600 L remaining provides 338 days of autonomy, well beyond the December relief vessel voyage.`
-                    : `Bharati burns ~21.84 L/hr to support its 84 kW generation load. Its vast 300,000L containerized fuel farm holds 252,000 L, yielding 525 days of autonomy. High thermal efficiency from CHP jacket heat recovery saves approximately 95 L of diesel heating equivalent every day.`}
-                </p>
-              </>
-            )}
-
-            {activeWhyTopic === 'heat' && (
-              <>
-                <div className="text-indigo-300 font-bold flex items-center gap-2">
-                  <Thermometer className="w-4 h-4 text-indigo-400" />
-                  <span>Why is Habitat Heating Load at {activeMetrics.heatingLoad.toFixed(1)} kW?</span>
-                </div>
-                <p className="text-slate-300 leading-relaxed">
-                  {isMaitri
-                    ? `Inland Maitri experiences harsh Katabatic wind gusts ({activeMetrics.wind.toFixed(0)} km/h) and -25.4°C ambient chill. Indoor target is 21°C, requiring a 46.4°C temperature lift. The older purpose-built insulation has a coefficient of 1.35 W/m²K, requiring 32 kW of continuous hydronic glycol circulation.`
-                    : `Bharati is situated in coastal Larsemann Hills where temperatures are milder (-16.2°C) but humid maritime winds induce external freeze risk. Modern modular insulated panels maintain 21.8°C indoor warmth utilizing CHP thermal loops as the primary heat source.`}
-                </p>
-              </>
-            )}
-
-            {activeWhyTopic === 'risk' && (
-              <>
-                <div className="text-emerald-300 font-bold flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-emerald-400" />
-                  <span>Why is Composite Risk Score at {activeMetrics.riskScore} pts ({activeMetrics.riskLevel})?</span>
-                </div>
-                <p className="text-slate-300 leading-relaxed">
-                  {isMaitri
-                    ? `Maitri composite risk is rated LOW (18 pts) because both generator units are fully operational, the Lake Zub heated pipeline is maintaining 3.8°C (above the 0.5°C freezing hazard threshold), and fuel reserves stand at 77%. The minor point contribution originates from overland line freezing exposure.`
-                    : `Bharati composite risk is rated LOW (14 pts). Triple-redundant CHP generation, extensive 300kL fuel reserves, and dual RO desalination trains provide higher structural resilience against extreme weather disruptions.`}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ── COMPARE STATIONS MODE (SIDE-BY-SIDE DIGITAL TWIN) ─────────────── */}
       {isCompareMode && (
