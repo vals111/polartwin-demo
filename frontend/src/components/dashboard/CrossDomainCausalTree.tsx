@@ -4,15 +4,16 @@ import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  ExternalLink, Activity, Shield, GitCommit, ChevronRight,
-  Sparkles, RefreshCw, Eye, Layers, GitCompare
+  ExternalLink, Layers, GitCompare, GitCommit, Box, Eye, Sparkles
 } from 'lucide-react';
+import { ThreeDomainGraph } from './ThreeDomainGraph';
 
 export interface TreeNode {
   id: string;
   name: string;
-  level: number;
-  levelName: string;
+  shortName: string;
+  tier: string;
+  tierNumber: number;
   x: number;
   y: number;
   w: number;
@@ -20,180 +21,212 @@ export interface TreeNode {
   route: string;
   icon: any;
   color: string;
-  borderGlow: string;
+  accentRgb: string;
 }
 
-export interface TreeEdge {
+export interface TreeEdgeDef {
+  id: string;
   from: string;
   to: string;
   label: string;
+  customPath?: string; // Optional manual routing to avoid collisions
 }
 
+// 9 Interconnected Operational Domains organized in balanced 4-tier hierarchy
+// Canvas Dimensions: 1180px x 740px
 const TREE_NODES: TreeNode[] = [
-  // Tier 1: External Climate & Environmental Forcing (Root)
+  // ── Tier 1: External Environmental & Supply Forcing (y = 40) ──
   {
     id: 'environment',
     name: 'Environment & Weather',
-    level: 1,
-    levelName: 'TIER 1 • EXTERNAL CLIMATE DRIVER',
-    x: 460,
-    y: 30,
-    w: 180,
-    h: 68,
+    shortName: 'Climate & Atmosphere',
+    tier: 'TIER 1 • EXTERNAL CLIMATE DRIVER',
+    tierNumber: 1,
+    x: 200,
+    y: 40,
+    w: 290,
+    h: 88,
     route: 'environment',
     icon: CloudSnow,
     color: '#818cf8',
-    borderGlow: 'rgba(129, 140, 248, 0.4)'
+    accentRgb: '129, 140, 248'
   },
-
-  // Tier 2: Annual Resupply & Logistics Lifeline
   {
     id: 'logistics',
     name: 'Transportation & Logistics',
-    level: 2,
-    levelName: 'TIER 2 • EXPEDITION SUPPLY LIFELINE',
-    x: 160,
-    y: 135,
-    w: 195,
-    h: 68,
+    shortName: 'Overland & Sea Lifeline',
+    tier: 'TIER 1 • EXPEDITION RESUPPLY',
+    tierNumber: 1,
+    x: 690,
+    y: 40,
+    w: 290,
+    h: 88,
     route: 'logistics',
     icon: Truck,
     color: '#2dd4bf',
-    borderGlow: 'rgba(45, 212, 191, 0.4)'
+    accentRgb: '45, 212, 191'
   },
 
-  // Tier 3: Primary Physical Reserves & Storage
+  // ── Tier 2: Physical Reserves & Hydrological Intake (y = 220) ──
   {
     id: 'fuel',
     name: 'Fuel Storage',
-    level: 3,
-    levelName: 'TIER 3 • HYDROCARBON RESERVE',
-    x: 70,
-    y: 250,
-    w: 165,
-    h: 68,
+    shortName: 'Hydrocarbon Tank Farm',
+    tier: 'TIER 2 • ENERGY RESERVE',
+    tierNumber: 2,
+    x: 60,
+    y: 220,
+    w: 280,
+    h: 88,
     route: 'fuel',
     icon: Fuel,
     color: '#f59e0b',
-    borderGlow: 'rgba(245, 158, 11, 0.4)'
+    accentRgb: '245, 158, 11'
   },
   {
     id: 'inventory',
     name: 'Storage & Inventory',
-    level: 3,
-    levelName: 'TIER 3 • SPARES & CONSUMABLES',
-    x: 270,
-    y: 250,
-    w: 175,
-    h: 68,
+    shortName: 'Spares & Consumables',
+    tier: 'TIER 2 • CRITICAL SKUS',
+    tierNumber: 2,
+    x: 450,
+    y: 220,
+    w: 280,
+    h: 88,
     route: 'inventory',
     icon: Archive,
     color: '#34d399',
-    borderGlow: 'rgba(52, 211, 153, 0.4)'
+    accentRgb: '52, 211, 153'
   },
   {
     id: 'water',
     name: 'Water Supply',
-    level: 3,
-    levelName: 'TIER 3 • HYDROLOGICAL INTAKE',
-    x: 740,
-    y: 250,
-    w: 165,
-    h: 68,
+    shortName: 'Lake Zub / Desal Intake',
+    tier: 'TIER 2 • HYDROLOGICAL CYCLE',
+    tierNumber: 2,
+    x: 840,
+    y: 220,
+    w: 280,
+    h: 88,
     route: 'water',
     icon: Droplet,
     color: '#38bdf8',
-    borderGlow: 'rgba(56, 189, 248, 0.4)'
+    accentRgb: '56, 189, 248'
   },
 
-  // Tier 4: Mechanical Asset Health & Conversion
+  // ── Tier 3: Conversion & Core Generation Hub (y = 400) ──
   {
     id: 'equipment',
     name: 'Equipment & Machinery',
-    level: 4,
-    levelName: 'TIER 4 • MECHANICAL ASSET HEALTH',
-    x: 270,
-    y: 365,
-    w: 185,
-    h: 68,
+    shortName: 'Mechanical Asset Health',
+    tier: 'TIER 3 • POWER CONVERSION',
+    tierNumber: 3,
+    x: 250,
+    y: 400,
+    w: 290,
+    h: 88,
     route: 'equipment',
     icon: Wrench,
     color: '#10b981',
-    borderGlow: 'rgba(16, 185, 129, 0.4)'
+    accentRgb: '16, 185, 129'
   },
-
-  // Tier 5: Central Microgrid Power Hub
   {
     id: 'energy',
     name: 'Energy & Power',
-    level: 5,
-    levelName: 'TIER 5 • CENTRAL POWER MICROGRID',
-    x: 460,
-    y: 450,
-    w: 180,
-    h: 72,
+    shortName: 'Microgrid Bus & PV',
+    tier: 'TIER 3 • CENTRAL MICROGRID',
+    tierNumber: 3,
+    x: 680,
+    y: 400,
+    w: 290,
+    h: 88,
     route: 'resources',
     icon: Zap,
     color: '#fbbf24',
-    borderGlow: 'rgba(251, 191, 36, 0.4)'
+    accentRgb: '251, 191, 36'
   },
 
-  // Tier 6: Human Habitation & External Communications
+  // ── Tier 4: Life Support, Human Habitation & Telemetry (y = 580) ──
   {
     id: 'personnel',
     name: 'Personnel & Occupancy',
-    level: 6,
-    levelName: 'TIER 6 • CREW LIFE SUPPORT',
-    x: 310,
-    y: 565,
-    w: 185,
-    h: 68,
+    shortName: 'Crew Life Support',
+    tier: 'TIER 4 • HABITAT OCCUPANCY',
+    tierNumber: 4,
+    x: 250,
+    y: 580,
+    w: 290,
+    h: 88,
     route: 'personnel',
     icon: Users,
     color: '#c084fc',
-    borderGlow: 'rgba(192, 132, 252, 0.4)'
+    accentRgb: '192, 132, 252'
   },
   {
     id: 'communication',
     name: 'Communication',
-    level: 6,
-    levelName: 'TIER 6 • SATELLITE TELEMETRY',
-    x: 590,
-    y: 565,
-    w: 175,
-    h: 68,
+    shortName: 'LEO Polar Constellation',
+    tier: 'TIER 4 • REAL-TIME TELEMETRY',
+    tierNumber: 4,
+    x: 680,
+    y: 580,
+    w: 290,
+    h: 88,
     route: 'communication',
     icon: Radio,
     color: '#38bdf8',
-    borderGlow: 'rgba(56, 189, 248, 0.4)'
-  }
+    accentRgb: '56, 189, 248'
+  },
 ];
 
-// Causal Tree Edges connecting upstream parents to downstream child nodes
-const TREE_EDGES: TreeEdge[] = [
-  // Climate influences
-  { from: 'environment', to: 'energy', label: 'Heating load & Solar PV' },
-  { from: 'environment', to: 'water', label: 'Conduit freeze hazard' },
-  { from: 'environment', to: 'logistics', label: 'Blizzards & sea-ice drift' },
-  { from: 'environment', to: 'communication', label: 'Radome attenuation' },
+// Pristine Causal Edges connecting upstream drivers to downstream consequences
+const TREE_EDGES: TreeEdgeDef[] = [
+  // 1. Environment -> Logistics (Horizontal atmospheric forcing)
+  { id: 'env-log', from: 'environment', to: 'logistics', label: 'Katabatic wind & blizzards' },
 
-  // Logistics deliveries
-  { from: 'logistics', to: 'fuel', label: 'AGO diesel resupply' },
-  { from: 'logistics', to: 'inventory', label: 'Spare parts restock' },
+  // 2. Environment -> Water (Direct conduit freeze hazard)
+  { id: 'env-wat', from: 'environment', to: 'water', label: 'Conduit freeze hazard' },
 
-  // Maintenance & machinery
-  { from: 'inventory', to: 'equipment', label: 'Filters & bearings' },
-  { from: 'fuel', to: 'energy', label: 'Diesel feed to gensets' },
-  { from: 'equipment', to: 'energy', label: 'Generator reliability' },
+  // 3. Environment -> Energy (Direct heating load & PV solar offset)
+  { id: 'env-eng', from: 'environment', to: 'energy', label: 'Heating demand & PV offset' },
 
-  // Power distribution & life support
-  { from: 'energy', to: 'water', label: '4.2 kW trace heating' },
-  { from: 'energy', to: 'communication', label: 'Radome heaters & power' },
-  { from: 'energy', to: 'personnel', label: 'Habitat warmth & galley' },
-  { from: 'water', to: 'personnel', label: 'Potable water hydration' }
+  // 4. Logistics -> Fuel (Bulk AGO resupply tankers)
+  { id: 'log-fl', from: 'logistics', to: 'fuel', label: 'Annual diesel replenishment' },
+
+  // 5. Logistics -> Inventory (Container spares manifest)
+  { id: 'log-inv', from: 'logistics', to: 'inventory', label: 'Spares & consumables restock' },
+
+  // 6. Fuel -> Energy (Continuous hydrocarbon fuel feed)
+  { id: 'fl-eng', from: 'fuel', to: 'energy', label: '17.5 L/hr diesel supply' },
+
+  // 7. Inventory -> Equipment (Preventive maintenance spares)
+  { id: 'inv-eq', from: 'inventory', to: 'equipment', label: 'Bearings & filter staging' },
+
+  // 8. Equipment -> Energy (Mechanical alternator health & genset synchro)
+  { id: 'eq-eng', from: 'equipment', to: 'energy', label: 'Genset alternator uptime' },
+
+  // 9. Energy -> Water (4.2 kW pipeline trace heating feedback loop)
+  { id: 'eng-wat', from: 'energy', to: 'water', label: '4.2 kW trace line heating' },
+
+  // 10. Energy -> Personnel (Microgrid warmth, life support & galley)
+  { id: 'eng-pers', from: 'energy', to: 'personnel', label: 'Habitat heating & power' },
+
+  // 11. Energy -> Communication (Radome heaters & transmitter power)
+  { id: 'eng-comm', from: 'energy', to: 'communication', label: 'Radome UPS & uplink power' },
+
+  // 12. Water -> Personnel (Potable hydration & galley supply)
+  { id: 'wat-pers', from: 'water', to: 'personnel', label: 'Filtered potable hydration' },
+
+  // 13. Personnel -> Communication (Mission coordination & SCADA operations)
+  { id: 'pers-comm', from: 'personnel', to: 'communication', label: 'Operator SCADA command' },
 ];
 
-export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare?: () => void }> = ({
+interface Props {
+  stationId?: string;
+  onOpenCompare?: () => void;
+}
+
+export const CrossDomainCausalTree: React.FC<Props> = ({
   stationId: propStationId,
   onOpenCompare
 }) => {
@@ -206,6 +239,8 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare
   const accentColor = isMaitri ? '#06b6d4' : '#60a5fa';
   const snapshot = liveSnapshot[currentStationId];
 
+  // View mode switcher: '2d' DAG or '3d' Spatial Orbit
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Dynamic Live KPIs per domain
@@ -289,19 +324,148 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare
     );
   };
 
+  // Helper to compute clean non-overlapping Bézier paths
+  const getEdgePath = (edge: TreeEdgeDef) => {
+    const fromNode = TREE_NODES.find((n) => n.id === edge.from);
+    const toNode = TREE_NODES.find((n) => n.id === edge.to);
+    if (!fromNode || !toNode) return '';
+
+    // Specific port coordinates engineered to avoid card collisions
+    let sx = fromNode.x + fromNode.w / 2;
+    let sy = fromNode.y + fromNode.h;
+    let tx = toNode.x + toNode.w / 2;
+    let ty = toNode.y;
+
+    // Custom non-colliding anchor assignments
+    switch (edge.id) {
+      case 'env-log':
+        // Horizontal connection across Tier 1
+        sx = fromNode.x + fromNode.w;
+        sy = fromNode.y + 44;
+        tx = toNode.x;
+        ty = toNode.y + 44;
+        return `M ${sx} ${sy} C ${sx + 80} ${sy}, ${tx - 80} ${ty}, ${tx} ${ty}`;
+
+      case 'env-wat':
+        // Curves from Env bottom-right across Tier 2 gap down to Water top
+        sx = fromNode.x + fromNode.w - 40;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + 40;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 50}, ${tx} ${ty}`;
+
+      case 'env-eng':
+        // Smooth corridor between Fuel and Inventory directly into Energy
+        sx = fromNode.x + 180;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + 60;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 120}, ${tx} ${ty - 80}, ${tx} ${ty}`;
+
+      case 'log-fl':
+        // Logistics down-left over to Fuel
+        sx = fromNode.x + 50;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w - 40;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 50}, ${tx} ${ty - 50}, ${tx} ${ty}`;
+
+      case 'log-inv':
+        // Logistics down-center to Inventory
+        sx = fromNode.x + 145;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w - 50;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+
+      case 'fl-eng':
+        // Fuel bottom-right into Energy left
+        sx = fromNode.x + toNode.w - 40;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x;
+        ty = toNode.y + 30;
+        return `M ${sx} ${sy} C ${sx} ${sy + 70}, ${tx - 90} ${ty}, ${tx} ${ty}`;
+
+      case 'inv-eq':
+        // Inventory bottom-left into Equipment top
+        sx = fromNode.x + 60;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w - 60;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+
+      case 'eq-eng':
+        // Clean horizontal generator power bridge
+        sx = fromNode.x + fromNode.w;
+        sy = fromNode.y + 44;
+        tx = toNode.x;
+        ty = toNode.y + 44;
+        return `M ${sx} ${sy} C ${sx + 60} ${sy}, ${tx - 60} ${ty}, ${tx} ${ty}`;
+
+      case 'eng-wat':
+        // Trace line heating loop: Energy top-right up into Water bottom
+        sx = fromNode.x + fromNode.w - 30;
+        sy = fromNode.y;
+        tx = toNode.x + 100;
+        ty = toNode.y + toNode.h;
+        return `M ${sx} ${sy} C ${sx + 40} ${sy - 30}, ${tx} ${ty + 40}, ${tx} ${ty}`;
+
+      case 'eng-pers':
+        // Energy bottom-left into Personnel top-right
+        sx = fromNode.x + 50;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w - 50;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+
+      case 'eng-comm':
+        // Energy bottom-right directly into Communication top
+        sx = fromNode.x + fromNode.w - 60;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w - 60;
+        ty = toNode.y;
+        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+
+      case 'wat-pers':
+        // Water bottom down around the right/bottom into Personnel
+        sx = fromNode.x + 50;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w;
+        ty = toNode.y + 44;
+        return `M ${sx} ${sy} C ${sx} ${sy + 100}, ${tx + 80} ${ty}, ${tx} ${ty}`;
+
+      case 'pers-comm':
+        // Horizontal human-comms command bridge
+        sx = fromNode.x + fromNode.w;
+        sy = fromNode.y + 44;
+        tx = toNode.x;
+        ty = toNode.y + 44;
+        return `M ${sx} ${sy} C ${sx + 60} ${sy}, ${tx - 60} ${ty}, ${tx} ${ty}`;
+
+      default:
+        // Default clean vertical S-curve
+        const dy = ty - sy;
+        return `M ${sx} ${sy} C ${sx} ${sy + dy * 0.5}, ${tx} ${ty - dy * 0.5}, ${tx} ${ty}`;
+    }
+  };
+
   return (
-    <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden bg-gradient-to-b from-[#071326]/90 to-[#030914]/95 shadow-2xl">
+    <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden bg-gradient-to-b from-[#071326]/95 to-[#030914]/98 shadow-2xl transition-all duration-300">
       <div
-        className="absolute -top-24 -right-24 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-20"
+        className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-20"
         style={{ background: accentColor }}
       />
 
-      {/* Top Station Context & Control Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-polar-border/40 mb-3">
+      {/* ── TOP INTEGRATED HEADER & MISSION CONTROLS ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-polar-border/40 mb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-polar-dark/80 text-slate-300 border border-polar-border">
+            <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-polar-dark/80 text-slate-300 border border-polar-border shadow-inner">
               {isMaitri ? '70°45′S 11°44′E • Inland Schirmacher' : '69°24′S 76°11′E • Coastal Larsemann'}
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-cyan-400" />
+              <span>Causal Digital Twin Engine</span>
             </span>
           </div>
 
@@ -311,10 +475,36 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare
           </h1>
         </div>
 
-        {/* Right Action Controls: Station Switcher & Compare Stations */}
+        {/* Right Action Controls: Station Switcher, View Switcher & Compare Stations */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* 2D / 3D Mode Toggle */}
+          <div className="bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center shadow-md">
+            <button
+              onClick={() => setViewMode('2d')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === '2d'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <GitCommit className="w-3.5 h-3.5" />
+              <span>2D Topological DAG</span>
+            </button>
+            <button
+              onClick={() => setViewMode('3d')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
+                viewMode === '3d'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Box className="w-3.5 h-3.5" />
+              <span>3D Spatial Constellation</span>
+            </button>
+          </div>
+
           {/* Station Switcher Pills */}
-          <div className="bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center">
+          <div className="bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center shadow-md">
             <button
               onClick={() => navigate('/station/maitri/domains')}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
@@ -324,7 +514,7 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare
               }`}
             >
               <span>Maitri</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40">Inland</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 font-bold">Inland</span>
             </button>
             <button
               onClick={() => navigate('/station/bharati/domains')}
@@ -335,7 +525,7 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare
               }`}
             >
               <span>Bharati</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-blue-950/80 text-blue-400 border border-blue-800/40">Coastal</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-blue-950/80 text-blue-400 border border-blue-800/40 font-bold">Coastal</span>
             </button>
           </div>
 
@@ -352,177 +542,208 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string; onOpenCompare
         </div>
       </div>
 
-      {/* Subheader: Inter-Domain Causal Propagation Architecture */}
-      <div className="flex items-center justify-between pb-1">
-        <h2 className="text-base lg:text-lg font-bold text-slate-300 flex items-center gap-2">
+      {/* ── SUBHEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
+        <h2 className="text-base lg:text-lg font-bold text-slate-200 flex items-center gap-2 font-mono">
           <GitCommit className="w-4 h-4 text-cyan-400" />
-          Inter-Domain Causal Propagation Architecture
+          <span>Inter-Domain Causal Propagation Architecture</span>
         </h2>
+        <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+          <Eye className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Hover node to isolate causality • Click node to open feature page</span>
+        </span>
       </div>
 
-      {/* SVG Canvas for Tree Nodes & Animated Causal Edges */}
-      <div className="relative overflow-x-auto mt-4 py-2">
-        <div className="min-w-[980px] h-[670px] relative">
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 980 670">
-            <defs>
-              <linearGradient id="edgeGlowCyan" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.3" />
-              </linearGradient>
-              <linearGradient id="edgeGlowAmber" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.3" />
-              </linearGradient>
-              <linearGradient id="edgeGlowPurple" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#c084fc" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#818cf8" stopOpacity="0.3" />
-              </linearGradient>
-              <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
+      {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
+      {viewMode === '3d' ? (
+        <ThreeDomainGraph stationId={currentStationId} />
+      ) : (
+        <div className="relative overflow-x-auto mt-2 py-2 rounded-2xl bg-polar-dark/60 border border-polar-border/50">
+          <div className="min-w-[1180px] h-[720px] relative">
+            {/* SVG Canvas for High-Precision Causal Conduits */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1180 720">
+              <defs>
+                <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="strongGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
 
-            {/* Render Directed Causal Edges */}
-            {TREE_EDGES.map((edge, idx) => {
-              const fromNode = TREE_NODES.find((n) => n.id === edge.from);
-              const toNode = TREE_NODES.find((n) => n.id === edge.to);
-              if (!fromNode || !toNode) return null;
+              {/* Render Directed Causal Edges */}
+              {TREE_EDGES.map((edge) => {
+                const isIncoming = edge.to === hoveredNodeId;
+                const isOutgoing = edge.from === hoveredNodeId;
+                const isHighlighted = isIncoming || isOutgoing;
+                const isDimmed = hoveredNodeId && !isHighlighted;
 
-              const x1 = fromNode.x + fromNode.w / 2;
-              const y1 = fromNode.y + fromNode.h;
-              const x2 = toNode.x + toNode.w / 2;
-              const y2 = toNode.y;
+                const pathData = getEdgePath(edge);
+                if (!pathData) return null;
 
-              const isIncoming = hoveredNodeId === edge.to;
-              const isOutgoing = hoveredNodeId === edge.from;
-              const isHighlighted = isIncoming || isOutgoing;
-              const isMuted = hoveredNodeId && !isHighlighted;
+                const strokeColor = isIncoming
+                  ? '#06b6d4'
+                  : isOutgoing
+                  ? '#fbbf24'
+                  : isDimmed
+                  ? '#16314c'
+                  : '#1f486e';
 
-              // Cubic bezier control points
-              const cy1 = y1 + (y2 - y1) * 0.5;
-              const cy2 = y1 + (y2 - y1) * 0.5;
-              const pathD = `M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`;
+                const strokeWidth = isHighlighted ? 3.5 : 1.8;
+                const particleColor = isIncoming ? '#67e8f9' : isOutgoing ? '#fde047' : '#38bdf8';
 
-              const strokeColor = isIncoming
-                ? '#38bdf8'
-                : isOutgoing
-                ? '#f59e0b'
-                : 'rgba(71, 85, 105, 0.45)';
-
-              return (
-                <g key={idx} className="transition-all duration-300">
-                  {/* Background glow path when highlighted */}
-                  {isHighlighted && (
+                return (
+                  <g key={edge.id} className="transition-all duration-300">
+                    {/* Underlying Glow Track */}
                     <path
-                      d={pathD}
+                      d={pathData}
+                      fill="none"
+                      stroke={isHighlighted ? strokeColor : '#091c2f'}
+                      strokeWidth={isHighlighted ? 7 : 4}
+                      strokeOpacity={isHighlighted ? 0.35 : 0.8}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Active Conduit Line */}
+                    <path
+                      d={pathData}
                       fill="none"
                       stroke={strokeColor}
-                      strokeWidth={5}
-                      strokeOpacity={0.4}
-                      filter="url(#glowFilter)"
+                      strokeWidth={strokeWidth}
+                      strokeOpacity={isDimmed ? 0.15 : 0.85}
+                      strokeLinecap="round"
+                      filter={isHighlighted ? 'url(#neonGlow)' : undefined}
                     />
-                  )}
 
-                  {/* Base curve */}
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth={isHighlighted ? 2.5 : 1.5}
-                    strokeDasharray={isHighlighted ? '6 3' : undefined}
-                    strokeOpacity={isMuted ? 0.15 : isHighlighted ? 1 : 0.6}
+                    {/* Live Traveling Energy Photon */}
+                    {!isDimmed && (
+                      <circle r={isHighlighted ? 4.5 : 3} fill={particleColor} filter="url(#neonGlow)">
+                        <animateMotion
+                          dur={isHighlighted ? '1.8s' : '3.2s'}
+                          repeatCount="indefinite"
+                          path={pathData}
+                        />
+                      </circle>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* ── HTML NODE CARDS (High-Legibility, Full Titles, Zero Truncation) ── */}
+            {TREE_NODES.map((node) => {
+              const Icon = node.icon;
+              const live = (nodeLiveKpi as any)[node.id] || { kpi: '--', sub: 'Nominal', status: 'Online' };
+              const isHovered = hoveredNodeId === node.id;
+              const isUpstream = hoveredNodeId && activeIncomingEdges.some((e) => e.from === node.id);
+              const isDownstream = hoveredNodeId && activeOutgoingEdges.some((e) => e.to === node.id);
+              const isDimmed = hoveredNodeId && !isHovered && !isUpstream && !isDownstream;
+
+              return (
+                <div
+                  key={node.id}
+                  onMouseEnter={() => setHoveredNodeId(node.id)}
+                  onMouseLeave={() => setHoveredNodeId(null)}
+                  onClick={() => navigate(`/station/${currentStationId}/${node.route}`)}
+                  style={{
+                    left: `${node.x}px`,
+                    top: `${node.y}px`,
+                    width: `${node.w}px`,
+                    height: `${node.h}px`,
+                  }}
+                  className={`absolute rounded-xl p-3.5 cursor-pointer select-none transition-all duration-300 flex flex-col justify-between group ${
+                    isHovered
+                      ? 'bg-polar-navy/95 border-2 shadow-2xl scale-[1.03] z-30'
+                      : isUpstream
+                      ? 'bg-cyan-950/40 border-2 border-cyan-400/80 shadow-lg shadow-cyan-500/20 z-20'
+                      : isDownstream
+                      ? 'bg-amber-950/40 border-2 border-amber-400/80 shadow-lg shadow-amber-500/20 z-20'
+                      : isDimmed
+                      ? 'opacity-25 bg-polar-dark/40 border border-polar-border/40 z-10'
+                      : 'bg-polar-dark/90 hover:bg-polar-navy/80 border border-polar-border/80 hover:border-cyan-500/50 shadow-md z-10'
+                  }`}
+                >
+                  {/* Glowing Outline & Corner Accents */}
+                  <div
+                    className="absolute inset-0 rounded-xl pointer-events-none transition-opacity"
+                    style={{
+                      boxShadow: isHovered ? `0 0 25px rgba(${node.accentRgb}, 0.35)` : undefined,
+                      borderColor: isHovered ? node.color : undefined
+                    }}
                   />
 
-                  {/* Flow direction particle animation */}
-                  {isHighlighted && (
-                    <circle r={3.5} fill={strokeColor} filter="url(#glowFilter)">
-                      <animateMotion path={pathD} dur="2.2s" repeatCount="indefinite" />
-                    </circle>
-                  )}
-                </g>
+                  {/* Header Row: Icon, Domain Title, Tier Tag & Link */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div
+                        className="p-2 rounded-lg border flex-shrink-0 transition-transform group-hover:scale-110 shadow-sm"
+                        style={{
+                          background: `rgba(${node.accentRgb}, 0.15)`,
+                          borderColor: `rgba(${node.accentRgb}, 0.45)`,
+                          color: node.color
+                        }}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white tracking-wide group-hover:text-cyan-300 transition-colors whitespace-nowrap">
+                          {node.name}
+                        </div>
+                        <div className="text-[9px] font-mono text-slate-400 whitespace-nowrap">
+                          {node.shortName}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5 flex-shrink-0">
+                      {isHovered ? (
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/30 text-cyan-300 border border-cyan-400/50 flex items-center gap-1">
+                          <span>OPEN</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </span>
+                      ) : isUpstream ? (
+                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/50">
+                          DRIVER
+                        </span>
+                      ) : isDownstream ? (
+                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50">
+                          IMPACT
+                        </span>
+                      ) : (
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Live Telemetry Row: Large Primary KPI + Sub-metrics */}
+                  <div className="flex items-baseline justify-between border-t border-polar-border/40 pt-1.5 mt-1 font-mono">
+                    <div>
+                      <span className="text-base font-black text-white tracking-tight">
+                        {live.kpi}
+                      </span>
+                      <span className="text-[10px] text-slate-400 ml-2">
+                        {live.sub}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-1 text-[10px] font-bold text-cyan-300/90">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0"
+                        style={{ background: node.color }}
+                      />
+                      <span className="text-[9px] text-slate-300 truncate max-w-[100px]">
+                        {live.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               );
             })}
-          </svg>
-
-          {/* Render Interactive Tree Nodes */}
-          {TREE_NODES.map((node) => {
-            const Icon = node.icon;
-            const kpiData = (nodeLiveKpi as any)[node.id];
-            const isHovered = hoveredNodeId === node.id;
-            const isRelated = isRelatedNode(node.id);
-
-            return (
-              <div
-                key={node.id}
-                style={{
-                  left: `${node.x}px`,
-                  top: `${node.y}px`,
-                  width: `${node.w}px`,
-                  height: `${node.h}px`
-                }}
-                onMouseEnter={() => setHoveredNodeId(node.id)}
-                onMouseLeave={() => setHoveredNodeId(null)}
-                onClick={() => navigate(`/station/${currentStationId}/${node.route}`)}
-                className={`absolute rounded-xl border p-2.5 transition-all duration-300 cursor-pointer select-none flex flex-col justify-between group ${
-                  isHovered
-                    ? 'ring-2 ring-cyan-400 shadow-xl bg-polar-navy -translate-y-1 z-20 scale-105'
-                    : !isRelated
-                    ? 'opacity-35 bg-polar-dark/80 border-slate-800'
-                    : 'bg-[#091526]/90 border-slate-700/80 hover:border-cyan-400/60 hover:shadow-lg'
-                }`}
-                title={`Click to open ${node.name} full feature page`}
-              >
-                {/* Top Node Identity */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div
-                      className="p-1 rounded-lg border transition-transform group-hover:scale-110 flex-shrink-0"
-                      style={{
-                        background: `${node.color}15`,
-                        color: node.color,
-                        borderColor: `${node.color}40`
-                      }}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-[11px] font-mono font-bold text-white group-hover:text-cyan-200 truncate">
-                      {node.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-slate-400 group-hover:text-cyan-300 transition-colors flex-shrink-0">
-                    <span className="text-[8px] font-mono uppercase font-semibold hidden group-hover:inline">
-                      OPEN
-                    </span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </div>
-                </div>
-
-                {/* Primary Live KPI & Sublabel */}
-                <div className="flex items-baseline justify-between pt-0.5">
-                  <span className="text-base font-black font-mono text-white tracking-tight">
-                    {kpiData?.kpi}
-                  </span>
-                  <span className="text-[9px] font-mono text-cyan-300 truncate max-w-[90px]">
-                    {kpiData?.sub}
-                  </span>
-                </div>
-
-                {/* Status Indicator Bar */}
-                <div className="flex items-center justify-between text-[8px] font-mono text-slate-400 pt-1 border-t border-slate-800/80">
-                  <span className="truncate">{kpiData?.status}</span>
-                  <span
-                    className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0"
-                    style={{ background: node.color }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+          </div>
         </div>
-      </div>
-
+      )}
     </div>
   );
 };
