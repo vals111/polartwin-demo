@@ -15,17 +15,17 @@ interface Domain3DDef {
   role: string;
 }
 
-// 9 Domains with individual signature colors matching the 2D Digital Architecture
+// 9 Domains with individual signature colors: 9 completely distinct hues across the 360° spectrum
 const DOMAINS_3D: Domain3DDef[] = [
-  { id: 'environment', name: 'Environment & Weather', shortName: 'Environment', route: 'environment', color: '#818cf8', pos: [0, 200, 0], role: 'External Climate Driver' },
-  { id: 'logistics', name: 'Transportation & Logistics', shortName: 'Logistics', route: 'logistics', color: '#2dd4bf', pos: [-240, 110, 100], role: 'Expedition Resupply' },
-  { id: 'fuel', name: 'Fuel Storage', shortName: 'Fuel', route: 'fuel', color: '#f59e0b', pos: [-290, -10, -50], role: 'Hydrocarbon Reserve' },
-  { id: 'inventory', name: 'Storage & Inventory', shortName: 'Inventory', route: 'inventory', color: '#34d399', pos: [-140, -30, -220], role: 'Critical Spares' },
-  { id: 'water', name: 'Water Supply', shortName: 'Water', route: 'water', color: '#38bdf8', pos: [260, 60, -100], role: 'Hydrological Cycle' },
-  { id: 'equipment', name: 'Equipment & Machinery', shortName: 'Equipment', route: 'equipment', color: '#10b981', pos: [-80, -130, 90], role: 'Power Conversion' },
-  { id: 'energy', name: 'Energy & Power', shortName: 'Energy & Power', route: 'resources', color: '#fbbf24', pos: [110, -80, 160], role: 'Central Microgrid Hub' },
-  { id: 'personnel', name: 'Personnel & Occupancy', shortName: 'Personnel', route: 'personnel', color: '#c084fc', pos: [40, -210, -70], role: 'Crew Life Support' },
-  { id: 'communication', name: 'Communication', shortName: 'Communication', route: 'communication', color: '#06b6d4', pos: [260, -120, 80], role: 'Real-Time Telemetry' },
+  { id: 'environment', name: 'Environment & Weather', shortName: 'Environment', route: 'environment', color: '#00e5ff', pos: [0, 200, 0], role: 'External Climate Driver' },
+  { id: 'logistics', name: 'Transportation & Logistics', shortName: 'Logistics', route: 'logistics', color: '#f97316', pos: [-240, 110, 100], role: 'Expedition Resupply' },
+  { id: 'fuel', name: 'Fuel Storage', shortName: 'Fuel', route: 'fuel', color: '#ef4444', pos: [-290, -10, -50], role: 'Hydrocarbon Reserve' },
+  { id: 'inventory', name: 'Storage & Inventory', shortName: 'Inventory', route: 'inventory', color: '#14b8a6', pos: [-140, -30, -220], role: 'Critical Spares' },
+  { id: 'water', name: 'Water Supply', shortName: 'Water', route: 'water', color: '#2563eb', pos: [260, 60, -100], role: 'Hydrological Cycle' },
+  { id: 'equipment', name: 'Equipment & Machinery', shortName: 'Equipment', route: 'equipment', color: '#22c55e', pos: [-80, -130, 90], role: 'Power Conversion' },
+  { id: 'energy', name: 'Energy & Power', shortName: 'Energy & Power', route: 'resources', color: '#eab308', pos: [110, -80, 160], role: 'Central Microgrid Hub' },
+  { id: 'personnel', name: 'Personnel & Occupancy', shortName: 'Personnel', route: 'personnel', color: '#ec4899', pos: [40, -210, -70], role: 'Crew Life Support' },
+  { id: 'communication', name: 'Communication', shortName: 'Communication', route: 'communication', color: '#8b5cf6', pos: [260, -120, 80], role: 'Real-Time Telemetry' },
 ];
 
 // Pristine directed causal dependencies matching 2D cross-domain tree
@@ -145,19 +145,19 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     controls.minPolarAngle = Math.PI * 0.15;
     controlsRef.current = controls;
 
-    // 4. Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0x0a2444, 2.5);
+    // 4. Lighting Setup - Balanced illumination to ensure all 9 distinct globe colors pop vividly
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0x38bdf8, 2.4);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
     keyLight.position.set(300, 400, 300);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x06b6d4, 1.5);
+    const fillLight = new THREE.DirectionalLight(0x7dd3fc, 0.9);
     fillLight.position.set(-300, -200, -200);
     scene.add(fillLight);
 
-    const centerGlow = new THREE.PointLight(0x06b6d4, 2.5, 600);
+    const centerGlow = new THREE.PointLight(0x0284c7, 1.8, 600);
     centerGlow.position.set(0, 0, 0);
     scene.add(centerGlow);
 
@@ -457,7 +457,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       });
 
       // 2. Domain Nodes (Preserve individual colors + highlight active drivers/impacts)
-      nodeDataList.forEach(({ dom, group, sphereMat, haloMat, spriteMat }) => {
+      nodeDataList.forEach(({ dom, group, sphereMat, haloMat, innerHaloMat, spriteMat }) => {
         if (!targetId) {
           // Nominal State: all 9 nodes visible in their distinctive individual colors
           sphereMat.color.setStyle(dom.color);
@@ -465,6 +465,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           sphereMat.emissiveIntensity = 0.85;
           haloMat.color.setStyle(dom.color);
           haloMat.opacity = 0.75;
+          innerHaloMat.color.setStyle(dom.color);
+          innerHaloMat.opacity = 0.55;
           spriteMat.opacity = 0.95;
           group.scale.set(1, 1, 1);
           return;
@@ -481,6 +483,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           sphereMat.emissiveIntensity = 1.8;
           haloMat.color.setStyle(dom.color);
           haloMat.opacity = 1.0;
+          innerHaloMat.color.setStyle(dom.color);
+          innerHaloMat.opacity = 0.95;
           spriteMat.opacity = 1.0;
           group.scale.set(1.15, 1.15, 1.15);
         } else if (isUpstream) {
@@ -490,6 +494,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           sphereMat.emissiveIntensity = 1.2;
           haloMat.color.copy(CYAN_COLOR);
           haloMat.opacity = 0.95;
+          innerHaloMat.color.setStyle(dom.color);
+          innerHaloMat.opacity = 0.7;
           spriteMat.opacity = 1.0;
           group.scale.set(1.08, 1.08, 1.08);
         } else if (isDownstream) {
@@ -499,12 +505,15 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           sphereMat.emissiveIntensity = 1.2;
           haloMat.color.copy(AMBER_COLOR);
           haloMat.opacity = 0.95;
+          innerHaloMat.color.setStyle(dom.color);
+          innerHaloMat.opacity = 0.7;
           spriteMat.opacity = 1.0;
           group.scale.set(1.08, 1.08, 1.08);
         } else {
           // Dimmed unrelated domain node
           sphereMat.emissiveIntensity = 0.15;
           haloMat.opacity = 0.12;
+          innerHaloMat.opacity = 0.08;
           spriteMat.opacity = 0.2;
           group.scale.set(0.92, 0.92, 0.92);
         }

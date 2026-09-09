@@ -48,8 +48,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'environment',
     icon: CloudSnow,
-    color: '#818cf8',
-    accentRgb: '129, 140, 248'
+    color: '#00e5ff',
+    accentRgb: '0, 229, 255'
   },
   {
     id: 'logistics',
@@ -63,8 +63,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'logistics',
     icon: Truck,
-    color: '#2dd4bf',
-    accentRgb: '45, 212, 191'
+    color: '#f97316',
+    accentRgb: '249, 115, 22'
   },
 
   // ── Tier 2: Physical Reserves & Hydrological Intake (y = 220) ──
@@ -80,8 +80,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'fuel',
     icon: Fuel,
-    color: '#f59e0b',
-    accentRgb: '245, 158, 11'
+    color: '#ef4444',
+    accentRgb: '239, 68, 68'
   },
   {
     id: 'inventory',
@@ -95,8 +95,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'inventory',
     icon: Archive,
-    color: '#34d399',
-    accentRgb: '52, 211, 153'
+    color: '#14b8a6',
+    accentRgb: '20, 184, 166'
   },
   {
     id: 'water',
@@ -110,8 +110,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'water',
     icon: Droplet,
-    color: '#38bdf8',
-    accentRgb: '56, 189, 248'
+    color: '#2563eb',
+    accentRgb: '37, 99, 235'
   },
 
   // ── Tier 3: Conversion & Core Generation Hub (y = 400) ──
@@ -127,8 +127,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'equipment',
     icon: Wrench,
-    color: '#10b981',
-    accentRgb: '16, 185, 129'
+    color: '#22c55e',
+    accentRgb: '34, 197, 94'
   },
   {
     id: 'energy',
@@ -142,8 +142,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'resources',
     icon: Zap,
-    color: '#fbbf24',
-    accentRgb: '251, 191, 36'
+    color: '#eab308',
+    accentRgb: '234, 179, 8'
   },
 
   // ── Tier 4: Life Support, Human Habitation & Telemetry (y = 580) ──
@@ -159,8 +159,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'personnel',
     icon: Users,
-    color: '#c084fc',
-    accentRgb: '192, 132, 252'
+    color: '#ec4899',
+    accentRgb: '236, 72, 153'
   },
   {
     id: 'communication',
@@ -174,8 +174,8 @@ const TREE_NODES: TreeNode[] = [
     h: 88,
     route: 'communication',
     icon: Radio,
-    color: '#38bdf8',
-    accentRgb: '56, 189, 248'
+    color: '#8b5cf6',
+    accentRgb: '139, 92, 246'
   },
 ];
 
