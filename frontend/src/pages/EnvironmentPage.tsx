@@ -67,99 +67,90 @@ const MercuryThermometer: React.FC<{ tempC: number; windChill?: number }> = ({ t
   );
 };
 
-// ─── Storm Threat Index Card (Advanced Polar Severity Gauge) ───────────────
+// ─── Simple & Intuitive Storm Index Card ──────────────────────────────────────
 const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ severity, isBlizzard }) => {
   const pct = Math.max(0, Math.min(1, severity));
   const score = Math.round(pct * 100);
 
-  const statusConfig = pct > 0.7 || isBlizzard
+  const status = isBlizzard || score >= 70
     ? {
-        label: 'SEVERE GALE',
-        tier: 'CRITICAL (L3)',
+        label: 'SEVERE',
         color: '#ef4444',
-        border: 'border-red-500/40',
-        bg: 'from-red-950/30 via-polar-dark/95 to-slate-950/95',
-        glow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]',
-        badgeBg: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse',
+        desc: 'High gale blizzard. Lockdown active.',
+        badge: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse',
       }
-    : pct > 0.35
+    : score >= 40
     ? {
         label: 'MODERATE',
-        tier: 'ELEVATED (L2)',
         color: '#f59e0b',
-        border: 'border-amber-500/35',
-        bg: 'from-amber-950/25 via-polar-dark/95 to-slate-950/95',
-        glow: 'shadow-[0_0_15px_rgba(245,158,11,0.15)]',
-        badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        desc: 'Strong gusts. Caution on exterior operations.',
+        badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       }
     : {
         label: 'CALM',
-        tier: 'NOMINAL (L0)',
         color: '#10b981',
-        border: 'border-emerald-500/30',
-        bg: 'from-emerald-950/20 via-polar-dark/95 to-slate-950/95',
-        glow: 'shadow-[0_0_15px_rgba(16,185,129,0.12)]',
-        badgeBg: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+        desc: 'Nominal conditions. Safe for all operations.',
+        badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
       };
 
   return (
-    <div className={`w-full bg-gradient-to-br ${statusConfig.bg} p-3 rounded-xl border ${statusConfig.border} ${statusConfig.glow} space-y-2.5 font-mono`}>
-      {/* Header */}
+    <div className="w-full bg-slate-900/60 p-3.5 rounded-xl border border-polar-border/60 font-mono space-y-3">
+      {/* Header with Title and Large Clear Score */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <CloudLightning className="w-3.5 h-3.5" style={{ color: statusConfig.color }} />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-200">
+        <div className="flex items-center gap-2">
+          <CloudLightning className="w-4 h-4" style={{ color: status.color }} />
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
             Storm Index
           </span>
         </div>
-        <div className={`px-2 py-0.5 rounded-full text-[9px] font-black border ${statusConfig.badgeBg}`}>
-          {score} • {statusConfig.label}
+        <div className="flex items-center gap-2">
+          <span className="text-base font-black tracking-tight" style={{ color: status.color }}>
+            {score}<span className="text-xs text-slate-500 font-normal">/100</span>
+          </span>
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${status.badge}`}>
+            {status.label}
+          </span>
         </div>
       </div>
 
-      {/* Multi-Spectrum Threat Gauge Bar */}
-      <div className="space-y-1">
-        <div className="relative h-2.5 bg-slate-950/80 rounded-full p-0.5 border border-slate-800/90 overflow-hidden">
-          {/* Base gradient bar */}
-          <div
-            className="h-full rounded-full transition-all duration-700 relative"
-            style={{
-              width: `${Math.max(6, score)}%`,
-              background: `linear-gradient(to right, #10b981, #06b6d4 35%, #f59e0b 70%, #ef4444 100%)`,
-              boxShadow: `0 0 10px ${statusConfig.color}66`,
-            }}
-          />
+      {/* Clean 3-Stage Progress Gauge */}
+      <div className="space-y-1.5">
+        <div className="grid grid-cols-3 gap-1 h-2 rounded-full overflow-hidden bg-slate-950 p-0.5 border border-slate-800">
+          {/* Calm Zone (0-40) */}
+          <div className="relative rounded-l-full overflow-hidden bg-slate-800/80">
+            <div
+              className="h-full bg-emerald-400 transition-all duration-500"
+              style={{ width: `${Math.min(100, (score / 40) * 100)}%` }}
+            />
+          </div>
+          {/* Moderate Zone (40-70) */}
+          <div className="relative overflow-hidden bg-slate-800/80">
+            <div
+              className="h-full bg-amber-400 transition-all duration-500"
+              style={{ width: score > 40 ? `${Math.min(100, ((score - 40) / 30) * 100)}%` : '0%' }}
+            />
+          </div>
+          {/* Severe Zone (70-100) */}
+          <div className="relative rounded-r-full overflow-hidden bg-slate-800/80">
+            <div
+              className="h-full bg-red-500 transition-all duration-500"
+              style={{ width: score > 70 ? `${Math.min(100, ((score - 70) / 30) * 100)}%` : '0%' }}
+            />
+          </div>
         </div>
 
-        {/* Calibrated scale zones */}
-        <div className="flex justify-between text-[8px] text-slate-500 font-mono px-0.5">
-          <span className="text-emerald-400/80">0 CALM</span>
-          <span className="text-cyan-400/80">35 WATCH</span>
-          <span className="text-amber-400/80">70 ADVISORY</span>
-          <span className="text-red-400/80">100 GALE</span>
+        {/* Intuitive 3-Stage Labels */}
+        <div className="flex justify-between text-[9px] text-slate-500 px-0.5">
+          <span className={score < 40 ? 'text-emerald-400 font-bold' : ''}>Calm (0-40)</span>
+          <span className={score >= 40 && score < 70 ? 'text-amber-400 font-bold' : ''}>Moderate (40-70)</span>
+          <span className={score >= 70 ? 'text-red-400 font-bold' : ''}>Severe (70+)</span>
         </div>
       </div>
 
-      {/* Tri-cell status telemetry */}
-      <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-800/70 text-[8px]">
-        <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center">
-          <div className="text-slate-400 uppercase">Risk Tier</div>
-          <div className="font-bold mt-0.5" style={{ color: statusConfig.color }}>
-            {statusConfig.tier}
-          </div>
-        </div>
-        <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center">
-          <div className="text-slate-400 uppercase">Blizzard Watch</div>
-          <div className={`font-bold mt-0.5 ${isBlizzard ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
-            {isBlizzard ? 'ACTIVE' : 'INACTIVE'}
-          </div>
-        </div>
-        <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center">
-          <div className="text-slate-400 uppercase">Atmosphere</div>
-          <div className="font-bold text-cyan-300 mt-0.5">
-            {score > 60 ? 'TURBULENT' : score > 30 ? 'UNSTABLE' : 'STABLE'}
-          </div>
-        </div>
+      {/* Plain English 1-Line Status */}
+      <div className="text-[10px] text-slate-400 border-t border-slate-800/60 pt-2 flex items-center justify-between">
+        <span>{status.desc}</span>
+        <span className="text-slate-500 text-[9px]">{isBlizzard ? 'Blizzard Active' : 'Nominal'}</span>
       </div>
     </div>
   );
