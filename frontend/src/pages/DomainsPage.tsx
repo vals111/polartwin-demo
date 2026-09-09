@@ -9,6 +9,7 @@ import {
   AlertTriangle, CheckCircle2, RefreshCw, GitCompare, ChevronRight, X,
   Gauge, Shield, Clock, Thermometer, Wind, BatteryCharging, Flame, Cpu
 } from 'lucide-react';
+import { CrossDomainCausalTree } from '../components/dashboard/CrossDomainCausalTree';
 
 interface DomainRelationship {
   upstreamIds: string[];
@@ -59,7 +60,7 @@ const NINE_DOMAINS: DomainConfig[] = [
     name: 'Fuel',
     category: 'fuel',
     icon: Fuel,
-    route: 'resources',
+    route: 'fuel',
     relationships: {
       upstreamIds: ['logistics'],
       downstreamIds: ['energy', 'equipment'],
@@ -85,7 +86,7 @@ const NINE_DOMAINS: DomainConfig[] = [
     name: 'Water',
     category: 'water',
     icon: Droplet,
-    route: 'resources',
+    route: 'water',
     relationships: {
       upstreamIds: ['environment', 'energy'],
       downstreamIds: ['personnel', 'equipment'],
@@ -98,7 +99,7 @@ const NINE_DOMAINS: DomainConfig[] = [
     name: 'Transportation & Logistics',
     category: 'logistics',
     icon: Truck,
-    route: 'forecast',
+    route: 'logistics',
     relationships: {
       upstreamIds: ['environment'],
       downstreamIds: ['fuel', 'inventory'],
@@ -111,7 +112,7 @@ const NINE_DOMAINS: DomainConfig[] = [
     name: 'Personnel & Occupancy',
     category: 'personnel',
     icon: Users,
-    route: 'analytics',
+    route: 'personnel',
     relationships: {
       upstreamIds: ['water', 'energy'],
       downstreamIds: ['energy', 'water', 'equipment'],
@@ -124,7 +125,7 @@ const NINE_DOMAINS: DomainConfig[] = [
     name: 'Communication',
     category: 'comms',
     icon: Radio,
-    route: 'analytics',
+    route: 'communication',
     relationships: {
       upstreamIds: ['energy', 'environment'],
       downstreamIds: [],
@@ -137,7 +138,7 @@ const NINE_DOMAINS: DomainConfig[] = [
     name: 'Storage & Inventory',
     category: 'inventory',
     icon: Archive,
-    route: 'resources',
+    route: 'inventory',
     relationships: {
       upstreamIds: ['logistics'],
       downstreamIds: ['equipment', 'personnel'],
@@ -619,6 +620,22 @@ export const DomainsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Cross-Domain Causal Propagation Tree Graph */}
+      <CrossDomainCausalTree stationId={stationId} />
+
+      {/* 9 Domains Grid Header */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <Layers className="w-5 h-5 text-cyan-400" />
+            <span>9 Operational Domain Interfaces</span>
+          </h2>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-polar-dark text-slate-400 border border-polar-border">
+            Click any domain to inspect causality or enter dedicated page
+          </span>
+        </div>
+      </div>
+
       {/* 9 Domains Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {NINE_DOMAINS.map((domain) => {
@@ -914,10 +931,10 @@ export const DomainsPage: React.FC = () => {
                     e.stopPropagation();
                     navigate(`/station/${stationId}/${domain.route}`);
                   }}
-                  className="flex items-center gap-1 text-[10px] font-mono text-cyan-400 hover:text-cyan-200 transition-colors flex-shrink-0 ml-2"
+                  className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-cyan-300 hover:text-white transition-colors flex-shrink-0 ml-2 px-2 py-1 rounded bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 shadow-sm"
                 >
-                  <span>Subsystem</span>
-                  <ExternalLink className="w-2.5 h-2.5" />
+                  <span>Open Feature Page</span>
+                  <ExternalLink className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -965,9 +982,9 @@ export const DomainsPage: React.FC = () => {
               </button>
               <button
                 onClick={() => navigate(`/station/${stationId}/${selectedConfig.route}`)}
-                className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 flex items-center gap-1.5 transition-all"
+                className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 flex items-center gap-1.5 transition-all shadow-md"
               >
-                <span>Full Subsystem View</span>
+                <span>Open {selectedConfig.name} Feature Page</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
