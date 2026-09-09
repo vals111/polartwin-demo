@@ -7,7 +7,7 @@ import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Thermometer, Eye, Sun, AlertTriangle, ShieldCheck,
-  Wind, Waves, Droplets, Gauge
+  Wind, Waves, Droplets, Gauge, Compass
 } from 'lucide-react';
 
 // ─── Animated Mercury Thermometer ───────────────────────────────────────────
@@ -225,15 +225,22 @@ export const EnvironmentPage: React.FC = () => {
             </h1>
           </div>
 
-          {/* Clean condition readouts */}
+          {/* Top Status Telemetry Capsules */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="bg-polar-darker border border-polar-border rounded-xl px-3 py-1.5 text-xs font-mono flex items-center gap-2">
-              <span className="text-slate-500 text-[9px] uppercase tracking-wider">Condition</span>
-              <span className="text-white font-bold">{condition}</span>
+            <div className="flex items-center gap-2.5 bg-gradient-to-r from-cyan-950/40 via-polar-darker/80 to-polar-dark/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-xl shadow-sm backdrop-blur-md">
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <div className="flex flex-col">
+                <span className="text-[8px] font-mono tracking-widest uppercase text-cyan-400/80 leading-none">Condition</span>
+                <span className="text-xs font-bold font-mono text-white leading-tight mt-0.5">{condition}</span>
+              </div>
             </div>
-            <div className="bg-polar-darker border border-polar-border rounded-xl px-3 py-1.5 text-xs font-mono flex items-center gap-2">
-              <span className="text-slate-500 text-[9px] uppercase tracking-wider">Wind Chill</span>
-              <span className="text-blue-300 font-bold">{windChill}°C</span>
+
+            <div className="flex items-center gap-2.5 bg-gradient-to-r from-blue-950/40 via-polar-darker/80 to-polar-dark/60 border border-blue-500/30 px-3.5 py-1.5 rounded-xl shadow-sm backdrop-blur-md">
+              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              <div className="flex flex-col">
+                <span className="text-[8px] font-mono tracking-widest uppercase text-blue-400/80 leading-none">Wind Chill</span>
+                <span className="text-xs font-black font-mono text-blue-300 leading-tight mt-0.5">{windChill}°C</span>
+              </div>
             </div>
           </div>
         </div>
@@ -261,29 +268,71 @@ export const EnvironmentPage: React.FC = () => {
 
           <StormSeverityRing severity={stormSev} />
 
-          {/* Gust & Wind Chill cards */}
+          {/* Gust & Vector Azimuth Telemetry Cards */}
           <div className="w-full grid grid-cols-2 gap-2 text-xs font-mono">
-            <div className="bg-polar-dark/80 p-2.5 rounded-xl border border-polar-border text-center">
-              <div className="text-slate-500 text-[9px] mb-0.5">GUST PEAK</div>
-              <div className="text-white font-bold">{gust} km/h</div>
+            <div className="bg-gradient-to-br from-amber-500/10 via-polar-dark/90 to-polar-darker/90 p-2.5 rounded-xl border border-amber-500/25 shadow-sm">
+              <div className="flex items-center justify-between text-[9px] text-amber-400/90 uppercase tracking-wider mb-0.5">
+                <span className="flex items-center gap-1">
+                  <Wind className="w-3 h-3 text-amber-400" />
+                  <span>Gust Peak</span>
+                </span>
+                <span className="text-[8px] text-amber-500/80 font-bold">MAX</span>
+              </div>
+              <div className="text-base font-black text-white tracking-tight">
+                {gust} <span className="text-[10px] font-medium text-amber-400/80">km/h</span>
+              </div>
+              <div className="w-full bg-slate-800/80 h-1 rounded-full mt-1.5 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(100, (gust / 90) * 100)}%` }} 
+                />
+              </div>
             </div>
-            <div className="bg-polar-dark/80 p-2.5 rounded-xl border border-polar-border text-center">
-              <div className="text-slate-500 text-[9px] mb-0.5">WIND CHILL</div>
-              <div className="text-blue-300 font-bold">{windChill}°C</div>
+
+            <div className="bg-gradient-to-br from-indigo-500/10 via-polar-dark/90 to-polar-darker/90 p-2.5 rounded-xl border border-indigo-500/25 shadow-sm">
+              <div className="flex items-center justify-between text-[9px] text-indigo-400/90 uppercase tracking-wider mb-0.5">
+                <span className="flex items-center gap-1">
+                  <Compass className="w-3 h-3 text-indigo-400" />
+                  <span>Azimuth</span>
+                </span>
+                <span className="text-[8px] text-indigo-400/80 font-bold">DIR</span>
+              </div>
+              <div className="text-base font-black text-white tracking-tight">
+                {Math.round(((windDir % 360) + 360) % 360)}° <span className="text-xs font-bold text-indigo-300">SSE</span>
+              </div>
+              <div className="text-[9px] text-slate-400 mt-1 truncate">
+                Katabatic Drainage
+              </div>
             </div>
           </div>
 
-          {/* Polar Atmospheric Flow Dynamics (balances height with center column) */}
-          <div className="w-full bg-polar-dark/80 p-3 rounded-xl border border-polar-border text-xs font-mono space-y-1.5">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 uppercase tracking-wider">Katabatic Flow</span>
-              <span className={wind > 50 ? 'text-red-400 font-bold' : wind > 30 ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
-                {wind > 50 ? 'GALE FORCE' : wind > 30 ? 'MODERATE ADVECTION' : 'NOMINAL DRAINAGE'}
+          {/* Polar Atmospheric Flow Dynamics */}
+          <div className="w-full bg-gradient-to-br from-cyan-950/20 via-polar-dark/95 to-polar-darker/95 p-3 rounded-xl border border-cyan-500/20 shadow-md space-y-2 font-mono">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider text-cyan-400 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                <span>Katabatic Dynamics</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+                wind > 50 
+                  ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse' 
+                  : wind > 30 
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              }`}>
+                {wind > 50 ? 'GALE INFLOW' : wind > 30 ? 'MODERATE ADVECTION' : 'NOMINAL DRAINAGE'}
               </span>
             </div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400">
-              <span>Polar Air Density</span>
-              <span className="text-slate-200 font-bold">1.39 kg/m³</span>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+              <div className="bg-slate-900/60 p-2 rounded-lg border border-polar-border/40">
+                <div className="text-[8px] text-slate-400 uppercase">Polar Air Density</div>
+                <div className="text-xs font-bold text-white mt-0.5">1.39 <span className="text-[9px] text-slate-400 font-normal">kg/m³</span></div>
+              </div>
+              <div className="bg-slate-900/60 p-2 rounded-lg border border-polar-border/40">
+                <div className="text-[8px] text-slate-400 uppercase">Wind Velocity</div>
+                <div className="text-xs font-bold text-cyan-300 mt-0.5">{windMs.toFixed(1)} <span className="text-[9px] text-slate-400 font-normal">m/s</span></div>
+              </div>
             </div>
           </div>
         </div>

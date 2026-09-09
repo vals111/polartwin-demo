@@ -39,140 +39,183 @@ export const WindCompass: React.FC<WindCompassProps> = ({
 
     const cx = size / 2;
     const cy = size / 2;
-    const r = size * 0.42;
+    // Radius with safe padding so no label ever clips
+    const r = size * 0.36;
     const target = direction;
 
     const draw = () => {
       ctx.clearRect(0, 0, size, size);
 
-      // Outer ring
+      // ── Background Ambient Glow ──
+      const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.48);
+      bgGrad.addColorStop(0, 'rgba(15, 23, 42, 0.4)');
+      bgGrad.addColorStop(0.8, 'rgba(2, 6, 23, 0.6)');
+      bgGrad.addColorStop(1, 'rgba(2, 6, 23, 0)');
+      ctx.fillStyle = bgGrad;
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      ctx.arc(cx, cy, size * 0.48, 0, Math.PI * 2);
+      ctx.fill();
 
-      // Inner ring
+      // ── Outer Bezel Ring ──
       ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.arc(cx, cy, r + size * 0.08, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Cardinal direction labels
+      // ── Dial Scale Ring ──
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // ── Cardinal direction labels (comfortably spaced within canvas) ──
       const cardinals = [
-        { label: 'N', angle: -Math.PI / 2, bold: true },
-        { label: 'E', angle: 0, bold: false },
-        { label: 'S', angle: Math.PI / 2, bold: false },
-        { label: 'W', angle: Math.PI, bold: false },
+        { label: 'N', angle: -Math.PI / 2, color: '#ef4444', isNorth: true },
+        { label: 'E', angle: 0, color: '#94a3b8', isNorth: false },
+        { label: 'S', angle: Math.PI / 2, color: '#94a3b8', isNorth: false },
+        { label: 'W', angle: Math.PI, color: '#94a3b8', isNorth: false },
       ];
-      cardinals.forEach(({ label, angle, bold }) => {
-        const lx = cx + Math.cos(angle) * (r + size * 0.08);
-        const ly = cy + Math.sin(angle) * (r + size * 0.08);
-        ctx.fillStyle = bold ? '#e2e8f0' : '#64748b';
-        ctx.font = `${bold ? 'bold ' : ''}${size * 0.1}px 'JetBrains Mono', monospace`;
+
+      cardinals.forEach(({ label, angle, color: labelColor, isNorth }) => {
+        const dist = r + size * 0.07;
+        const lx = cx + Math.cos(angle) * dist;
+        const ly = cy + Math.sin(angle) * dist;
+
+        ctx.fillStyle = labelColor;
+        ctx.font = `bold ${Math.round(size * 0.075)}px 'JetBrains Mono', monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, lx, ly);
+
+        // Small North triangle pip
+        if (isNorth) {
+          ctx.beginPath();
+          ctx.moveTo(lx, ly + size * 0.05);
+          ctx.lineTo(lx - size * 0.02, ly + size * 0.07);
+          ctx.lineTo(lx + size * 0.02, ly + size * 0.07);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+          ctx.fill();
+        }
       });
 
-      // Degree tick marks
-      for (let i = 0; i < 36; i++) {
-        const tickAngle = (i * 10 * Math.PI) / 180 - Math.PI / 2;
-        const isMajor = i % 9 === 0;
-        const outer = r - 1;
-        const inner = outer - (isMajor ? size * 0.06 : size * 0.03);
+      // ── Degree Tick Marks ──
+      for (let i = 0; i < 72; i++) {
+        const tickAngle = (i * 5 * Math.PI) / 180 - Math.PI / 2;
+        const isMajor = i % 18 === 0; // 0, 90, 180, 270
+        const isMedium = i % 6 === 0; // Every 30 deg
+        const outer = r;
+        const inner = outer - (isMajor ? size * 0.06 : isMedium ? size * 0.04 : size * 0.02);
+
         ctx.beginPath();
         ctx.moveTo(cx + Math.cos(tickAngle) * outer, cy + Math.sin(tickAngle) * outer);
         ctx.lineTo(cx + Math.cos(tickAngle) * inner, cy + Math.sin(tickAngle) * inner);
-        ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)';
-        ctx.lineWidth = isMajor ? 2 : 1;
+        ctx.strokeStyle = isMajor
+          ? 'rgba(255,255,255,0.45)'
+          : isMedium
+          ? 'rgba(255,255,255,0.2)'
+          : 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = isMajor ? 1.5 : 1;
         ctx.stroke();
       }
 
-      // Animate toward target direction
+      // ── Smooth Animation to Target Angle ──
       let diff = target - currentDirRef.current;
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
-      const needsAnim = Math.abs(diff) > 0.5;
+      const needsAnim = Math.abs(diff) > 0.4;
       if (needsAnim) {
-        currentDirRef.current += diff * 0.06;
+        currentDirRef.current += diff * 0.08;
       } else {
         currentDirRef.current = target;
       }
 
-      const arrowAngle = (currentDirRef.current * Math.PI) / 180 - Math.PI / 2;
+      const currentDir = currentDirRef.current;
+      const arrowAngle = (currentDir * Math.PI) / 180 - Math.PI / 2;
 
-      // Wind direction arrow (tail first)
-      const arrowLen = r * 0.55;
-      const tailLen = r * 0.3;
+      // ── Aerodynamic Wind Vector Pointer ──
+      const arrowLen = r * 0.82;
+      const tailLen = r * 0.45;
 
-      // Tail
-      ctx.beginPath();
-      ctx.moveTo(cx - Math.cos(arrowAngle) * tailLen, cy - Math.sin(arrowAngle) * tailLen);
-      ctx.lineTo(cx, cy);
-      ctx.strokeStyle = 'rgba(148,163,184,0.4)';
-      ctx.lineWidth = size * 0.025;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      // Glow head
-      ctx.save();
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 20;
+      // Counter-balance tail
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.lineTo(
-        cx + Math.cos(arrowAngle) * arrowLen,
-        cy + Math.sin(arrowAngle) * arrowLen
-      );
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size * 0.035;
+      ctx.lineTo(cx - Math.cos(arrowAngle) * tailLen, cy - Math.sin(arrowAngle) * tailLen);
+      ctx.strokeStyle = 'rgba(100, 116, 139, 0.45)';
+      ctx.lineWidth = size * 0.02;
       ctx.lineCap = 'round';
       ctx.stroke();
 
-      // Arrowhead
+      // Tail circle pip
+      ctx.beginPath();
+      ctx.arc(cx - Math.cos(arrowAngle) * tailLen, cy - Math.sin(arrowAngle) * tailLen, size * 0.02, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.8)';
+      ctx.fill();
+
+      // Vector beam glow
+      ctx.save();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(arrowAngle) * arrowLen, cy + Math.sin(arrowAngle) * arrowLen);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size * 0.028;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Direction Arrowhead
       const tipX = cx + Math.cos(arrowAngle) * arrowLen;
       const tipY = cy + Math.sin(arrowAngle) * arrowLen;
-      const headSize = size * 0.06;
+      const headSize = size * 0.07;
       ctx.beginPath();
       ctx.moveTo(tipX, tipY);
-      ctx.lineTo(
-        tipX - headSize * Math.cos(arrowAngle - 0.4),
-        tipY - headSize * Math.sin(arrowAngle - 0.4)
-      );
-      ctx.lineTo(
-        tipX - headSize * Math.cos(arrowAngle + 0.4),
-        tipY - headSize * Math.sin(arrowAngle + 0.4)
-      );
+      ctx.lineTo(tipX - headSize * Math.cos(arrowAngle - 0.45), tipY - headSize * Math.sin(arrowAngle - 0.45));
+      ctx.lineTo(tipX - headSize * 0.5 * Math.cos(arrowAngle), tipY - headSize * 0.5 * Math.sin(arrowAngle));
+      ctx.lineTo(tipX - headSize * Math.cos(arrowAngle + 0.45), tipY - headSize * Math.sin(arrowAngle + 0.45));
       ctx.closePath();
       ctx.fillStyle = color;
       ctx.fill();
       ctx.restore();
 
-      // Center dot
+      // ── Central Digital Telemetry Hub (Sleek Glass Disc) ──
+      const hubRadius = size * 0.23;
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(cx, cy, size * 0.025, 0, Math.PI * 2);
-      ctx.fillStyle = '#1e293b';
+      ctx.arc(cx, cy, hubRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#090f1e';
       ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Speed in center
+      // Inner subtle rim
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubRadius - 3, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Speed Readout in Center
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${size * 0.15}px 'JetBrains Mono', monospace`;
-      ctx.fillText(`${speed}`, cx, cy + size * 0.22);
-      ctx.fillStyle = '#64748b';
-      ctx.font = `${size * 0.08}px 'JetBrains Mono', monospace`;
-      ctx.fillText('km/h', cx, cy + size * 0.31);
+      ctx.font = `bold ${Math.round(size * 0.12)}px 'JetBrains Mono', monospace`;
+      ctx.fillText(speed.toFixed(1), cx, cy - size * 0.04);
 
-      // Cardinal label
+      // Speed Unit
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `500 ${Math.round(size * 0.055)}px 'JetBrains Mono', monospace`;
+      ctx.fillText('km/h', cx, cy + size * 0.04);
+
+      // Direction Badge (Cardinal + Exact Degree — Cleanly inside hub with NO collisions)
       ctx.fillStyle = color;
-      ctx.font = `bold ${size * 0.11}px 'JetBrains Mono', monospace`;
-      ctx.fillText(getCardinal(currentDirRef.current), cx, cy + size * 0.41);
+      ctx.font = `bold ${Math.round(size * 0.065)}px 'JetBrains Mono', monospace`;
+      ctx.fillText(`${getCardinal(currentDir)} • ${Math.round(((currentDir % 360) + 360) % 360)}°`, cx, cy + size * 0.11);
+
+      ctx.restore();
 
       if (needsAnim) {
         animRef.current = requestAnimationFrame(draw);
