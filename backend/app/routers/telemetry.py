@@ -105,8 +105,7 @@ def get_live_telemetry_snapshot(
 
 @router.get("/weather/{station_id}")
 def get_station_weather(
-    station_id: str,
-    user = Depends(require_viewer)
+    station_id: str
 ):
     """
     Fetches real-time weather and 24h forecast from MET Norway API
@@ -120,8 +119,7 @@ def get_station_weather(
 
 @router.post("/weather/{station_id}/refresh")
 def refresh_station_weather(
-    station_id: str,
-    user = Depends(require_viewer)
+    station_id: str
 ):
     """
     Forces a fresh fetch from the MET Norway API (respecting fair-use limits)
