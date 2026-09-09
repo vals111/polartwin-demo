@@ -6,7 +6,7 @@ import { WindCompass } from '../components/charts/WindCompass';
 import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
-  Thermometer, Eye, Sun, AlertTriangle, ShieldCheck,
+  Thermometer, Eye, Sun, AlertTriangle, ShieldCheck, ShieldAlert, CloudLightning,
   Wind, Waves, Droplets, Gauge, Compass
 } from 'lucide-react';
 
@@ -62,44 +62,99 @@ const MercuryThermometer: React.FC<{ tempC: number }> = ({ tempC }) => {
   );
 };
 
-// ─── Storm Severity Ring ─────────────────────────────────────────────────────
-const StormSeverityRing: React.FC<{ severity: number }> = ({ severity }) => {
+// ─── Storm Threat Index Card (Advanced Polar Severity Gauge) ───────────────
+const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ severity, isBlizzard }) => {
   const pct = Math.max(0, Math.min(1, severity));
-  const color = pct > 0.7 ? '#ef4444' : pct > 0.4 ? '#f59e0b' : '#10b981';
-  const label = pct > 0.7 ? 'SEVERE' : pct > 0.4 ? 'MODERATE' : 'CALM';
-  const r = 44;
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - pct);
+  const score = Math.round(pct * 100);
+
+  const statusConfig = pct > 0.7 || isBlizzard
+    ? {
+        label: 'SEVERE GALE',
+        tier: 'CRITICAL (L3)',
+        color: '#ef4444',
+        border: 'border-red-500/40',
+        bg: 'from-red-950/30 via-polar-dark/95 to-slate-950/95',
+        glow: 'shadow-[0_0_15px_rgba(239,68,68,0.2)]',
+        badgeBg: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse',
+      }
+    : pct > 0.35
+    ? {
+        label: 'MODERATE',
+        tier: 'ELEVATED (L2)',
+        color: '#f59e0b',
+        border: 'border-amber-500/35',
+        bg: 'from-amber-950/25 via-polar-dark/95 to-slate-950/95',
+        glow: 'shadow-[0_0_15px_rgba(245,158,11,0.15)]',
+        badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      }
+    : {
+        label: 'CALM',
+        tier: 'NOMINAL (L0)',
+        color: '#10b981',
+        border: 'border-emerald-500/30',
+        bg: 'from-emerald-950/20 via-polar-dark/95 to-slate-950/95',
+        glow: 'shadow-[0_0_15px_rgba(16,185,129,0.12)]',
+        badgeBg: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      };
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Storm Index</div>
-      <div className="relative">
-        <svg width="110" height="110" viewBox="0 0 110 110">
-          {/* Background ring */}
-          <circle cx="55" cy="55" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
-          {/* Filled arc */}
-          <circle
-            cx="55"
-            cy="55"
-            r={r}
-            fill="none"
-            stroke={color}
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={offset}
-            transform="rotate(-90 55 55)"
-            style={{ transition: 'stroke-dashoffset 1.2s ease-out', filter: `drop-shadow(0 0 6px ${color})` }}
+    <div className={`w-full bg-gradient-to-br ${statusConfig.bg} p-3 rounded-xl border ${statusConfig.border} ${statusConfig.glow} space-y-2.5 font-mono`}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <CloudLightning className="w-3.5 h-3.5" style={{ color: statusConfig.color }} />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-200">
+            Storm Index
+          </span>
+        </div>
+        <div className={`px-2 py-0.5 rounded-full text-[9px] font-black border ${statusConfig.badgeBg}`}>
+          {score} • {statusConfig.label}
+        </div>
+      </div>
+
+      {/* Multi-Spectrum Threat Gauge Bar */}
+      <div className="space-y-1">
+        <div className="relative h-2.5 bg-slate-950/80 rounded-full p-0.5 border border-slate-800/90 overflow-hidden">
+          {/* Base gradient bar */}
+          <div
+            className="h-full rounded-full transition-all duration-700 relative"
+            style={{
+              width: `${Math.max(6, score)}%`,
+              background: `linear-gradient(to right, #10b981, #06b6d4 35%, #f59e0b 70%, #ef4444 100%)`,
+              boxShadow: `0 0 10px ${statusConfig.color}66`,
+            }}
           />
-          {/* Label */}
-          <text x="55" y="50" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="monospace">
-            {(pct * 100).toFixed(0)}
-          </text>
-          <text x="55" y="63" textAnchor="middle" fill={color} fontSize="8" fontFamily="monospace">
-            {label}
-          </text>
-        </svg>
+        </div>
+
+        {/* Calibrated scale zones */}
+        <div className="flex justify-between text-[8px] text-slate-500 font-mono px-0.5">
+          <span className="text-emerald-400/80">0 CALM</span>
+          <span className="text-cyan-400/80">35 WATCH</span>
+          <span className="text-amber-400/80">70 ADVISORY</span>
+          <span className="text-red-400/80">100 GALE</span>
+        </div>
+      </div>
+
+      {/* Tri-cell status telemetry */}
+      <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-slate-800/70 text-[8px]">
+        <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center">
+          <div className="text-slate-400 uppercase">Risk Tier</div>
+          <div className="font-bold mt-0.5" style={{ color: statusConfig.color }}>
+            {statusConfig.tier}
+          </div>
+        </div>
+        <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center">
+          <div className="text-slate-400 uppercase">Blizzard Watch</div>
+          <div className={`font-bold mt-0.5 ${isBlizzard ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
+            {isBlizzard ? 'ACTIVE' : 'INACTIVE'}
+          </div>
+        </div>
+        <div className="bg-slate-900/60 p-1.5 rounded-lg border border-slate-800/80 text-center">
+          <div className="text-slate-400 uppercase">Atmosphere</div>
+          <div className="font-bold text-cyan-300 mt-0.5">
+            {score > 60 ? 'TURBULENT' : score > 30 ? 'UNSTABLE' : 'STABLE'}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -322,8 +377,6 @@ export const EnvironmentPage: React.FC = () => {
             </div>
           </div>
 
-          <StormSeverityRing severity={stormSev} />
-
           {/* Gust & Vector Telemetry Cards */}
           <div className="w-full grid grid-cols-2 gap-2 text-xs font-mono">
             <div className="bg-gradient-to-br from-amber-500/10 via-polar-dark/90 to-polar-darker/90 p-2.5 rounded-xl border border-amber-500/25 shadow-sm">
@@ -391,6 +444,9 @@ export const EnvironmentPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Storm Index at the Bottom of the Card */}
+          <StormIndexCard severity={stormSev} isBlizzard={isBlizzard} />
         </div>
 
         {/* ── CENTER: Primary Readouts + Visibility + Cascade (col-span-2) ── */}
