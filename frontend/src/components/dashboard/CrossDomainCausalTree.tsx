@@ -339,12 +339,12 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
     // Custom non-colliding anchor assignments
     switch (edge.id) {
       case 'env-log':
-        // Horizontal connection across Tier 1
+        // Horizontal connection across Tier 1 with gentle upward arc
         sx = fromNode.x + fromNode.w;
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 80} ${sy}, ${tx - 80} ${ty}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 70} ${sy - 24}, ${tx - 70} ${ty - 24}, ${tx} ${ty}`;
 
       case 'env-wat':
         // Curves from Env bottom-right across Tier 2 gap down to Water top
@@ -395,12 +395,12 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
 
       case 'eq-eng':
-        // Clean horizontal generator power bridge
+        // Generator power bridge with gentle upward arc
         sx = fromNode.x + fromNode.w;
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 60} ${sy}, ${tx - 60} ${ty}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 60} ${sy - 22}, ${tx - 60} ${ty - 22}, ${tx} ${ty}`;
 
       case 'eng-wat':
         // Trace line heating loop: Energy top-right up into Water bottom
@@ -419,15 +419,15 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
 
       case 'eng-comm':
-        // Energy bottom-right directly into Communication top
-        sx = fromNode.x + fromNode.w - 60;
+        // Energy bottom-right into Communication top with slight S-curve
+        sx = fromNode.x + fromNode.w - 50;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + toNode.w - 60;
+        tx = toNode.x + fromNode.w - 80;
         ty = toNode.y;
         return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
 
       case 'wat-pers':
-        // Water bottom down around the right/bottom into Personnel
+        // Water bottom down around into Personnel
         sx = fromNode.x + 50;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x + toNode.w;
@@ -435,12 +435,12 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         return `M ${sx} ${sy} C ${sx} ${sy + 100}, ${tx + 80} ${ty}, ${tx} ${ty}`;
 
       case 'pers-comm':
-        // Horizontal human-comms command bridge
+        // Horizontal human-comms command bridge with gentle upward arc
         sx = fromNode.x + fromNode.w;
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 60} ${sy}, ${tx - 60} ${ty}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 60} ${sy - 22}, ${tx - 60} ${ty - 22}, ${tx} ${ty}`;
 
       default:
         // Default clean vertical S-curve
@@ -565,13 +565,23 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             {/* SVG Canvas for High-Precision Causal Conduits */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1180 720">
               <defs>
-                <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                <filter id="neonGlowCyan" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
+                  <feMerge>
+                    <feMergeNode in="blur2" />
+                    <feMergeNode in="blur1" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
                 </filter>
-                <filter id="strongGlow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation="5" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                <filter id="neonGlowAmber" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
+                  <feMerge>
+                    <feMergeNode in="blur2" />
+                    <feMergeNode in="blur1" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
                 </filter>
               </defs>
 
@@ -584,36 +594,48 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                 const pathData = getEdgePath(edge);
                 if (!pathData) return null;
 
-                const strokeColor = isIncoming ? '#06b6d4' : '#fbbf24';
-                const particleColor = isIncoming ? '#67e8f9' : '#fde047';
+                // Perfectly calibrated ultra-bright neon colors
+                const strokeColor = isIncoming ? '#00f2fe' : '#fbbf24';
+                const auraColor = isIncoming ? '#00c6ff' : '#f59e0b';
+                const filterId = isIncoming ? 'url(#neonGlowCyan)' : 'url(#neonGlowAmber)';
 
                 return (
                   <g key={edge.id} className="transition-all duration-300">
-                    {/* Underlying Glow Track */}
+                    {/* Layer 1: Wide Deep Neon Halo Aura */}
+                    <path
+                      d={pathData}
+                      fill="none"
+                      stroke={auraColor}
+                      strokeWidth={12}
+                      strokeOpacity={0.4}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Layer 2: Main Vivid Saturated Neon Conduit Beam */}
                     <path
                       d={pathData}
                       fill="none"
                       stroke={strokeColor}
-                      strokeWidth={8}
-                      strokeOpacity={0.25}
+                      strokeWidth={4}
+                      strokeOpacity={1.0}
                       strokeLinecap="round"
+                      filter={filterId}
                     />
 
-                    {/* Active Conduit Line */}
+                    {/* Layer 3: High-Intensity White Hot Laser Core */}
                     <path
                       d={pathData}
                       fill="none"
-                      stroke={strokeColor}
-                      strokeWidth={3}
-                      strokeOpacity={0.95}
+                      stroke="#ffffff"
+                      strokeWidth={1.5}
+                      strokeOpacity={0.9}
                       strokeLinecap="round"
-                      filter="url(#neonGlow)"
                     />
 
-                    {/* Live Traveling Energy Photon */}
-                    <circle r={4.5} fill={particleColor} filter="url(#neonGlow)">
+                    {/* Layer 4: Live Fast-Traveling Energized Photon Bead */}
+                    <circle r={5} fill="#ffffff" stroke={strokeColor} strokeWidth={2.5} filter={filterId}>
                       <animateMotion
-                        dur="1.8s"
+                        dur="1.7s"
                         repeatCount="indefinite"
                         path={pathData}
                       />
