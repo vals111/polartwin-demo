@@ -6,9 +6,6 @@ import { useUiStore } from '../../store/uiStore';
 import {
   LayoutDashboard,
   Cpu,
-  Zap,
-  Wrench,
-  CloudSnow,
   LineChart,
   TrendingUp,
   AlertTriangle,
@@ -68,14 +65,7 @@ export const Sidebar: React.FC = () => {
         { to: `/station/${selectedStationId}/twin3d`, label: '3D Spatial View', icon: Box },
       ]
     },
-    {
-      title: 'Station Subsystems',
-      items: [
-        { to: `/station/${selectedStationId}/resources`, label: 'Power & Fuel', icon: Zap },
-        { to: `/station/${selectedStationId}/equipment`, label: 'Equipment & Machinery', icon: Wrench },
-        { to: `/station/${selectedStationId}/environment`, label: 'Weather & Environment', icon: CloudSnow },
-      ]
-    },
+
     {
       title: 'Operations & Intelligence',
       items: [
