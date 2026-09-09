@@ -344,7 +344,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 70} ${sy - 24}, ${tx - 70} ${ty - 24}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 70} ${sy - 28}, ${tx - 70} ${ty - 28}, ${tx} ${ty}`;
 
       case 'env-wat':
         // Curves from Env bottom-right across Tier 2 gap down to Water top
@@ -380,7 +380,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
 
       case 'fl-eng':
         // Fuel bottom-right into Energy left
-        sx = fromNode.x + toNode.w - 40;
+        sx = fromNode.x + fromNode.w - 30;
         sy = fromNode.y + fromNode.h;
         tx = toNode.x;
         ty = toNode.y + 30;
@@ -400,7 +400,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 60} ${sy - 22}, ${tx - 60} ${ty - 22}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 60} ${sy - 25}, ${tx - 60} ${ty - 25}, ${tx} ${ty}`;
 
       case 'eng-wat':
         // Trace line heating loop: Energy top-right up into Water bottom
@@ -422,9 +422,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         // Energy bottom-right into Communication top with slight S-curve
         sx = fromNode.x + fromNode.w - 50;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + fromNode.w - 80;
+        tx = toNode.x + toNode.w - 50;
         ty = toNode.y;
-        return `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 35} ${sy + 35}, ${tx + 35} ${ty - 35}, ${tx} ${ty}`;
 
       case 'wat-pers':
         // Water bottom down around into Personnel
@@ -440,7 +440,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         sy = fromNode.y + 44;
         tx = toNode.x;
         ty = toNode.y + 44;
-        return `M ${sx} ${sy} C ${sx + 60} ${sy - 22}, ${tx - 60} ${ty - 22}, ${tx} ${ty}`;
+        return `M ${sx} ${sy} C ${sx + 60} ${sy - 25}, ${tx - 60} ${ty - 25}, ${tx} ${ty}`;
 
       default:
         // Default clean vertical S-curve
@@ -594,48 +594,66 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                 const pathData = getEdgePath(edge);
                 if (!pathData) return null;
 
-                // Perfectly calibrated ultra-bright neon colors
+                // Perfectly calibrated ultra-bright neon colors with equal perceived luminance and high saturation
                 const strokeColor = isIncoming ? '#00f2fe' : '#fbbf24';
                 const auraColor = isIncoming ? '#00c6ff' : '#f59e0b';
-                const filterId = isIncoming ? 'url(#neonGlowCyan)' : 'url(#neonGlowAmber)';
+                const haloColor = isIncoming ? '#0284c7' : '#d97706';
+                const coreColor = isIncoming ? '#e0faff' : '#fffbeb';
 
                 return (
-                  <g key={edge.id} className="transition-all duration-300">
+                  <g
+                    key={edge.id}
+                    className="transition-all duration-300"
+                    style={{
+                      filter: isIncoming
+                        ? 'drop-shadow(0 0 6px rgba(0, 242, 254, 0.75)) drop-shadow(0 0 14px rgba(0, 198, 255, 0.45))'
+                        : 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.75)) drop-shadow(0 0 14px rgba(245, 158, 11, 0.45))'
+                    }}
+                  >
                     {/* Layer 1: Wide Deep Neon Halo Aura */}
                     <path
                       d={pathData}
                       fill="none"
-                      stroke={auraColor}
-                      strokeWidth={12}
-                      strokeOpacity={0.4}
+                      stroke={haloColor}
+                      strokeWidth={14}
+                      strokeOpacity={0.3}
                       strokeLinecap="round"
                     />
 
-                    {/* Layer 2: Main Vivid Saturated Neon Conduit Beam */}
+                    {/* Layer 2: Medium Saturating Neon Aura */}
+                    <path
+                      d={pathData}
+                      fill="none"
+                      stroke={auraColor}
+                      strokeWidth={8}
+                      strokeOpacity={0.6}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Layer 3: Solid Vivid Saturated Neon Conduit Beam */}
                     <path
                       d={pathData}
                       fill="none"
                       stroke={strokeColor}
-                      strokeWidth={4}
+                      strokeWidth={3.5}
                       strokeOpacity={1.0}
                       strokeLinecap="round"
-                      filter={filterId}
                     />
 
-                    {/* Layer 3: High-Intensity White Hot Laser Core */}
+                    {/* Layer 4: Luminous High-Intensity Energy Core */}
                     <path
                       d={pathData}
                       fill="none"
-                      stroke="#ffffff"
-                      strokeWidth={1.5}
-                      strokeOpacity={0.9}
+                      stroke={coreColor}
+                      strokeWidth={1.2}
+                      strokeOpacity={0.95}
                       strokeLinecap="round"
                     />
 
-                    {/* Layer 4: Live Fast-Traveling Energized Photon Bead */}
-                    <circle r={5} fill="#ffffff" stroke={strokeColor} strokeWidth={2.5} filter={filterId}>
+                    {/* Layer 5: Live Fast-Traveling Energized Photon Bead */}
+                    <circle r={5} fill={coreColor} stroke={strokeColor} strokeWidth={2.5}>
                       <animateMotion
-                        dur="1.7s"
+                        dur="1.6s"
                         repeatCount="indefinite"
                         path={pathData}
                       />
