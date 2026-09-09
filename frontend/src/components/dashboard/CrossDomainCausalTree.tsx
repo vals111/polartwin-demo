@@ -548,10 +548,12 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           <GitCommit className="w-4 h-4 text-cyan-400" />
           <span>Inter-Domain Causal Propagation Architecture</span>
         </h2>
-        <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-          <Eye className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Hover node to isolate causality • Click node to open feature page</span>
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center gap-2 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span>Hover over any domain to reveal its causal links</span>
+          </span>
+        </div>
       </div>
 
       {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
@@ -573,26 +575,17 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                 </filter>
               </defs>
 
-              {/* Render Directed Causal Edges */}
-              {TREE_EDGES.map((edge) => {
+              {/* Render Directed Causal Edges ONLY when a domain is hovered */}
+              {hoveredNodeId && TREE_EDGES.map((edge) => {
                 const isIncoming = edge.to === hoveredNodeId;
                 const isOutgoing = edge.from === hoveredNodeId;
-                const isHighlighted = isIncoming || isOutgoing;
-                const isDimmed = hoveredNodeId && !isHighlighted;
+                if (!isIncoming && !isOutgoing) return null;
 
                 const pathData = getEdgePath(edge);
                 if (!pathData) return null;
 
-                const strokeColor = isIncoming
-                  ? '#06b6d4'
-                  : isOutgoing
-                  ? '#fbbf24'
-                  : isDimmed
-                  ? '#16314c'
-                  : '#1f486e';
-
-                const strokeWidth = isHighlighted ? 3.5 : 1.8;
-                const particleColor = isIncoming ? '#67e8f9' : isOutgoing ? '#fde047' : '#38bdf8';
+                const strokeColor = isIncoming ? '#06b6d4' : '#fbbf24';
+                const particleColor = isIncoming ? '#67e8f9' : '#fde047';
 
                 return (
                   <g key={edge.id} className="transition-all duration-300">
@@ -600,9 +593,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                     <path
                       d={pathData}
                       fill="none"
-                      stroke={isHighlighted ? strokeColor : '#091c2f'}
-                      strokeWidth={isHighlighted ? 7 : 4}
-                      strokeOpacity={isHighlighted ? 0.35 : 0.8}
+                      stroke={strokeColor}
+                      strokeWidth={8}
+                      strokeOpacity={0.25}
                       strokeLinecap="round"
                     />
 
@@ -611,22 +604,20 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                       d={pathData}
                       fill="none"
                       stroke={strokeColor}
-                      strokeWidth={strokeWidth}
-                      strokeOpacity={isDimmed ? 0.15 : 0.85}
+                      strokeWidth={3}
+                      strokeOpacity={0.95}
                       strokeLinecap="round"
-                      filter={isHighlighted ? 'url(#neonGlow)' : undefined}
+                      filter="url(#neonGlow)"
                     />
 
                     {/* Live Traveling Energy Photon */}
-                    {!isDimmed && (
-                      <circle r={isHighlighted ? 4.5 : 3} fill={particleColor} filter="url(#neonGlow)">
-                        <animateMotion
-                          dur={isHighlighted ? '1.8s' : '3.2s'}
-                          repeatCount="indefinite"
-                          path={pathData}
-                        />
-                      </circle>
-                    )}
+                    <circle r={4.5} fill={particleColor} filter="url(#neonGlow)">
+                      <animateMotion
+                        dur="1.8s"
+                        repeatCount="indefinite"
+                        path={pathData}
+                      />
+                    </circle>
                   </g>
                 );
               })}
