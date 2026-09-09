@@ -495,35 +495,6 @@ export const EnvironmentPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Official Norwegian Meteorological Institute Attribution Banner */}
-      <div className="glass-panel p-4 rounded-2xl border border-polar-border/80 bg-polar-darker/60 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
-            <Radio className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div>
-            <div className="text-white font-bold flex items-center gap-2">
-              <span>Weather data from the Norwegian Meteorological Institute</span>
-              <span className="bg-cyan-500/20 text-cyan-300 text-[10px] px-2 py-0.5 rounded border border-cyan-500/40">
-                MET Norway Locationforecast 2.0
-              </span>
-            </div>
-            <div className="text-slate-400 text-[11px] mt-0.5">
-              Live observational & forecast feeds for Maitri ({stationCoords.lat}°, {stationCoords.lon}°) &amp; Bharati (&minus;69.4080°, 76.1874°). Authenticated via User-Agent compliant fair-use protocol.
-            </div>
-          </div>
-        </div>
-        <a
-          href="https://api.met.no/weatherapi/locationforecast/2.0/documentation"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap bg-polar-dark px-3 py-1.5 rounded-lg border border-polar-border text-[11px]"
-        >
-          <span>MET API Docs</span>
-          <ExternalLink className="w-3 h-3" />
-        </a>
-      </div>
-
       {/* Blizzard Alert Banner */}
       {isBlizzard && (
         <div className="glass-panel p-4 rounded-2xl border border-red-500/60 bg-red-500/10 animate-pulse">
