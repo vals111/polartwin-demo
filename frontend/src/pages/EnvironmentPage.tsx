@@ -11,52 +11,57 @@ import {
 } from 'lucide-react';
 
 // ─── Animated Mercury Thermometer ───────────────────────────────────────────
-const MercuryThermometer: React.FC<{ tempC: number }> = ({ tempC }) => {
+const MercuryThermometer: React.FC<{ tempC: number; windChill?: number }> = ({ tempC, windChill }) => {
   const MIN = -60;
   const MAX = 10;
   const pct = Math.max(0, Math.min(100, ((tempC - MIN) / (MAX - MIN)) * 100));
   const color = tempC < -40 ? '#818cf8' : tempC < -20 ? '#06b6d4' : tempC < 0 ? '#3b82f6' : '#ef4444';
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Ambient Temp</div>
-      <div className="flex items-end gap-3">
-        {/* Thermometer SVG */}
-        <svg width="36" height="160" viewBox="0 0 36 160">
-          {/* Scale ticks */}
-          {[-60, -40, -20, 0, 10].map((t) => {
-            const ty = 10 + ((MAX - t) / (MAX - MIN)) * 120;
-            return (
-              <g key={t}>
-                <line x1="24" y1={ty} x2="30" y2={ty} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                <text x="22" y={ty + 3} fill="#64748b" fontSize="7" textAnchor="end" fontFamily="monospace">
-                  {t}°
-                </text>
-              </g>
-            );
-          })}
-          {/* Tube outline */}
-          <rect x="14" y="10" width="8" height="120" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-          {/* Mercury fill (animates via CSS) */}
-          <rect
-            x="15"
-            y={10 + 120 - (pct / 100) * 120}
-            width="6"
-            height={(pct / 100) * 120}
-            rx="3"
-            fill={color}
-            style={{ transition: 'all 1s ease-out', filter: `drop-shadow(0 0 4px ${color})` }}
-          />
-          {/* Bulb */}
-          <circle cx="18" cy="140" r="10" fill={color} style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
-          <circle cx="18" cy="140" r="6" fill="rgba(255,255,255,0.2)" />
-        </svg>
-        <div>
-          <div className="text-4xl font-black font-mono leading-none" style={{ color }}>
+    <div className="flex items-center justify-center gap-3.5">
+      {/* Thermometer SVG */}
+      <svg width="34" height="130" viewBox="0 0 34 130">
+        {/* Scale ticks */}
+        {[-60, -40, -20, 0, 10].map((t) => {
+          const ty = 8 + ((MAX - t) / (MAX - MIN)) * 92;
+          return (
+            <g key={t}>
+              <line x1="22" y1={ty} x2="28" y2={ty} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+              <text x="20" y={ty + 3} fill="#64748b" fontSize="6.5" textAnchor="end" fontFamily="monospace">
+                {t}°
+              </text>
+            </g>
+          );
+        })}
+        {/* Tube outline */}
+        <rect x="13" y="8" width="8" height="95" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        {/* Mercury fill (animates via CSS) */}
+        <rect
+          x="14"
+          y={8 + 95 - (pct / 100) * 95}
+          width="6"
+          height={(pct / 100) * 95}
+          rx="3"
+          fill={color}
+          style={{ transition: 'all 1s ease-out', filter: `drop-shadow(0 0 4px ${color})` }}
+        />
+        {/* Bulb */}
+        <circle cx="17" cy="114" r="10" fill={color} style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
+        <circle cx="17" cy="114" r="6" fill="rgba(255,255,255,0.2)" />
+      </svg>
+      <div className="flex flex-col">
+        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Ambient Temp</span>
+        <div className="flex items-baseline gap-1 mt-1">
+          <span className="text-3xl font-black font-mono leading-none tracking-tight" style={{ color }}>
             {tempC.toFixed(1)}
-          </div>
-          <div className="text-base font-mono text-slate-400 mt-1">°C</div>
+          </span>
+          <span className="text-sm font-mono text-slate-400 font-bold">°C</span>
         </div>
+        {windChill !== undefined && (
+          <div className="text-[9px] font-mono text-blue-300 mt-2 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/25">
+            Wind Chill: <span className="font-bold text-white">{windChill}°C</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -543,35 +548,28 @@ export const EnvironmentPage: React.FC = () => {
               <span>Primary Instrument Readout</span>
               <span className="text-emerald-400 text-[9px] font-bold">LIVE TELEMETRY</span>
             </div>
-            <div className="flex flex-wrap justify-around items-center gap-4">
-              <MercuryThermometer tempC={temp} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 1. Ambient Temperature */}
+              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-cyan-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
+                <MercuryThermometer tempC={temp} windChill={windChill} />
+              </div>
 
-              <div className="flex flex-col items-center gap-1">
+              {/* 2. Solar Radiation */}
+              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-amber-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
                 <IndustrialGauge
                   value={solar}
                   min={0}
-                  max={800}
+                  max={600}
                   unit="W/m²"
                   label="Solar Radiation"
                   size={135}
                   accentColor="#f59e0b"
-                  warningThreshold={600}
+                  warningThreshold={450}
                 />
               </div>
 
-              <div className="flex flex-col items-center gap-1">
-                <IndustrialGauge
-                  value={humidity}
-                  min={0}
-                  max={100}
-                  unit="%"
-                  label="Rel. Humidity"
-                  size={135}
-                  accentColor="#38bdf8"
-                />
-              </div>
-
-              <div className="flex flex-col items-center gap-1">
+              {/* 3. Barometric Pressure */}
+              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-purple-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
                 <IndustrialGauge
                   value={pressure}
                   min={940}
@@ -582,6 +580,19 @@ export const EnvironmentPage: React.FC = () => {
                   accentColor="#a78bfa"
                   warningThreshold={965}
                   criticalThreshold={950}
+                />
+              </div>
+
+              {/* 4. Relative Humidity */}
+              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-sky-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
+                <IndustrialGauge
+                  value={humidity}
+                  min={0}
+                  max={100}
+                  unit="%"
+                  label="Rel. Humidity"
+                  size={135}
+                  accentColor="#38bdf8"
                 />
               </div>
             </div>
