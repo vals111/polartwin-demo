@@ -192,7 +192,7 @@ export const StationTwinPage: React.FC = () => {
       <StationFlowTopology stationId={stationId} />
 
       {/* Causal graph */}
-      <CausalGraphViewer snapshot={snapshot} risk={risk} />
+      <CausalGraphViewer snapshot={snapshot} risk={risk} stationId={stationId} />
     </div>
   );
 };
