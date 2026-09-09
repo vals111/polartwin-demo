@@ -193,6 +193,82 @@ const VisibilityBeam: React.FC<{ km: number; maxKm?: number }> = ({ km, maxKm = 
   );
 };
 
+// ─── Interactive 24-Hour Forecast Archive Card ────────────────────────────────
+const ForecastArchiveCard: React.FC<{
+  label: string;
+  data: number[];
+  color: string;
+  unit: string;
+  current: number;
+  timestamps?: string[];
+}> = ({ label, data, color, unit, current, timestamps }) => {
+  const [hovered, setHovered] = useState<{ val: number; time: string } | null>(null);
+  const min = data.length ? Math.min(...data) : current;
+  const max = data.length ? Math.max(...data) : current;
+
+  return (
+    <div className="bg-gradient-to-br from-slate-900/80 via-polar-dark/95 to-slate-950/90 p-2.5 rounded-xl border border-polar-border/60 hover:border-cyan-500/40 transition-all flex flex-col justify-between h-full shadow-sm group">
+      {/* Top Header */}
+      <div className="flex items-center justify-between text-xs font-mono mb-1">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">{label}</span>
+          <span className="text-[8px] text-slate-500 hidden sm:inline">
+            ({min.toFixed(0)} ~ {max.toFixed(0)} {unit})
+          </span>
+        </div>
+        <div className="text-right">
+          {hovered ? (
+            <div className="flex items-baseline gap-1">
+              <span className="text-[8px] text-cyan-400 uppercase font-bold">{hovered.time}:</span>
+              <span className="text-xs font-black font-mono text-white tracking-tight">
+                {hovered.val.toFixed(1)} {unit}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-baseline gap-1">
+              <span className="text-[8px] text-slate-500 uppercase">Live:</span>
+              <span className="text-xs font-black font-mono" style={{ color }}>
+                {current.toFixed(1)} {unit}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chart Canvas filling available height */}
+      <div className="flex-1 w-full min-h-[48px]">
+        <SparklineChart
+          data={data}
+          color={color}
+          height="100%"
+          showArea
+          interactive
+          unit={unit}
+          label={label}
+          timestamps={timestamps}
+          onHover={(val, time) => {
+            if (val !== null && time !== null) {
+              setHovered({ val, time });
+            } else {
+              setHovered(null);
+            }
+          }}
+        />
+      </div>
+
+      {/* Timeline labels at the bottom of each graph */}
+      <div className="flex justify-between text-[8px] font-mono text-slate-500 pt-0.5 border-t border-slate-800/60 px-0.5">
+        <span>-24h</span>
+        <span>-18h</span>
+        <span>-12h</span>
+        <span>-6h</span>
+        <span className="text-cyan-400 font-bold">Now</span>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const EnvironmentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -271,6 +347,16 @@ export const EnvironmentPage: React.FC = () => {
   const pressureHistory = metWeather?.forecast_24h?.length
     ? metWeather.forecast_24h.map((f: any) => f.pressure)
     : genHistory(pressure, 2);
+
+  const forecastTimestamps = metWeather?.forecast_24h?.length
+    ? metWeather.forecast_24h.map((f: any, i: number) => {
+        const hoursAgo = metWeather.forecast_24h.length - 1 - i;
+        const timeStr = f.time
+          ? new Date(f.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+          : '';
+        return hoursAgo === 0 ? 'Now' : `${timeStr ? `${timeStr} ` : ''}(-${hoursAgo}h)`;
+      })
+    : Array.from({ length: 24 }, (_, i) => (i === 23 ? 'Now' : `-${23 - i}h`));
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -569,39 +655,50 @@ export const EnvironmentPage: React.FC = () => {
 
         {/* ── RIGHT: 24h Trends & Sensor Array (col-span-1) ── */}
         <div className="xl:col-span-1 glass-panel p-4 rounded-2xl border border-polar-border flex flex-col justify-between gap-3 h-full">
-          <div className="flex items-center justify-between">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">24-Hour Forecast Archive</div>
-            <span className="text-[9px] font-mono text-cyan-400 font-bold">MET Timeseries</span>
+          {/* Header */}
+          <div className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-slate-900/90 via-polar-dark to-slate-950/90 border border-polar-border/80 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
+                24-Hour Forecast Archive
+              </span>
+            </div>
+            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
+              MET TIMESERIES
+            </span>
           </div>
 
-          {/* Sparkline trends */}
-          <div className="space-y-2.5">
+          {/* Evenly Spaced 4 Archive Trend Graphs Filling Empty Space */}
+          <div className="grid grid-rows-4 gap-2.5 flex-1 min-h-[400px]">
             {[
               { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C', current: temp },
               { label: 'Wind Velocity', data: windHistory, color: '#818cf8', unit: 'km/h', current: wind },
               { label: 'Solar Radiation', data: solarHistory, color: '#f59e0b', unit: 'W/m²', current: solar },
               { label: 'Barometric Pressure', data: pressureHistory, color: '#a78bfa', unit: 'hPa', current: pressure },
             ].map((trend) => (
-              <div key={trend.label} className="space-y-1">
-                <div className="flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-slate-400 uppercase tracking-wider">{trend.label}</span>
-                  <span className="font-bold" style={{ color: trend.color }}>
-                    {trend.current.toFixed(1)}{trend.unit}
-                  </span>
-                </div>
-                <SparklineChart data={trend.data} color={trend.color} height={42} showArea />
-              </div>
+              <ForecastArchiveCard
+                key={trend.label}
+                label={trend.label}
+                data={trend.data}
+                color={trend.color}
+                unit={trend.unit}
+                current={trend.current}
+                timestamps={forecastTimestamps}
+              />
             ))}
           </div>
 
-          {/* Sensor Array Status Grid (fills the bottom without dead space) */}
-          <div className="pt-2.5 border-t border-polar-border/60 space-y-1.5">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Meteorological Sensors</div>
-            <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+          {/* Meteorological Sensors Array */}
+          <div className="pt-2 border-t border-polar-border/60 space-y-1.5">
+            <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-wider text-slate-400">
+              <span>Meteorological Sensors</span>
+              <span className="text-emerald-400 font-bold">6/6 ONLINE</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 text-[9px] font-mono">
               {['Anemometer', 'Pyranometer', 'Thermistor', 'Barograph', 'Ceilometer', 'Hygrometer'].map((sensor) => (
-                <div key={sensor} className="bg-polar-dark/80 px-2 py-1.5 rounded-lg border border-polar-border/40 flex items-center justify-between">
-                  <span className="text-slate-400 text-[10px]">{sensor}</span>
-                  <span className="flex items-center gap-1 text-emerald-400 text-[9px]">
+                <div key={sensor} className="bg-slate-900/60 px-2 py-1.5 rounded-lg border border-polar-border/40 flex items-center justify-between">
+                  <span className="text-slate-400 text-[9px]">{sensor}</span>
+                  <span className="flex items-center gap-1 text-emerald-400 text-[8px] font-bold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     ONLINE
                   </span>
