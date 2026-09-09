@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../../store/telemetryStore';
-import { ExternalLink, RotateCcw, Play, Pause } from 'lucide-react';
+import { ExternalLink, RotateCcw, Play, Pause, X, Pin } from 'lucide-react';
 
 interface Domain3DDef {
   id: string;
@@ -83,10 +83,24 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
   const snapshot = liveSnapshot[stationId];
 
   const [hoveredDomain, setHoveredDomain] = useState<Domain3DDef | null>(null);
+  const [pinnedDomain, setPinnedDomain] = useState<Domain3DDef | null>(null);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
 
   const controlsRef = useRef<OrbitControls | null>(null);
   const hoveredDomainRef = useRef<Domain3DDef | null>(null);
+  const pinnedDomainRef = useRef<Domain3DDef | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHoveringCardRef = useRef<boolean>(false);
+  const updateGraphStatesRef = useRef<((id: string | null) => void) | null>(null);
+  const autoRotateRef = useRef<boolean>(autoRotate);
+
+  useEffect(() => {
+    autoRotateRef.current = autoRotate;
+  }, [autoRotate]);
+
+  useEffect(() => {
+    pinnedDomainRef.current = pinnedDomain;
+  }, [pinnedDomain]);
 
   // Compute live telemetry for hovered tooltip
   const liveTelemetry = (domainId: string) => {
@@ -243,9 +257,13 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       group.add(sphereMesh);
       nodeMeshes.push(sphereMesh);
 
-      // Invisible expanded hit target sphere (radius 36) for effortless, fluid hovering
-      const hitGeo = new THREE.SphereGeometry(36, 16, 16);
-      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      // Expanded hit target sphere (radius 46) - transparent material with opacity 0 so raycasting intersects reliably without clipping
+      const hitGeo = new THREE.SphereGeometry(46, 16, 16);
+      const hitMat = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0.0,
+        depthWrite: false
+      });
       const hitMesh = new THREE.Mesh(hitGeo, hitMat);
       hitMesh.userData = { domain: dom };
       group.add(hitMesh);
@@ -474,7 +492,10 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       });
 
       // 2. Domain Nodes (Preserve individual colors + highlight active drivers/impacts)
-      nodeDataList.forEach(({ dom, group, sphereMat, haloMat, innerHaloMat, spriteMat }) => {
+      nodeDataList.forEach(({ dom, group, sphereMesh, sphereMat, haloMesh, haloMat, innerHaloMat, spriteMat }) => {
+        // Keep group.scale strictly at (1, 1, 1) so hitMesh world hitbox stays completely static and raycaster never jitters!
+        group.scale.set(1, 1, 1);
+
         if (!targetId) {
           // Nominal State: all 9 nodes visible in their distinctive individual colors
           sphereMat.color.setStyle(dom.color);
@@ -485,7 +506,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           innerHaloMat.color.setStyle(dom.color);
           innerHaloMat.opacity = 0.55;
           spriteMat.opacity = 0.95;
-          group.scale.set(1, 1, 1);
+          sphereMesh.scale.set(1, 1, 1);
+          haloMesh.scale.set(1, 1, 1);
           return;
         }
 
@@ -494,7 +516,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         const isDownstream = CONNECTIONS_3D.some((c) => c.from === targetId && c.to === dom.id);
 
         if (isHoveredNode) {
-          // Hovered Domain: peak luminance in its signature color + expanded aura
+          // Active Domain: peak luminance in its signature color + expanded aura
           sphereMat.color.setStyle(dom.color);
           sphereMat.emissive.setStyle(dom.color);
           sphereMat.emissiveIntensity = 1.8;
@@ -503,7 +525,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           innerHaloMat.color.setStyle(dom.color);
           innerHaloMat.opacity = 0.95;
           spriteMat.opacity = 1.0;
-          group.scale.set(1.15, 1.15, 1.15);
+          sphereMesh.scale.set(1.2, 1.2, 1.2);
+          haloMesh.scale.set(1.15, 1.15, 1.15);
         } else if (isUpstream) {
           // Upstream Driver: Cyan ring highlight + individual domain core
           sphereMat.color.setStyle(dom.color);
@@ -514,7 +537,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           innerHaloMat.color.setStyle(dom.color);
           innerHaloMat.opacity = 0.7;
           spriteMat.opacity = 1.0;
-          group.scale.set(1.08, 1.08, 1.08);
+          sphereMesh.scale.set(1.08, 1.08, 1.08);
+          haloMesh.scale.set(1.08, 1.08, 1.08);
         } else if (isDownstream) {
           // Downstream Impact: Amber ring highlight + individual domain core
           sphereMat.color.setStyle(dom.color);
@@ -525,23 +549,30 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           innerHaloMat.color.setStyle(dom.color);
           innerHaloMat.opacity = 0.7;
           spriteMat.opacity = 1.0;
-          group.scale.set(1.08, 1.08, 1.08);
+          sphereMesh.scale.set(1.08, 1.08, 1.08);
+          haloMesh.scale.set(1.08, 1.08, 1.08);
         } else {
           // Dimmed unrelated domain node
           sphereMat.emissiveIntensity = 0.15;
           haloMat.opacity = 0.12;
           innerHaloMat.opacity = 0.08;
           spriteMat.opacity = 0.2;
-          group.scale.set(0.92, 0.92, 0.92);
+          sphereMesh.scale.set(0.92, 0.92, 0.92);
+          haloMesh.scale.set(0.92, 0.92, 0.92);
         }
       });
     };
+
+    updateGraphStatesRef.current = updateGraphStates;
 
     // 10. Raycaster & Pointer Event Listeners
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2(-999, -999);
 
     const onPointerMove = (e: MouseEvent) => {
+      // If user is actively hovering over the callout card, do not disturb state
+      if (isHoveringCardRef.current) return;
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -550,19 +581,35 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       const intersects = raycaster.intersectObjects(nodeMeshes);
 
       if (intersects.length > 0) {
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
         const hit = intersects[0].object as THREE.Mesh;
         const dom = hit.userData.domain as Domain3DDef;
         if (hoveredDomainRef.current?.id !== dom.id) {
           hoveredDomainRef.current = dom;
           setHoveredDomain(dom);
-          updateGraphStates(dom.id);
+          // If no domain is explicitly pinned, activate this hovered domain
+          if (!pinnedDomainRef.current) {
+            updateGraphStates(dom.id);
+          }
         }
         renderer.domElement.style.cursor = 'pointer';
       } else {
-        if (hoveredDomainRef.current !== null) {
-          hoveredDomainRef.current = null;
-          setHoveredDomain(null);
-          updateGraphStates(null);
+        // Hysteresis / debounce delay: gives smooth grace time before dropping hover
+        if (hoveredDomainRef.current !== null && !hoverTimeoutRef.current) {
+          hoverTimeoutRef.current = setTimeout(() => {
+            hoverTimeoutRef.current = null;
+            if (isHoveringCardRef.current) return;
+            hoveredDomainRef.current = null;
+            setHoveredDomain(null);
+            if (pinnedDomainRef.current) {
+              updateGraphStates(pinnedDomainRef.current.id);
+            } else {
+              updateGraphStates(null);
+            }
+          }, 350);
         }
         renderer.domElement.style.cursor = 'grab';
       }
@@ -579,12 +626,49 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       if (intersects.length > 0) {
         const hit = intersects[0].object as THREE.Mesh;
         const dom = hit.userData.domain as Domain3DDef;
+        if (pinnedDomainRef.current?.id === dom.id) {
+          // Clicking the already pinned domain unpins it
+          pinnedDomainRef.current = null;
+          setPinnedDomain(null);
+          if (!hoveredDomainRef.current) {
+            updateGraphStates(null);
+          }
+        } else {
+          // Pin this domain permanently
+          pinnedDomainRef.current = dom;
+          setPinnedDomain(dom);
+          updateGraphStates(dom.id);
+        }
+      } else {
+        // Click on empty 3D space: unpin and clear hover
+        if (pinnedDomainRef.current !== null) {
+          pinnedDomainRef.current = null;
+          setPinnedDomain(null);
+          hoveredDomainRef.current = null;
+          setHoveredDomain(null);
+          updateGraphStates(null);
+        }
+      }
+    };
+
+    const onDblClick = (e: MouseEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(nodeMeshes);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0].object as THREE.Mesh;
+        const dom = hit.userData.domain as Domain3DDef;
         navigate(`/station/${stationId}/${dom.route}`);
       }
     };
 
     renderer.domElement.addEventListener('pointermove', onPointerMove);
     renderer.domElement.addEventListener('click', onClick);
+    renderer.domElement.addEventListener('dblclick', onDblClick);
 
     // 11. Resize Handler
     const handleResize = () => {
@@ -626,10 +710,14 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         }
       });
 
-      // Dynamically project hovered 3D node to screen space with SMART STANDOFF DISTANCE
-      // The card is positioned far outward into unobstructed space so all incoming & outgoing links are 100% visible
-      if (hoveredDomainRef.current && calloutRef.current) {
-        const v = new THREE.Vector3(...hoveredDomainRef.current.pos);
+      // Auto-rotation pauses automatically when a globe or card is hovered/pinned so it never rotates out from under cursor!
+      const isTargetActive = !!(pinnedDomainRef.current || hoveredDomainRef.current || isHoveringCardRef.current);
+      controls.autoRotate = autoRotateRef.current && !isTargetActive;
+
+      // Project active (pinned or hovered) 3D node to screen space with SMART STANDOFF DISTANCE
+      const targetDomain = pinnedDomainRef.current || hoveredDomainRef.current;
+      if (targetDomain && calloutRef.current) {
+        const v = new THREE.Vector3(...targetDomain.pos);
         v.project(camera);
 
         if (v.z > 1.0) {
@@ -646,8 +734,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           const nx = (v.x * 0.5 + 0.5) * currentW;
           const ny = (-v.y * 0.5 + 0.5) * height;
 
-          const cardW = 300;
-          const cardH = 245;
+          const cardW = 310;
+          const cardH = 265;
 
           // ── SMART OUTWARD STANDOFF CALCULATION ──
           // Links congregate inward toward other constellation domains.
@@ -657,7 +745,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           let cardX: number;
 
           if (isRightHalf) {
-            // Push rightward with at least 190px standoff
+            // Push rightward with at least 195px standoff
             const preferredX = nx + 195;
             if (preferredX + cardW <= currentW - 20) {
               cardX = preferredX;
@@ -668,7 +756,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
               cardX = Math.max(20, nx - cardW - 195);
             }
           } else {
-            // Push leftward with at least 190px standoff
+            // Push leftward with at least 195px standoff
             const preferredX = nx - cardW - 195;
             if (preferredX >= 20) {
               cardX = preferredX;
@@ -696,10 +784,12 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
             calloutLineRef.current.setAttribute('y1', `${ny}`);
             calloutLineRef.current.setAttribute('x2', `${attachX}`);
             calloutLineRef.current.setAttribute('y2', `${attachY}`);
+            calloutLineRef.current.setAttribute('stroke', targetDomain.color);
           }
           if (reticleCircleRef.current) {
             reticleCircleRef.current.setAttribute('cx', `${nx}`);
             reticleCircleRef.current.setAttribute('cy', `${ny}`);
+            reticleCircleRef.current.setAttribute('stroke', targetDomain.color);
           }
         }
       } else if (calloutRef.current) {
@@ -716,13 +806,19 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     // 13. Cleanup on Unmount
     return () => {
       cancelAnimationFrame(animId);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      updateGraphStatesRef.current = null;
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('click', onClick);
+      renderer.domElement.removeEventListener('dblclick', onDblClick);
       renderer.dispose();
       scene.clear();
     };
-  }, [stationId, autoRotate, navigate]);
+  }, [stationId, navigate]);
 
   const handleResetCamera = () => {
     if (controlsRef.current) {
@@ -730,17 +826,18 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     }
   };
 
-  const currentHoverKpi = hoveredDomain ? liveTelemetry(hoveredDomain.id) : null;
+  const activeDomain = pinnedDomain || hoveredDomain;
+  const currentKpi = activeDomain ? liveTelemetry(activeDomain.id) : null;
 
-  // Compute active incoming drivers and outgoing impacts for the hovered domain
-  const incomingDomains = hoveredDomain
-    ? CONNECTIONS_3D.filter((c) => c.to === hoveredDomain.id)
+  // Compute active incoming drivers and outgoing impacts for the active domain
+  const incomingDomains = activeDomain
+    ? CONNECTIONS_3D.filter((c) => c.to === activeDomain.id)
         .map((c) => DOMAINS_3D.find((d) => d.id === c.from))
         .filter(Boolean) as Domain3DDef[]
     : [];
 
-  const outgoingDomains = hoveredDomain
-    ? CONNECTIONS_3D.filter((c) => c.from === hoveredDomain.id)
+  const outgoingDomains = activeDomain
+    ? CONNECTIONS_3D.filter((c) => c.from === activeDomain.id)
         .map((c) => DOMAINS_3D.find((d) => d.id === c.to))
         .filter(Boolean) as Domain3DDef[]
     : [];
@@ -748,8 +845,6 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
   return (
     <div ref={containerRef} className="relative w-full rounded-2xl overflow-hidden bg-[#020814] border border-polar-border/60 select-none">
       <canvas ref={canvasRef} className="w-full block" style={{ height: '680px' }} />
-
-
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         <button
@@ -792,7 +887,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           ref={reticleCircleRef}
           r={30}
           fill="none"
-          stroke={hoveredDomain ? hoveredDomain.color : '#00f2fe'}
+          stroke={activeDomain ? activeDomain.color : '#00f2fe'}
           strokeWidth={1.8}
           strokeDasharray="5 3"
           opacity={0.85}
@@ -803,7 +898,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         {/* High-tech laser tracer line connecting domain to the offset hover card */}
         <line
           ref={calloutLineRef}
-          stroke={hoveredDomain ? hoveredDomain.color : '#00f2fe'}
+          stroke={activeDomain ? activeDomain.color : '#00f2fe'}
           strokeWidth={1.8}
           strokeDasharray="4 3"
           opacity={0.75}
@@ -815,42 +910,97 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       {/* ── Floating Holographic Callout Card (Offset at a safe standoff distance so all links are viewed perfectly) ── */}
       <div
         ref={calloutRef}
-        className="absolute top-0 left-0 z-30 pointer-events-none transition-opacity duration-150"
+        className="absolute top-0 left-0 z-30 pointer-events-auto transition-opacity duration-150"
         style={{ display: 'none', willChange: 'transform' }}
+        onMouseEnter={() => {
+          isHoveringCardRef.current = true;
+          if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+          }
+        }}
+        onMouseLeave={() => {
+          isHoveringCardRef.current = false;
+          if (!pinnedDomainRef.current) {
+            hoverTimeoutRef.current = setTimeout(() => {
+              hoverTimeoutRef.current = null;
+              if (isHoveringCardRef.current) return;
+              hoveredDomainRef.current = null;
+              setHoveredDomain(null);
+              updateGraphStatesRef.current?.(null);
+            }, 250);
+          }
+        }}
       >
-        {hoveredDomain && currentHoverKpi && (
+        {activeDomain && currentKpi && (
           <div
-            className="p-4 rounded-2xl border-2 shadow-2xl bg-[#020b18]/90 w-[300px] text-xs font-mono backdrop-blur-xl"
+            className="p-4 rounded-2xl border-2 shadow-2xl bg-[#020b18]/95 w-[310px] text-xs font-mono backdrop-blur-xl transition-all"
             style={{
-              borderColor: hoveredDomain.color,
-              boxShadow: `0 0 35px ${hoveredDomain.color}35`
+              borderColor: activeDomain.color,
+              boxShadow: `0 0 35px ${activeDomain.color}40`
             }}
           >
-            {/* Header: Signature Color Dot, Name, Role Badge */}
+            {/* Header: Signature Color Dot, Name, Role Badge & Pin/Unpin action */}
             <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-polar-border/60">
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className="w-3 h-3 rounded-full flex-shrink-0 animate-pulse"
-                  style={{ background: hoveredDomain.color, boxShadow: `0 0 10px ${hoveredDomain.color}` }}
+                  style={{ background: activeDomain.color, boxShadow: `0 0 10px ${activeDomain.color}` }}
                 />
-                <span className="font-black text-sm text-white truncate">{hoveredDomain.name}</span>
+                <span className="font-black text-sm text-white truncate">{activeDomain.name}</span>
               </div>
-              <span
-                className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0"
-                style={{ background: `${hoveredDomain.color}25`, color: hoveredDomain.color, border: `1px solid ${hoveredDomain.color}40` }}
-              >
-                {hoveredDomain.role}
-              </span>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {pinnedDomain ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinnedDomain(null);
+                      pinnedDomainRef.current = null;
+                      if (!hoveredDomainRef.current) {
+                        updateGraphStatesRef.current?.(null);
+                      } else {
+                        updateGraphStatesRef.current?.(hoveredDomainRef.current.id);
+                      }
+                    }}
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 transition-colors text-[9px] font-bold cursor-pointer"
+                    title="Click to Unpin"
+                  >
+                    <Pin className="w-2.5 h-2.5 fill-cyan-400" />
+                    <span>PINNED</span>
+                    <X className="w-2.5 h-2.5 ml-0.5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinnedDomain(activeDomain);
+                      pinnedDomainRef.current = activeDomain;
+                      updateGraphStatesRef.current?.(activeDomain.id);
+                    }}
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 transition-colors text-[9px] font-bold cursor-pointer"
+                    title="Pin permanently"
+                  >
+                    <Pin className="w-2.5 h-2.5" />
+                    <span>PIN</span>
+                  </button>
+                )}
+                <span
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
+                  style={{ background: `${activeDomain.color}25`, color: activeDomain.color, border: `1px solid ${activeDomain.color}40` }}
+                >
+                  {activeDomain.role}
+                </span>
+              </div>
             </div>
 
             {/* Live Telemetry KPI */}
             <div className="mt-2.5 flex items-baseline justify-between">
               <span className="text-xl font-black text-white font-mono tracking-tight">
-                {currentHoverKpi.kpi}
+                {currentKpi.kpi}
               </span>
-              <span className="text-[10px] text-slate-400">{currentHoverKpi.sub}</span>
+              <span className="text-[10px] text-slate-400">{currentKpi.sub}</span>
             </div>
-            <div className="mt-0.5 text-[10.5px] text-cyan-300 font-semibold">{currentHoverKpi.status}</div>
+            <div className="mt-0.5 text-[10.5px] text-cyan-300 font-semibold">{currentKpi.status}</div>
 
             {/* Causal Conduit Breakdown: Incoming Drivers (Cyan) & Outgoing Impacts (Amber) */}
             <div className="mt-3 pt-2.5 border-t border-polar-border/40 space-y-2">
@@ -861,12 +1011,19 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
                 <div className="flex flex-wrap gap-1">
                   {incomingDomains.length > 0 ? (
                     incomingDomains.map((d) => (
-                      <span
+                      <button
                         key={d.id}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/50 text-cyan-200 border border-cyan-500/30"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPinnedDomain(d);
+                          pinnedDomainRef.current = d;
+                          updateGraphStatesRef.current?.(d.id);
+                        }}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 hover:bg-cyan-800 text-cyan-200 border border-cyan-500/30 hover:border-cyan-400 transition-colors cursor-pointer"
+                        title={`Focus ${d.shortName}`}
                       >
                         {d.shortName}
-                      </span>
+                      </button>
                     ))
                   ) : (
                     <span className="text-[9px] text-slate-500 italic">Root Primary Driver</span>
@@ -881,12 +1038,19 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
                 <div className="flex flex-wrap gap-1">
                   {outgoingDomains.length > 0 ? (
                     outgoingDomains.map((d) => (
-                      <span
+                      <button
                         key={d.id}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/50 text-amber-200 border border-amber-500/30"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPinnedDomain(d);
+                          pinnedDomainRef.current = d;
+                          updateGraphStatesRef.current?.(d.id);
+                        }}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 hover:bg-amber-800 text-amber-200 border border-amber-500/30 hover:border-amber-400 transition-colors cursor-pointer"
+                        title={`Focus ${d.shortName}`}
                       >
                         {d.shortName}
-                      </span>
+                      </button>
                     ))
                   ) : (
                     <span className="text-[9px] text-slate-500 italic">Terminal Domain</span>
@@ -895,11 +1059,17 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
               </div>
             </div>
 
-            {/* Direct Click Navigation Prompt */}
-            <div className="mt-3 pt-2 border-t border-polar-border/40 flex items-center justify-between text-[11px] text-slate-300">
-              <span className="text-cyan-400 font-bold">Click node to open dashboard</span>
-              <ExternalLink className="w-3.5 h-3.5 text-cyan-300" />
-            </div>
+            {/* Direct Click Navigation Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/station/${stationId}/${activeDomain.route}`);
+              }}
+              className="mt-3 pt-2 border-t border-polar-border/40 w-full flex items-center justify-between text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer group"
+            >
+              <span className="text-cyan-400 font-bold group-hover:underline">Open {activeDomain.shortName} Dashboard</span>
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-300 group-hover:translate-x-0.5 transition-transform" />
+            </button>
           </div>
         )}
       </div>
