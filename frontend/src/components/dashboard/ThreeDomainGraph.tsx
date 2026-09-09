@@ -15,17 +15,24 @@ interface Domain3DDef {
   role: string;
 }
 
-// 9 Domains with individual signature colors: 9 completely distinct hues across the 360° spectrum
+// 9 Domains organized in strict 3D Causal Priority Tiers with distinct vibrant hues
 const DOMAINS_3D: Domain3DDef[] = [
-  { id: 'environment', name: 'Environment & Weather', shortName: 'Environment', route: 'environment', color: '#00e5ff', pos: [0, 200, 0], role: 'External Climate Driver' },
-  { id: 'logistics', name: 'Transportation & Logistics', shortName: 'Logistics', route: 'logistics', color: '#f97316', pos: [-240, 110, 100], role: 'Expedition Resupply' },
-  { id: 'fuel', name: 'Fuel Storage', shortName: 'Fuel', route: 'fuel', color: '#ef4444', pos: [-290, -10, -50], role: 'Hydrocarbon Reserve' },
-  { id: 'inventory', name: 'Storage & Inventory', shortName: 'Inventory', route: 'inventory', color: '#14b8a6', pos: [-140, -30, -220], role: 'Critical Spares' },
-  { id: 'water', name: 'Water Supply', shortName: 'Water', route: 'water', color: '#2563eb', pos: [260, 60, -100], role: 'Hydrological Cycle' },
-  { id: 'equipment', name: 'Equipment & Machinery', shortName: 'Equipment', route: 'equipment', color: '#22c55e', pos: [-80, -130, 90], role: 'Power Conversion' },
-  { id: 'energy', name: 'Energy & Power', shortName: 'Energy & Power', route: 'resources', color: '#eab308', pos: [110, -80, 160], role: 'Central Microgrid Hub' },
-  { id: 'personnel', name: 'Personnel & Occupancy', shortName: 'Personnel', route: 'personnel', color: '#ec4899', pos: [40, -210, -70], role: 'Crew Life Support' },
-  { id: 'communication', name: 'Communication', shortName: 'Communication', route: 'communication', color: '#8b5cf6', pos: [260, -120, 80], role: 'Real-Time Telemetry' },
+  // Tier 1: Primary Environmental & Supply Forcing (Top Level: Y = +190)
+  { id: 'environment', name: 'Environment & Weather', shortName: 'Environment', route: 'environment', color: '#00e5ff', pos: [-140, 190, 40], role: 'Tier 1 • Root Climate Driver' },
+  { id: 'logistics', name: 'Transportation & Logistics', shortName: 'Logistics', route: 'logistics', color: '#f97316', pos: [140, 190, -40], role: 'Tier 1 • Expedition Resupply' },
+
+  // Tier 2: Storage Reserves & Conversion Machinery (Upper-Mid Level: Y = +65)
+  { id: 'fuel', name: 'Fuel Storage', shortName: 'Fuel', route: 'fuel', color: '#ef4444', pos: [-260, 65, 50], role: 'Tier 2 • Energy Reserve' },
+  { id: 'inventory', name: 'Storage & Inventory', shortName: 'Inventory', route: 'inventory', color: '#14b8a6', pos: [0, 65, -200], role: 'Tier 2 • Critical Spares' },
+  { id: 'equipment', name: 'Equipment & Machinery', shortName: 'Equipment', route: 'equipment', color: '#22c55e', pos: [240, 65, 70], role: 'Tier 2 • Power Conversion' },
+
+  // Tier 3: Central Microgrid Power Core (Central Level: Y = -40)
+  { id: 'energy', name: 'Energy & Power', shortName: 'Energy & Power', route: 'resources', color: '#eab308', pos: [0, -40, 20], role: 'Tier 3 • Central Microgrid' },
+
+  // Tier 4: Life Support, Human Habitation & Telemetry (Bottom Level: Y = -180)
+  { id: 'water', name: 'Water Supply', shortName: 'Water', route: 'water', color: '#2563eb', pos: [-230, -180, 40], role: 'Tier 4 • Water Lifeline' },
+  { id: 'personnel', name: 'Personnel & Occupancy', shortName: 'Personnel', route: 'personnel', color: '#ec4899', pos: [0, -205, 130], role: 'Tier 4 • Habitat Habitation' },
+  { id: 'communication', name: 'Communication', shortName: 'Communication', route: 'communication', color: '#8b5cf6', pos: [230, -180, -40], role: 'Tier 4 • SCADA Telemetry' },
 ];
 
 // Pristine directed causal dependencies matching 2D cross-domain tree
@@ -36,17 +43,25 @@ interface Connection3DDef {
 }
 
 const CONNECTIONS_3D: Connection3DDef[] = [
+  // Tier 1 -> Tier 1 & Downward
   { from: 'environment', to: 'logistics', label: 'Katabatic wind & blizzards' },
-  { from: 'environment', to: 'water', label: 'Conduit freeze hazard' },
   { from: 'environment', to: 'energy', label: 'Heating demand & PV offset' },
+  { from: 'environment', to: 'water', label: 'Conduit freeze hazard' },
+  { from: 'environment', to: 'communication', label: 'Blizzard ionization & RF attenuation' },
   { from: 'logistics', to: 'fuel', label: 'Annual diesel replenishment' },
   { from: 'logistics', to: 'inventory', label: 'Spares & consumables restock' },
-  { from: 'fuel', to: 'energy', label: '17.5 L/hr diesel supply' },
+
+  // Tier 2 -> Tier 2 & Tier 3
   { from: 'inventory', to: 'equipment', label: 'Bearings & filter staging' },
+  { from: 'fuel', to: 'energy', label: '17.5 L/hr diesel supply' },
   { from: 'equipment', to: 'energy', label: 'Genset alternator uptime' },
+
+  // Tier 3 -> Tier 4
   { from: 'energy', to: 'water', label: '4.2 kW trace line heating' },
   { from: 'energy', to: 'personnel', label: 'Habitat heating & power' },
   { from: 'energy', to: 'communication', label: 'Radome UPS & uplink power' },
+
+  // Tier 4 peer interactions
   { from: 'water', to: 'personnel', label: 'Filtered potable hydration' },
   { from: 'personnel', to: 'communication', label: 'Operator SCADA command' },
 ];
@@ -330,10 +345,12 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       const toPos = nodeMap.get(conn.to);
       if (!fromPos || !toPos) return;
 
-      // Arc midpoint elevated outward
+      // Arc midpoint elevated outward away from graph center to prevent globe collision
       const mid = new THREE.Vector3().addVectors(fromPos, toPos).multiplyScalar(0.5);
+      const outwardDir = mid.clone().normalize();
+      if (outwardDir.length() < 0.1) outwardDir.set(0, 0, 1);
       const dist = fromPos.distanceTo(toPos);
-      mid.y += dist * 0.18;
+      mid.addScaledVector(outwardDir, dist * 0.22);
 
       const curve = new THREE.QuadraticBezierCurve3(fromPos, mid, toPos);
 
