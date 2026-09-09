@@ -7,8 +7,7 @@ import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Thermometer, Eye, Sun, AlertTriangle, ShieldCheck,
-  Wind, Waves, RefreshCw, Satellite, Radio, ExternalLink,
-  CheckCircle2, Compass, Droplets, Gauge
+  Wind, Waves, Satellite, Compass, Droplets, Gauge
 } from 'lucide-react';
 
 // ─── Animated Mercury Thermometer ───────────────────────────────────────────
@@ -150,16 +149,13 @@ export const EnvironmentPage: React.FC = () => {
 
   // Live MET Norway API state
   const [metWeather, setMetWeather] = useState<any>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-  const [syncSuccess, setSyncSuccess] = useState(false);
 
   // Station Geographic & Elevation Coordinates
   const stationCoords = isMaitri
     ? { lat: '-70.766667', lon: '11.731944', name: 'Maitri Station', region: 'Schirmacher Oasis', elevation: '117m' }
     : { lat: '-69.408030', lon: '76.187361', name: 'Bharati Station', region: 'Larsemann Hills', elevation: '35m' };
 
-  // Fetch real-time weather from MET Norway API (cached 10 min for fair-use)
+  // Automatic live sync every 3 seconds
   useEffect(() => {
     let isMounted = true;
     const fetchWeather = async () => {
@@ -167,38 +163,19 @@ export const EnvironmentPage: React.FC = () => {
         const data = await telemetryApi.getWeather(stationId);
         if (isMounted && data) {
           setMetWeather(data);
-          setLastSyncTime(new Date().toLocaleTimeString());
         }
       } catch (err) {
-        console.warn('Could not fetch MET Norway live weather:', err);
+        console.warn('Live weather poll error:', err);
       }
     };
 
     fetchWeather();
-    const timer = setInterval(fetchWeather, 300000); // 5-minute poll
+    const timer = setInterval(fetchWeather, 3000); // 3-second automatic live sync
     return () => {
       isMounted = false;
       clearInterval(timer);
     };
   }, [stationId]);
-
-  // Force live refresh trigger
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      const data = await telemetryApi.refreshWeather(stationId);
-      if (data) {
-        setMetWeather(data);
-        setLastSyncTime(new Date().toLocaleTimeString());
-        setSyncSuccess(true);
-        setTimeout(() => setSyncSuccess(false), 3000);
-      }
-    } catch (err) {
-      console.error('Failed to refresh MET Norway weather:', err);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   // Weather parameters: MET Norway live values with simulation fallbacks
   const liveCur = metWeather?.current;
@@ -234,120 +211,108 @@ export const EnvironmentPage: React.FC = () => {
     i < 6 || i > 20 ? 0 : Math.max(0, solar * Math.sin(((i - 6) / 14) * Math.PI))
   );
 
+  const pressureHistory = metWeather?.forecast_24h?.length
+    ? metWeather.forecast_24h.map((f: any) => f.pressure)
+    : genHistory(pressure, 2);
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header Banner with MET Norway Live Satellite Indicator */}
-      <div className={`glass-panel p-5 rounded-2xl border relative overflow-hidden ${isBlizzard ? 'border-red-500/50' : 'border-polar-border'}`}>
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Header Banner — Clean & Unified without manual buttons */}
+      <div className={`glass-panel px-5 py-3.5 rounded-2xl border relative overflow-hidden ${isBlizzard ? 'border-red-500/50' : 'border-polar-border'}`}>
         {isBlizzard && (
           <div className="absolute inset-0 bg-red-500/5 animate-pulse pointer-events-none" />
         )}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-black text-white capitalize">
-                {stationId} Antarctic Microclimate
-              </h1>
-              {/* MET Norway Live Status Pill */}
-              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-mono text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <Satellite className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-bold tracking-wider uppercase text-[10px]">MET Norway Live Feed</span>
-              </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-black text-white capitalize">
+              {stationId} Antarctic Microclimate
+            </h1>
+            {/* Live Auto-Sync Indicator */}
+            <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-mono text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Satellite className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="font-bold tracking-wider uppercase text-[10px]">Auto-Sync (3s)</span>
             </div>
-
-            {/* GPS Coordinates & Fair-Use Cache Badge */}
-            <div className="flex items-center gap-3 text-xs font-mono text-slate-400 flex-wrap">
-              <span className="flex items-center gap-1 text-slate-300">
-                <Compass className="w-3.5 h-3.5 text-cyan-400" />
-                <span>LAT {stationCoords.lat}° • LON {stationCoords.lon}°</span>
-                <span className="text-slate-500">({stationCoords.region}, {stationCoords.elevation})</span>
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="text-slate-400">
-                Fair-Use Cache (10m TTL)
-              </span>
-            </div>
+            {/* Coordinates */}
+            <span className="text-xs font-mono text-slate-400 flex items-center gap-1">
+              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+              <span>LAT {stationCoords.lat}° • LON {stationCoords.lon}°</span>
+              <span className="text-slate-500">({stationCoords.region}, {stationCoords.elevation})</span>
+            </span>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Sync Live Weather Button */}
-            <button
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono border transition-all ${
-                syncSuccess
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                  : 'bg-polar-darker border-polar-border hover:border-cyan-500/50 text-slate-300 hover:text-white'
-              } disabled:opacity-60`}
-              title="Force refresh live weather data from Norwegian Meteorological Institute"
-            >
-              {isRefreshing ? (
-                <RefreshCw className="w-3.5 h-3.5 text-cyan-400 animate-spin" />
-              ) : syncSuccess ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              ) : (
-                <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
-              )}
-              <span>{isRefreshing ? 'Syncing...' : syncSuccess ? 'Synced MET Data' : 'Sync Live Weather'}</span>
-            </button>
-
-            {/* Quick condition readout */}
-            <div className="bg-polar-darker border border-polar-border rounded-xl px-4 py-2 text-xs font-mono">
-              <div className="text-slate-500 text-[9px] uppercase tracking-wider">Condition</div>
-              <div className="text-white font-bold mt-0.5">{condition}</div>
+          {/* Clean condition readouts */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="bg-polar-darker border border-polar-border rounded-xl px-3 py-1.5 text-xs font-mono flex items-center gap-2">
+              <span className="text-slate-500 text-[9px] uppercase tracking-wider">Condition</span>
+              <span className="text-white font-bold">{condition}</span>
             </div>
-
-            {/* Last sync time */}
-            {lastSyncTime && (
-              <div className="hidden sm:block bg-polar-darker border border-polar-border rounded-xl px-3 py-2 text-xs font-mono">
-                <div className="text-slate-500 text-[9px] uppercase tracking-wider">Last Sync</div>
-                <div className="text-slate-300 font-bold mt-0.5">{lastSyncTime}</div>
-              </div>
-            )}
+            <div className="bg-polar-darker border border-polar-border rounded-xl px-3 py-1.5 text-xs font-mono flex items-center gap-2">
+              <span className="text-slate-500 text-[9px] uppercase tracking-wider">Wind Chill</span>
+              <span className="text-blue-300 font-bold">{windChill}°C</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Instrument Panel */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      {/* Main Instrument Panel — Balanced 3-column Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 items-stretch">
 
-        {/* ── LEFT: Wind Compass + Storm Ring ── */}
-        <div className="xl:col-span-1 glass-panel p-5 rounded-2xl border border-polar-border flex flex-col items-center gap-6">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 self-start flex items-center justify-between w-full">
+        {/* ── LEFT: Wind Vector Analysis & Polar Dynamics (col-span-1) ── */}
+        <div className="xl:col-span-1 glass-panel p-4 rounded-2xl border border-polar-border flex flex-col justify-between gap-4 h-full">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center justify-between w-full">
             <span>Wind Vector Analysis</span>
-            <span className="text-cyan-400">{windMs.toFixed(1)} m/s</span>
+            <span className="text-cyan-400 font-bold">{windMs.toFixed(1)} m/s</span>
           </div>
-          <WindCompass
-            direction={windDir}
-            speed={wind}
-            gust={gust}
-            size={200}
-            color={isMaitri ? '#818cf8' : '#60a5fa'}
-          />
+
+          <div className="flex justify-center my-auto">
+            <WindCompass
+              direction={windDir}
+              speed={wind}
+              gust={gust}
+              size={185}
+              color={isMaitri ? '#818cf8' : '#60a5fa'}
+            />
+          </div>
+
           <StormSeverityRing severity={stormSev} />
 
-          {/* Gust info */}
+          {/* Gust & Wind Chill cards */}
           <div className="w-full grid grid-cols-2 gap-2 text-xs font-mono">
             <div className="bg-polar-dark/80 p-2.5 rounded-xl border border-polar-border text-center">
-              <div className="text-slate-500 text-[9px] mb-1">GUST PEAK</div>
+              <div className="text-slate-500 text-[9px] mb-0.5">GUST PEAK</div>
               <div className="text-white font-bold">{gust} km/h</div>
             </div>
             <div className="bg-polar-dark/80 p-2.5 rounded-xl border border-polar-border text-center">
-              <div className="text-slate-500 text-[9px] mb-1">WIND CHILL</div>
+              <div className="text-slate-500 text-[9px] mb-0.5">WIND CHILL</div>
               <div className="text-blue-300 font-bold">{windChill}°C</div>
+            </div>
+          </div>
+
+          {/* Polar Atmospheric Flow Dynamics (balances height with center column) */}
+          <div className="w-full bg-polar-dark/80 p-3 rounded-xl border border-polar-border text-xs font-mono space-y-1.5">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-slate-400 uppercase tracking-wider">Katabatic Flow</span>
+              <span className={wind > 50 ? 'text-red-400 font-bold' : wind > 30 ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
+                {wind > 50 ? 'GALE FORCE' : wind > 30 ? 'MODERATE ADVECTION' : 'NOMINAL DRAINAGE'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-400">
+              <span>Polar Air Density</span>
+              <span className="text-slate-200 font-bold">1.39 kg/m³</span>
             </div>
           </div>
         </div>
 
-        {/* ── CENTER: Thermometer + Gauges ── */}
-        <div className="xl:col-span-2 space-y-4">
-          {/* Temperature + Other gauges row */}
-          <div className="glass-panel p-5 rounded-2xl border border-polar-border">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-4 flex items-center justify-between">
+        {/* ── CENTER: Primary Readouts + Visibility + Cascade (col-span-2) ── */}
+        <div className="xl:col-span-2 flex flex-col gap-4 justify-between h-full">
+          {/* Primary Instruments */}
+          <div className="glass-panel p-4 rounded-2xl border border-polar-border">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
               <span>Primary Instrument Readout</span>
-              <span className="text-emerald-400 text-[9px]">API &bull; INSTANT TELEMETRY</span>
+              <span className="text-emerald-400 text-[9px] font-bold">LIVE TELEMETRY</span>
             </div>
-            <div className="flex flex-wrap justify-around items-center gap-6">
+            <div className="flex flex-wrap justify-around items-center gap-4">
               <MercuryThermometer tempC={temp} />
 
               <div className="flex flex-col items-center gap-1">
@@ -357,7 +322,7 @@ export const EnvironmentPage: React.FC = () => {
                   max={800}
                   unit="W/m²"
                   label="Solar Radiation"
-                  size={140}
+                  size={135}
                   accentColor="#f59e0b"
                   warningThreshold={600}
                 />
@@ -370,7 +335,7 @@ export const EnvironmentPage: React.FC = () => {
                   max={100}
                   unit="%"
                   label="Rel. Humidity"
-                  size={140}
+                  size={135}
                   accentColor="#38bdf8"
                 />
               </div>
@@ -382,7 +347,7 @@ export const EnvironmentPage: React.FC = () => {
                   max={1050}
                   unit="hPa"
                   label="Barometric Pressure"
-                  size={140}
+                  size={135}
                   accentColor="#a78bfa"
                   warningThreshold={965}
                   criticalThreshold={950}
@@ -392,7 +357,7 @@ export const EnvironmentPage: React.FC = () => {
           </div>
 
           {/* Visibility beam */}
-          <div className="glass-panel p-5 rounded-2xl border border-polar-border space-y-3">
+          <div className="glass-panel p-4 rounded-2xl border border-polar-border space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
                 <Eye className="w-3.5 h-3.5" />
@@ -403,17 +368,17 @@ export const EnvironmentPage: React.FC = () => {
             <VisibilityBeam km={visibility} maxKm={50} />
           </div>
 
-          {/* Cross-domain cascade */}
-          <div className="glass-panel p-5 rounded-2xl border border-polar-border">
-            <div className="flex items-center justify-between mb-3">
+          {/* Cross-domain cascade impact */}
+          <div className="glass-panel p-4 rounded-2xl border border-polar-border">
+            <div className="flex items-center justify-between mb-2.5">
               <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold">
                 Climate → Systems Cascade Impact
               </div>
               <span className="text-[9px] font-mono text-slate-500">
-                Weather API → Data Adapter → Simulation Engine
+                Live Weather → Simulation Engine
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
               {[
                 {
                   title: 'Heating Energy Demand',
@@ -444,7 +409,7 @@ export const EnvironmentPage: React.FC = () => {
                   icon: '🚛',
                 },
               ].map((item) => (
-                <div key={item.title} className="bg-polar-dark/80 p-3 rounded-xl border border-polar-border flex flex-col gap-1">
+                <div key={item.title} className="bg-polar-dark/80 p-2.5 rounded-xl border border-polar-border flex flex-col gap-1">
                   <div className="flex items-center gap-1.5">
                     <span>{item.icon}</span>
                     <span className="font-semibold text-white text-[11px]">{item.title}</span>
@@ -457,40 +422,47 @@ export const EnvironmentPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── RIGHT: 24h Trends ── */}
-        <div className="xl:col-span-1 glass-panel p-5 rounded-2xl border border-polar-border flex flex-col gap-4">
+        {/* ── RIGHT: 24h Trends & Sensor Array (col-span-1) ── */}
+        <div className="xl:col-span-1 glass-panel p-4 rounded-2xl border border-polar-border flex flex-col justify-between gap-3 h-full">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">24-Hour Forecast Archive</div>
-            <span className="text-[9px] font-mono text-cyan-400">MET Timeseries</span>
+            <span className="text-[9px] font-mono text-cyan-400 font-bold">MET Timeseries</span>
           </div>
 
-          {[
-            { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C', current: temp },
-            { label: 'Wind Speed', data: windHistory, color: '#818cf8', unit: 'km/h', current: wind },
-            { label: 'Solar Radiation', data: solarHistory, color: '#f59e0b', unit: 'W/m²', current: solar },
-          ].map((trend) => (
-            <div key={trend.label} className="space-y-1">
-              <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-slate-400 uppercase tracking-wider">{trend.label}</span>
-                <span className="font-bold" style={{ color: trend.color }}>
-                  {trend.current.toFixed(1)}{trend.unit}
-                </span>
-              </div>
-              <SparklineChart data={trend.data} color={trend.color} height={52} showArea />
-            </div>
-          ))}
-
-          <div className="mt-auto pt-3 border-t border-polar-border/60 space-y-2">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">Sensor Status</div>
-            {['Anemometer', 'Pyranometer', 'Thermistor', 'Barograph', 'Ceilometer'].map((sensor) => (
-              <div key={sensor} className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-slate-400">{sensor}</span>
-                <span className="flex items-center gap-1 text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  ONLINE
-                </span>
+          {/* Sparkline trends */}
+          <div className="space-y-2.5">
+            {[
+              { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C', current: temp },
+              { label: 'Wind Velocity', data: windHistory, color: '#818cf8', unit: 'km/h', current: wind },
+              { label: 'Solar Radiation', data: solarHistory, color: '#f59e0b', unit: 'W/m²', current: solar },
+              { label: 'Barometric Pressure', data: pressureHistory, color: '#a78bfa', unit: 'hPa', current: pressure },
+            ].map((trend) => (
+              <div key={trend.label} className="space-y-1">
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-slate-400 uppercase tracking-wider">{trend.label}</span>
+                  <span className="font-bold" style={{ color: trend.color }}>
+                    {trend.current.toFixed(1)}{trend.unit}
+                  </span>
+                </div>
+                <SparklineChart data={trend.data} color={trend.color} height={42} showArea />
               </div>
             ))}
+          </div>
+
+          {/* Sensor Array Status Grid (fills the bottom without dead space) */}
+          <div className="pt-2.5 border-t border-polar-border/60 space-y-1.5">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Meteorological Sensors</div>
+            <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+              {['Anemometer', 'Pyranometer', 'Thermistor', 'Barograph', 'Ceilometer', 'Hygrometer'].map((sensor) => (
+                <div key={sensor} className="bg-polar-dark/80 px-2 py-1.5 rounded-lg border border-polar-border/40 flex items-center justify-between">
+                  <span className="text-slate-400 text-[10px]">{sensor}</span>
+                  <span className="flex items-center gap-1 text-emerald-400 text-[9px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    ONLINE
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
