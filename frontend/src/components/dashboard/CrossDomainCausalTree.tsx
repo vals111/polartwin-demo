@@ -4,7 +4,7 @@ import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  ExternalLink, Layers, GitCompare, GitCommit, Box, Eye, Sparkles
+  ExternalLink, Layers, GitCompare, GitCommit, Box, Eye
 } from 'lucide-react';
 import { ThreeDomainGraph } from './ThreeDomainGraph';
 
@@ -463,10 +463,6 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-polar-dark/80 text-slate-300 border border-polar-border shadow-inner">
               {isMaitri ? '70°45′S 11°44′E • Inland Schirmacher' : '69°24′S 76°11′E • Coastal Larsemann'}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-              <span>Causal Digital Twin Engine</span>
-            </span>
           </div>
 
           <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
@@ -475,7 +471,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           </h1>
         </div>
 
-        {/* Right Action Controls: Station Switcher, View Switcher & Compare Stations */}
+        {/* Right Action Controls: View Switcher & Compare Stations */}
         <div className="flex flex-wrap items-center gap-3">
           {/* 2D / 3D Mode Toggle */}
           <div className="bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center shadow-md">
@@ -500,32 +496,6 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             >
               <Box className="w-3.5 h-3.5" />
               <span>3D Spatial Constellation</span>
-            </button>
-          </div>
-
-          {/* Station Switcher Pills */}
-          <div className="bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center shadow-md">
-            <button
-              onClick={() => navigate('/station/maitri/domains')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
-                isMaitri
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>Maitri</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 font-bold">Inland</span>
-            </button>
-            <button
-              onClick={() => navigate('/station/bharati/domains')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 ${
-                !isMaitri
-                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>Bharati</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-blue-950/80 text-blue-400 border border-blue-800/40 font-bold">Coastal</span>
             </button>
           </div>
 
