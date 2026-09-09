@@ -191,6 +191,12 @@ export const EnvironmentPage: React.FC = () => {
     13.12 + 0.6215 * temp - 11.37 * Math.pow(wind, 0.16) + 0.3965 * temp * Math.pow(wind, 0.16)
   );
 
+  const getCardinal = (deg: number) => {
+    const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    return dirs[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
+  };
+  const cardinal = getCardinal(windDir);
+
   // Hourly 24h history from MET Norway locationforecast timeseries if available
   const genHistory = (base: number, variance: number, n = 24) =>
     Array.from({ length: n }, (_, i) => base + (Math.random() - 0.5) * variance * 2 + Math.sin(i / 4) * variance * 0.5);
@@ -250,12 +256,27 @@ export const EnvironmentPage: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 items-stretch">
 
         {/* ── LEFT: Wind Vector Analysis & Polar Dynamics (col-span-1) ── */}
-        <div className="xl:col-span-1 glass-panel p-4 rounded-2xl border border-polar-border flex flex-col justify-between gap-4 h-full">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center justify-between w-full">
-            <span>Wind Vector Analysis</span>
-            <span className="text-cyan-400 font-bold">{windMs.toFixed(1)} m/s</span>
+        <div className="xl:col-span-1 glass-panel p-4 rounded-2xl border border-polar-border flex flex-col justify-between gap-3.5 h-full">
+          {/* Highlighted Wind Vector Analysis Header */}
+          <div className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-950/70 via-blue-950/50 to-slate-900/90 border border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.18)] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="relative flex items-center justify-center">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping absolute opacity-75" />
+                <span className="w-2 h-2 rounded-full bg-cyan-400 relative" />
+              </div>
+              <span className="text-xs font-mono font-black tracking-wider uppercase text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]">
+                Wind Vector Analysis
+              </span>
+            </div>
+            <div className="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.3)] flex items-baseline gap-1">
+              <span className="text-sm font-mono font-black text-cyan-300 tracking-tight">
+                {windMs.toFixed(1)}
+              </span>
+              <span className="text-[10px] font-mono font-bold text-cyan-400">m/s</span>
+            </div>
           </div>
 
+          {/* Clean Wind Compass (Unobstructed Needle) */}
           <div className="flex justify-center my-auto">
             <WindCompass
               direction={windDir}
@@ -266,9 +287,44 @@ export const EnvironmentPage: React.FC = () => {
             />
           </div>
 
+          {/* Primary Wind Telemetry Card (Information outside compass) */}
+          <div className="w-full bg-gradient-to-br from-slate-900/95 via-polar-dark to-slate-950/95 p-3 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 mb-2">
+              <span className="text-[9px] font-mono uppercase tracking-widest text-cyan-400 font-bold flex items-center gap-1.5">
+                <Wind className="w-3 h-3 text-cyan-400" />
+                Wind Telemetry
+              </span>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold">
+                SURFACE VECTOR
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 items-center">
+              <div>
+                <div className="text-[8px] font-mono text-slate-400 uppercase tracking-wider">Surface Speed</div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black font-mono text-white tracking-tight">
+                    {wind.toFixed(1)}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-cyan-400">km/h</span>
+                </div>
+              </div>
+              <div className="border-l border-slate-800 pl-3">
+                <div className="text-[8px] font-mono text-slate-400 uppercase tracking-wider">Heading / Bearing</div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-lg font-black font-mono text-indigo-300">
+                    {cardinal}
+                  </span>
+                  <span className="text-xs font-mono text-slate-400">
+                    • {Math.round(((windDir % 360) + 360) % 360)}°
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <StormSeverityRing severity={stormSev} />
 
-          {/* Gust & Vector Azimuth Telemetry Cards */}
+          {/* Gust & Vector Telemetry Cards */}
           <div className="w-full grid grid-cols-2 gap-2 text-xs font-mono">
             <div className="bg-gradient-to-br from-amber-500/10 via-polar-dark/90 to-polar-darker/90 p-2.5 rounded-xl border border-amber-500/25 shadow-sm">
               <div className="flex items-center justify-between text-[9px] text-amber-400/90 uppercase tracking-wider mb-0.5">
@@ -298,7 +354,7 @@ export const EnvironmentPage: React.FC = () => {
                 <span className="text-[8px] text-indigo-400/80 font-bold">DIR</span>
               </div>
               <div className="text-base font-black text-white tracking-tight">
-                {Math.round(((windDir % 360) + 360) % 360)}° <span className="text-xs font-bold text-indigo-300">SSE</span>
+                {Math.round(((windDir % 360) + 360) % 360)}° <span className="text-xs font-bold text-indigo-300">{cardinal}</span>
               </div>
               <div className="text-[9px] text-slate-400 mt-1 truncate">
                 Katabatic Drainage

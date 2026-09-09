@@ -180,41 +180,22 @@ export const WindCompass: React.FC<WindCompassProps> = ({
       ctx.fill();
       ctx.restore();
 
-      // ── Central Digital Telemetry Hub (Sleek Glass Disc) ──
-      const hubRadius = size * 0.23;
+      // ── Minimal Center Pivot Cap (keeps needle 100% visible) ──
+      const hubRadius = size * 0.05;
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, hubRadius, 0, Math.PI * 2);
-      ctx.fillStyle = '#090f1e';
+      ctx.fillStyle = '#0f172a';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Inner subtle rim
+      // Center jewel pivot point
       ctx.beginPath();
-      ctx.arc(cx, cy, hubRadius - 3, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Speed Readout in Center
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(size * 0.12)}px 'JetBrains Mono', monospace`;
-      ctx.fillText(speed.toFixed(1), cx, cy - size * 0.04);
-
-      // Speed Unit
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = `500 ${Math.round(size * 0.055)}px 'JetBrains Mono', monospace`;
-      ctx.fillText('km/h', cx, cy + size * 0.04);
-
-      // Direction Badge (Cardinal + Exact Degree — Cleanly inside hub with NO collisions)
+      ctx.arc(cx, cy, size * 0.02, 0, Math.PI * 2);
       ctx.fillStyle = color;
-      ctx.font = `bold ${Math.round(size * 0.065)}px 'JetBrains Mono', monospace`;
-      ctx.fillText(`${getCardinal(currentDir)} • ${Math.round(((currentDir % 360) + 360) % 360)}°`, cx, cy + size * 0.11);
-
+      ctx.fill();
       ctx.restore();
 
       if (needsAnim) {
