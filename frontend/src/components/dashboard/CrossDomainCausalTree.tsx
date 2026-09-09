@@ -288,7 +288,7 @@ export const CrossDomainCausalTree: React.FC<{ stationId?: string }> = ({ statio
   return (
     <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden bg-gradient-to-b from-[#071326]/90 to-[#030914]/95 shadow-2xl">
       {/* Header Bar */}
-      <div className="flex items-center justify-between pb-3 border-b border-polar-border/60">
+      <div className="flex items-center justify-between pb-1">
         <h2 className="text-lg lg:text-xl font-black text-white flex items-center gap-2.5">
           <GitCommit className="w-5 h-5 text-cyan-400" />
           Inter-Domain Causal Propagation Architecture
