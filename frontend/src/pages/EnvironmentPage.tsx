@@ -18,12 +18,12 @@ const MercuryThermometer: React.FC<{ tempC: number; windChill?: number }> = ({ t
   const color = tempC < -40 ? '#818cf8' : tempC < -20 ? '#06b6d4' : tempC < 0 ? '#3b82f6' : '#ef4444';
 
   return (
-    <div className="flex items-center justify-center gap-3.5">
+    <div className="flex items-center justify-center gap-4 py-1">
       {/* Thermometer SVG */}
-      <svg width="34" height="130" viewBox="0 0 34 130">
+      <svg width="34" height="120" viewBox="0 0 34 125">
         {/* Scale ticks */}
         {[-60, -40, -20, 0, 10].map((t) => {
-          const ty = 8 + ((MAX - t) / (MAX - MIN)) * 92;
+          const ty = 8 + ((MAX - t) / (MAX - MIN)) * 88;
           return (
             <g key={t}>
               <line x1="22" y1={ty} x2="28" y2={ty} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
@@ -34,32 +34,32 @@ const MercuryThermometer: React.FC<{ tempC: number; windChill?: number }> = ({ t
           );
         })}
         {/* Tube outline */}
-        <rect x="13" y="8" width="8" height="95" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        <rect x="13" y="8" width="8" height="90" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
         {/* Mercury fill (animates via CSS) */}
         <rect
           x="14"
-          y={8 + 95 - (pct / 100) * 95}
+          y={8 + 90 - (pct / 100) * 90}
           width="6"
-          height={(pct / 100) * 95}
+          height={(pct / 100) * 90}
           rx="3"
           fill={color}
           style={{ transition: 'all 1s ease-out', filter: `drop-shadow(0 0 4px ${color})` }}
         />
         {/* Bulb */}
-        <circle cx="17" cy="114" r="10" fill={color} style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
-        <circle cx="17" cy="114" r="6" fill="rgba(255,255,255,0.2)" />
+        <circle cx="17" cy="110" r="10" fill={color} style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
+        <circle cx="17" cy="110" r="6" fill="rgba(255,255,255,0.2)" />
       </svg>
-      <div className="flex flex-col">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Ambient Temp</span>
-        <div className="flex items-baseline gap-1 mt-1">
+      <div className="flex flex-col justify-center">
+        <div className="flex items-baseline gap-1">
           <span className="text-3xl font-black font-mono leading-none tracking-tight" style={{ color }}>
             {tempC.toFixed(1)}
           </span>
           <span className="text-sm font-mono text-slate-400 font-bold">°C</span>
         </div>
         {windChill !== undefined && (
-          <div className="text-[9px] font-mono text-blue-300 mt-2 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/25">
-            Wind Chill: <span className="font-bold text-white">{windChill}°C</span>
+          <div className="text-[10px] font-mono text-cyan-300 mt-2.5 bg-cyan-500/10 px-2.5 py-1 rounded-md border border-cyan-500/25 inline-flex items-center gap-1.5">
+            <span className="text-slate-400 text-[9px] uppercase">Wind Chill:</span>
+            <span className="font-black text-white">{windChill}°C</span>
           </div>
         )}
       </div>
@@ -519,50 +519,111 @@ export const EnvironmentPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* 1. Ambient Temperature */}
-              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-cyan-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
-                <MercuryThermometer tempC={temp} windChill={windChill} />
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-polar-border/60 hover:border-cyan-500/40 transition-all flex flex-col justify-between min-h-[175px] shadow-sm group">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                      <Thermometer className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100">
+                      Ambient Temp
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold">
+                    PT100 RTD
+                  </span>
+                </div>
+                <div className="flex-1 flex items-center justify-center pt-2">
+                  <MercuryThermometer tempC={temp} windChill={windChill} />
+                </div>
               </div>
 
               {/* 2. Solar Radiation */}
-              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-amber-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
-                <IndustrialGauge
-                  value={solar}
-                  min={0}
-                  max={600}
-                  unit="W/m²"
-                  label="Solar Radiation"
-                  size={135}
-                  accentColor="#f59e0b"
-                  warningThreshold={450}
-                />
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-polar-border/60 hover:border-amber-500/40 transition-all flex flex-col justify-between min-h-[175px] shadow-sm group">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                      <Sun className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100">
+                      Solar Radiation
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 font-bold">
+                    PYRANOMETER
+                  </span>
+                </div>
+                <div className="flex-1 flex items-center justify-center pt-1">
+                  <IndustrialGauge
+                    value={solar}
+                    min={0}
+                    max={600}
+                    unit="W/m²"
+                    size={128}
+                    accentColor="#f59e0b"
+                    warningThreshold={450}
+                  />
+                </div>
               </div>
 
               {/* 3. Barometric Pressure */}
-              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-purple-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
-                <IndustrialGauge
-                  value={pressure}
-                  min={940}
-                  max={1050}
-                  unit="hPa"
-                  label="Barometric Pressure"
-                  size={135}
-                  accentColor="#a78bfa"
-                  warningThreshold={965}
-                  criticalThreshold={950}
-                />
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-polar-border/60 hover:border-purple-500/40 transition-all flex flex-col justify-between min-h-[175px] shadow-sm group">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                      <Gauge className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100">
+                      Barometric Pressure
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold">
+                    BAROMETER
+                  </span>
+                </div>
+                <div className="flex-1 flex items-center justify-center pt-1">
+                  <IndustrialGauge
+                    value={pressure}
+                    min={940}
+                    max={1050}
+                    unit="hPa"
+                    size={128}
+                    accentColor="#a78bfa"
+                    warningThreshold={965}
+                    criticalThreshold={950}
+                  />
+                </div>
               </div>
 
               {/* 4. Relative Humidity */}
-              <div className="bg-slate-900/60 p-3 rounded-xl border border-polar-border/60 hover:border-sky-500/30 transition-all flex items-center justify-center min-h-[155px] shadow-sm">
-                <IndustrialGauge
-                  value={humidity}
-                  min={0}
-                  max={100}
-                  unit="%"
-                  label="Rel. Humidity"
-                  size={135}
-                  accentColor="#38bdf8"
-                />
+              <div className="bg-slate-900/60 p-3.5 rounded-xl border border-polar-border/60 hover:border-sky-500/40 transition-all flex flex-col justify-between min-h-[175px] shadow-sm group">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-400">
+                      <Droplets className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100">
+                      Rel. Humidity
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/25 font-bold">
+                    HYGROMETER
+                  </span>
+                </div>
+                <div className="flex-1 flex items-center justify-center pt-1">
+                  <IndustrialGauge
+                    value={humidity}
+                    min={0}
+                    max={100}
+                    unit="%"
+                    size={128}
+                    accentColor="#38bdf8"
+                  />
+                </div>
               </div>
             </div>
           </div>
