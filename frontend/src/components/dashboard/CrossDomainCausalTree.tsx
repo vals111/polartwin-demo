@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
@@ -242,6 +242,21 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
   // View mode switcher: '2d' DAG or '3d' Spatial Orbit
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
+  // 3D center guidance toast: appears for 2 seconds upon switching to 3D and then disappears
+  const [showPrompt3D, setShowPrompt3D] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (viewMode === '3d') {
+      setShowPrompt3D(true);
+      const timer = setTimeout(() => {
+        setShowPrompt3D(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPrompt3D(false);
+    }
+  }, [viewMode]);
 
   // Dynamic Live KPIs per domain
   const nodeLiveKpi = useMemo(() => {
@@ -553,19 +568,23 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── HOVER GUIDANCE CALLOUT (2D ONLY) ── */}
-      {viewMode === '2d' && (
-        <div className="flex items-center justify-end pb-3">
-          <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center gap-2 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>Hover over any domain to reveal its causal links</span>
-          </span>
-        </div>
-      )}
-
       {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
       {viewMode === '3d' ? (
-        <ThreeDomainGraph stationId={currentStationId} />
+        <div className="relative w-full">
+          <ThreeDomainGraph stationId={currentStationId} />
+
+          {/* 2-Second Center Toast Notification upon switching to 3D */}
+          <div
+            className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 transition-all duration-500 ${
+              showPrompt3D ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+            }`}
+          >
+            <div className="px-6 py-3.5 rounded-2xl bg-[#020b18]/95 border-2 border-cyan-400/80 shadow-[0_0_50px_rgba(0,242,254,0.45)] backdrop-blur-2xl flex items-center gap-3 text-sm font-mono font-black text-cyan-200">
+              <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#00f2fe] animate-ping flex-shrink-0" />
+              <span className="text-white tracking-wide text-base font-bold">Hover over any domain to reveal</span>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="relative overflow-x-auto mt-2 py-2 rounded-2xl bg-polar-dark/60 border border-polar-border/50">
           <div className="min-w-[1180px] h-[720px] relative">
