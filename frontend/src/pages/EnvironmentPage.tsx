@@ -494,15 +494,15 @@ export const EnvironmentPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
-              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-polar-border/40">
-                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide">Polar Air Density</div>
-                <div className="text-base sm:text-lg font-black font-mono text-white mt-0.5">
+              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-polar-border/40 text-center flex flex-col items-center justify-center">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide text-center">Polar Air Density</div>
+                <div className="text-base sm:text-lg font-black font-mono text-white mt-0.5 text-center">
                   1.39 <span className="text-xs text-slate-400 font-medium">kg/m³</span>
                 </div>
               </div>
-              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-polar-border/40">
-                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide">Wind Velocity</div>
-                <div className="text-base sm:text-lg font-black font-mono text-cyan-300 mt-0.5">
+              <div className="bg-slate-900/60 p-2.5 rounded-lg border border-polar-border/40 text-center flex flex-col items-center justify-center">
+                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide text-center">Wind Velocity</div>
+                <div className="text-base sm:text-lg font-black font-mono text-cyan-300 mt-0.5 text-center">
                   {windMs.toFixed(1)} <span className="text-xs text-slate-400 font-medium">m/s</span>
                 </div>
               </div>
