@@ -17,14 +17,14 @@ interface Domain3DDef {
 
 // 9 Domains with individual signature colors matching the 2D Digital Architecture
 const DOMAINS_3D: Domain3DDef[] = [
-  { id: 'environment', name: 'Environment & Weather', shortName: 'Environment & Weather', route: 'environment', color: '#818cf8', pos: [0, 200, 0], role: 'External Climate Driver' },
-  { id: 'logistics', name: 'Transportation & Logistics', shortName: 'Transportation & Logistics', route: 'logistics', color: '#2dd4bf', pos: [-240, 110, 100], role: 'Expedition Resupply' },
-  { id: 'fuel', name: 'Fuel Storage', shortName: 'Fuel Storage', route: 'fuel', color: '#f59e0b', pos: [-290, -10, -50], role: 'Hydrocarbon Reserve' },
-  { id: 'inventory', name: 'Storage & Inventory', shortName: 'Storage & Inventory', route: 'inventory', color: '#34d399', pos: [-140, -30, -220], role: 'Critical Spares Manifest' },
-  { id: 'water', name: 'Water Supply', shortName: 'Water Supply', route: 'water', color: '#38bdf8', pos: [260, 60, -100], role: 'Hydrological Cycle' },
-  { id: 'equipment', name: 'Equipment & Machinery', shortName: 'Equipment & Machinery', route: 'equipment', color: '#10b981', pos: [-80, -130, 90], role: 'Power Conversion' },
+  { id: 'environment', name: 'Environment & Weather', shortName: 'Environment', route: 'environment', color: '#818cf8', pos: [0, 200, 0], role: 'External Climate Driver' },
+  { id: 'logistics', name: 'Transportation & Logistics', shortName: 'Logistics', route: 'logistics', color: '#2dd4bf', pos: [-240, 110, 100], role: 'Expedition Resupply' },
+  { id: 'fuel', name: 'Fuel Storage', shortName: 'Fuel', route: 'fuel', color: '#f59e0b', pos: [-290, -10, -50], role: 'Hydrocarbon Reserve' },
+  { id: 'inventory', name: 'Storage & Inventory', shortName: 'Inventory', route: 'inventory', color: '#34d399', pos: [-140, -30, -220], role: 'Critical Spares' },
+  { id: 'water', name: 'Water Supply', shortName: 'Water', route: 'water', color: '#38bdf8', pos: [260, 60, -100], role: 'Hydrological Cycle' },
+  { id: 'equipment', name: 'Equipment & Machinery', shortName: 'Equipment', route: 'equipment', color: '#10b981', pos: [-80, -130, 90], role: 'Power Conversion' },
   { id: 'energy', name: 'Energy & Power', shortName: 'Energy & Power', route: 'resources', color: '#fbbf24', pos: [110, -80, 160], role: 'Central Microgrid Hub' },
-  { id: 'personnel', name: 'Personnel & Occupancy', shortName: 'Personnel & Occupancy', route: 'personnel', color: '#c084fc', pos: [40, -210, -70], role: 'Habitat Life Support' },
+  { id: 'personnel', name: 'Personnel & Occupancy', shortName: 'Personnel', route: 'personnel', color: '#c084fc', pos: [40, -210, -70], role: 'Crew Life Support' },
   { id: 'communication', name: 'Communication', shortName: 'Communication', route: 'communication', color: '#06b6d4', pos: [260, -120, 80], role: 'Real-Time Telemetry' },
 ];
 
@@ -58,13 +58,16 @@ interface Props {
 export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const calloutRef = useRef<HTMLDivElement>(null);
+  const calloutLineRef = useRef<SVGLineElement>(null);
+  const reticleCircleRef = useRef<SVGCircleElement>(null);
+
   const navigate = useNavigate();
   const { liveSnapshot } = useTelemetryStore();
   const isMaitri = stationId === 'maitri';
   const snapshot = liveSnapshot[stationId];
 
   const [hoveredDomain, setHoveredDomain] = useState<Domain3DDef | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
 
   const controlsRef = useRef<OrbitControls | null>(null);
@@ -225,6 +228,14 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       group.add(sphereMesh);
       nodeMeshes.push(sphereMesh);
 
+      // Invisible expanded hit target sphere (radius 36) for effortless, fluid hovering
+      const hitGeo = new THREE.SphereGeometry(36, 16, 16);
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+      hitMesh.userData = { domain: dom };
+      group.add(hitMesh);
+      nodeMeshes.push(hitMesh);
+
       // Outer glowing halo ring with individual color
       const haloGeo = new THREE.TorusGeometry(32, 1.4, 16, 64);
       const haloMat = new THREE.MeshBasicMaterial({
@@ -295,7 +306,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     // 8. 3D Causal Conduit Curves & Flow Photons
     // Links appear ONLY on hover: Incoming = Electric Cyan (#00f2fe), Outgoing = Radiant Amber (#fbbf24)
     const CYAN_COLOR = new THREE.Color(0x00f2fe);
-    const CYAN_EMISSIVE = new THREE.Color(0x00c6ff);
+    const CYAN_EMISSIVE = new THREE.Color(0x00d8ff);
     const AMBER_COLOR = new THREE.Color(0xfbbf24);
     const AMBER_EMISSIVE = new THREE.Color(0xf59e0b);
 
@@ -305,8 +316,12 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       curve: THREE.QuadraticBezierCurve3;
       tubeMesh: THREE.Mesh;
       tubeMat: THREE.MeshStandardMaterial;
-      photonMesh: THREE.Mesh;
-      photonMat: THREE.MeshBasicMaterial;
+      arrowMesh: THREE.Mesh;
+      arrowMat: THREE.MeshBasicMaterial;
+      photonMesh1: THREE.Mesh;
+      photonMat1: THREE.MeshBasicMaterial;
+      photonMesh2: THREE.Mesh;
+      photonMat2: THREE.MeshBasicMaterial;
     }
     const connectionObjs: ConnectionObj[] = [];
 
@@ -322,30 +337,55 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
 
       const curve = new THREE.QuadraticBezierCurve3(fromPos, mid, toPos);
 
-      // Conduit Tube (Initially Hidden: visible only on hover)
-      const tubeGeo = new THREE.TubeGeometry(curve, 36, 1.8, 8, false);
+      // Conduit Tube (Initially Hidden: visible only on hover, radius 2.2 for bold glowing vector presence)
+      const tubeGeo = new THREE.TubeGeometry(curve, 36, 2.2, 8, false);
       const tubeMat = new THREE.MeshStandardMaterial({
         color: CYAN_COLOR,
         emissive: CYAN_EMISSIVE,
-        emissiveIntensity: 0.9,
+        emissiveIntensity: 1.25,
         transparent: true,
-        opacity: 0.85,
-        roughness: 0.2
+        opacity: 0.9,
+        roughness: 0.15
       });
       const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
       tubeMesh.visible = false;
       scene.add(tubeMesh);
 
-      // Flowing energy photon (Initially Hidden: visible only on hover)
-      const photonGeo = new THREE.SphereGeometry(3.6, 16, 16);
-      const photonMat = new THREE.MeshBasicMaterial({
+      // Directional Flow Arrowhead Cone at arc apex (t = 0.55)
+      const arrowGeo = new THREE.ConeGeometry(4.2, 10.5, 8);
+      arrowGeo.rotateX(Math.PI / 2);
+      const arrowMat = new THREE.MeshBasicMaterial({
+        color: CYAN_COLOR,
+        transparent: true,
+        opacity: 0.95
+      });
+      const arrowMesh = new THREE.Mesh(arrowGeo, arrowMat);
+      const apexPos = curve.getPointAt(0.55);
+      const apexTangent = curve.getTangentAt(0.55).normalize();
+      arrowMesh.position.copy(apexPos);
+      arrowMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), apexTangent);
+      arrowMesh.visible = false;
+      scene.add(arrowMesh);
+
+      // Dual Flowing energy photons (Initially Hidden: visible only on hover)
+      const photonGeo = new THREE.SphereGeometry(4.0, 16, 16);
+      const photonMat1 = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
         opacity: 0.95
       });
-      const photonMesh = new THREE.Mesh(photonGeo, photonMat);
-      photonMesh.visible = false;
-      scene.add(photonMesh);
+      const photonMesh1 = new THREE.Mesh(photonGeo, photonMat1);
+      photonMesh1.visible = false;
+      scene.add(photonMesh1);
+
+      const photonMat2 = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.95
+      });
+      const photonMesh2 = new THREE.Mesh(photonGeo, photonMat2);
+      photonMesh2.visible = false;
+      scene.add(photonMesh2);
 
       connectionObjs.push({
         from: conn.from,
@@ -353,8 +393,12 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         curve,
         tubeMesh,
         tubeMat,
-        photonMesh,
-        photonMat
+        arrowMesh,
+        arrowMat,
+        photonMesh1,
+        photonMat1,
+        photonMesh2,
+        photonMat2
       });
     });
 
@@ -364,7 +408,9 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       connectionObjs.forEach((c) => {
         if (!targetId) {
           c.tubeMesh.visible = false;
-          c.photonMesh.visible = false;
+          c.arrowMesh.visible = false;
+          c.photonMesh1.visible = false;
+          c.photonMesh2.visible = false;
           return;
         }
 
@@ -372,27 +418,41 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         const isOutgoing = c.from === targetId;
 
         if (isIncoming) {
-          // Incoming Upstream Link: Electric Cyan
+          // Incoming Upstream Link: Electric Cyan (#00f2fe)
           c.tubeMesh.visible = true;
-          c.photonMesh.visible = true;
+          c.arrowMesh.visible = true;
+          c.photonMesh1.visible = true;
+          c.photonMesh2.visible = true;
+
           c.tubeMat.color.copy(CYAN_COLOR);
           c.tubeMat.emissive.copy(CYAN_EMISSIVE);
-          c.tubeMat.emissiveIntensity = 1.0;
-          c.tubeMat.opacity = 0.9;
-          c.photonMat.color.setHex(0xe0faff);
+          c.tubeMat.emissiveIntensity = 1.35;
+          c.tubeMat.opacity = 0.95;
+
+          c.arrowMat.color.copy(CYAN_COLOR);
+          c.photonMat1.color.setHex(0xe0faff);
+          c.photonMat2.color.setHex(0xe0faff);
         } else if (isOutgoing) {
-          // Outgoing Downstream Link: Radiant Golden Amber
+          // Outgoing Downstream Link: Radiant Golden Amber (#fbbf24)
           c.tubeMesh.visible = true;
-          c.photonMesh.visible = true;
+          c.arrowMesh.visible = true;
+          c.photonMesh1.visible = true;
+          c.photonMesh2.visible = true;
+
           c.tubeMat.color.copy(AMBER_COLOR);
           c.tubeMat.emissive.copy(AMBER_EMISSIVE);
-          c.tubeMat.emissiveIntensity = 1.0;
-          c.tubeMat.opacity = 0.9;
-          c.photonMat.color.setHex(0xfffbeb);
+          c.tubeMat.emissiveIntensity = 1.35;
+          c.tubeMat.opacity = 0.95;
+
+          c.arrowMat.color.copy(AMBER_COLOR);
+          c.photonMat1.color.setHex(0xfffbeb);
+          c.photonMat2.color.setHex(0xfffbeb);
         } else {
           // Unrelated Link: Completely Hidden
           c.tubeMesh.visible = false;
-          c.photonMesh.visible = false;
+          c.arrowMesh.visible = false;
+          c.photonMesh1.visible = false;
+          c.photonMesh2.visible = false;
         }
       });
 
@@ -418,7 +478,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           // Hovered Domain: peak luminance in its signature color + expanded aura
           sphereMat.color.setStyle(dom.color);
           sphereMat.emissive.setStyle(dom.color);
-          sphereMat.emissiveIntensity = 1.7;
+          sphereMat.emissiveIntensity = 1.8;
           haloMat.color.setStyle(dom.color);
           haloMat.opacity = 1.0;
           spriteMat.opacity = 1.0;
@@ -427,7 +487,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           // Upstream Driver: Cyan ring highlight + individual domain core
           sphereMat.color.setStyle(dom.color);
           sphereMat.emissive.setStyle(dom.color);
-          sphereMat.emissiveIntensity = 1.15;
+          sphereMat.emissiveIntensity = 1.2;
           haloMat.color.copy(CYAN_COLOR);
           haloMat.opacity = 0.95;
           spriteMat.opacity = 1.0;
@@ -436,7 +496,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           // Downstream Impact: Amber ring highlight + individual domain core
           sphereMat.color.setStyle(dom.color);
           sphereMat.emissive.setStyle(dom.color);
-          sphereMat.emissiveIntensity = 1.15;
+          sphereMat.emissiveIntensity = 1.2;
           haloMat.color.copy(AMBER_COLOR);
           haloMat.opacity = 0.95;
           spriteMat.opacity = 1.0;
@@ -471,7 +531,6 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           setHoveredDomain(dom);
           updateGraphStates(dom.id);
         }
-        setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
         renderer.domElement.style.cursor = 'pointer';
       } else {
         if (hoveredDomainRef.current !== null) {
@@ -528,14 +587,100 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         innerHaloMesh.rotation.y = elapsedTime * -0.6 + i;
       });
 
-      // Animate flowing photons ONLY along active visible conduits
+      // Animate dual flowing photons along active visible conduits
       connectionObjs.forEach((c, idx) => {
-        if (c.photonMesh.visible) {
-          const t = (elapsedTime * 0.4 + idx * 0.15) % 1;
-          const pos = c.curve.getPointAt(t);
-          c.photonMesh.position.copy(pos);
+        if (c.tubeMesh.visible) {
+          const t1 = (elapsedTime * 0.45 + idx * 0.15) % 1;
+          const pos1 = c.curve.getPointAt(t1);
+          c.photonMesh1.position.copy(pos1);
+
+          const t2 = (elapsedTime * 0.45 + idx * 0.15 + 0.5) % 1;
+          const pos2 = c.curve.getPointAt(t2);
+          c.photonMesh2.position.copy(pos2);
         }
       });
+
+      // Dynamically project hovered 3D node to screen space with SMART STANDOFF DISTANCE
+      // The card is positioned far outward into unobstructed space so all incoming & outgoing links are 100% visible
+      if (hoveredDomainRef.current && calloutRef.current) {
+        const v = new THREE.Vector3(...hoveredDomainRef.current.pos);
+        v.project(camera);
+
+        if (v.z > 1.0) {
+          // Node is behind the camera plane
+          calloutRef.current.style.display = 'none';
+          if (calloutLineRef.current) calloutLineRef.current.style.display = 'none';
+          if (reticleCircleRef.current) reticleCircleRef.current.style.display = 'none';
+        } else {
+          calloutRef.current.style.display = 'block';
+          if (calloutLineRef.current) calloutLineRef.current.style.display = 'block';
+          if (reticleCircleRef.current) reticleCircleRef.current.style.display = 'block';
+
+          const currentW = container.clientWidth;
+          const nx = (v.x * 0.5 + 0.5) * currentW;
+          const ny = (-v.y * 0.5 + 0.5) * height;
+
+          const cardW = 300;
+          const cardH = 245;
+
+          // ── SMART OUTWARD STANDOFF CALCULATION ──
+          // Links congregate inward toward other constellation domains.
+          // By pushing the hover card outward away from the center of the graph,
+          // the card never crosses or blocks any of the connected conduits.
+          const isRightHalf = nx > currentW * 0.5;
+          let cardX: number;
+
+          if (isRightHalf) {
+            // Push rightward with at least 190px standoff
+            const preferredX = nx + 195;
+            if (preferredX + cardW <= currentW - 20) {
+              cardX = preferredX;
+            } else if (nx < currentW - cardW - 70) {
+              cardX = currentW - cardW - 20;
+            } else {
+              // Edge fallback: place to the far left with large clearance
+              cardX = Math.max(20, nx - cardW - 195);
+            }
+          } else {
+            // Push leftward with at least 190px standoff
+            const preferredX = nx - cardW - 195;
+            if (preferredX >= 20) {
+              cardX = preferredX;
+            } else if (nx > cardW + 70) {
+              cardX = 20;
+            } else {
+              // Edge fallback: place to the far right with large clearance
+              cardX = Math.min(currentW - cardW - 20, nx + 195);
+            }
+          }
+
+          // Vertical placement: keep comfortable margin and offset vertically
+          const isBottomHalf = ny > height * 0.5;
+          let rawY = isBottomHalf ? ny - cardH - 25 : ny + 25;
+          const cardY = Math.max(70, Math.min(height - cardH - 24, rawY));
+
+          calloutRef.current.style.transform = `translate3d(${cardX}px, ${cardY}px, 0)`;
+
+          // Connect card to node using cyber tracer leader line
+          const attachX = cardX > nx ? cardX : cardX + cardW;
+          const attachY = Math.max(cardY + 24, Math.min(cardY + cardH - 24, ny));
+
+          if (calloutLineRef.current) {
+            calloutLineRef.current.setAttribute('x1', `${nx}`);
+            calloutLineRef.current.setAttribute('y1', `${ny}`);
+            calloutLineRef.current.setAttribute('x2', `${attachX}`);
+            calloutLineRef.current.setAttribute('y2', `${attachY}`);
+          }
+          if (reticleCircleRef.current) {
+            reticleCircleRef.current.setAttribute('cx', `${nx}`);
+            reticleCircleRef.current.setAttribute('cy', `${ny}`);
+          }
+        }
+      } else if (calloutRef.current) {
+        calloutRef.current.style.display = 'none';
+        if (calloutLineRef.current) calloutLineRef.current.style.display = 'none';
+        if (reticleCircleRef.current) reticleCircleRef.current.style.display = 'none';
+      }
 
       controls.update();
       renderer.render(scene, camera);
@@ -561,22 +706,48 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
 
   const currentHoverKpi = hoveredDomain ? liveTelemetry(hoveredDomain.id) : null;
 
+  // Compute active incoming drivers and outgoing impacts for the hovered domain
+  const incomingDomains = hoveredDomain
+    ? CONNECTIONS_3D.filter((c) => c.to === hoveredDomain.id)
+        .map((c) => DOMAINS_3D.find((d) => d.id === c.from))
+        .filter(Boolean) as Domain3DDef[]
+    : [];
+
+  const outgoingDomains = hoveredDomain
+    ? CONNECTIONS_3D.filter((c) => c.from === hoveredDomain.id)
+        .map((c) => DOMAINS_3D.find((d) => d.id === c.to))
+        .filter(Boolean) as Domain3DDef[]
+    : [];
+
   return (
-    <div ref={containerRef} className="relative w-full rounded-2xl overflow-hidden bg-[#020814] border border-polar-border/60">
+    <div ref={containerRef} className="relative w-full rounded-2xl overflow-hidden bg-[#020814] border border-polar-border/60 select-none">
       <canvas ref={canvasRef} className="w-full block" style={{ height: '680px' }} />
 
       {/* 3D View Controls HUD Bar */}
       <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
-        <div className="px-3 py-1.5 rounded-xl bg-polar-dark/90 border border-polar-border/80 backdrop-blur-md flex items-center gap-2 text-xs font-mono text-slate-300 shadow-xl">
+        <div className="px-3.5 py-2 rounded-xl bg-polar-dark/95 border border-polar-border/80 backdrop-blur-md flex items-center gap-2 text-xs font-mono text-slate-300 shadow-xl">
           <Compass className="w-4 h-4 text-cyan-400 animate-spin-slow" />
-          <span className="font-bold text-white">3D Antarctic Spatial Twin</span>
+          <span className="font-bold text-white tracking-wide">3D Antarctic Spatial Twin</span>
           <span className="text-slate-500">•</span>
           <span className="text-[11px] text-cyan-300">Drag to Orbit • Scroll to Zoom • Click Node to Enter</span>
         </div>
 
+        {/* Dynamic Interactive Flow Legend */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-polar-dark/90 border border-polar-border/70 backdrop-blur-md text-xs font-mono">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f2fe]" />
+            <span className="text-[11px] text-cyan-200 font-bold">Incoming Drivers</span>
+          </div>
+          <span className="text-slate-600">|</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
+            <span className="text-[11px] text-amber-200 font-bold">Outgoing Impacts</span>
+          </div>
+        </div>
+
         <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-500/40 flex items-center gap-2 shadow-lg backdrop-blur-md">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span>Hover over any domain to reveal its causal links</span>
+          <span>Hover domain node to inspect conduits</span>
         </span>
       </div>
 
@@ -604,34 +775,134 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         </button>
       </div>
 
-      {/* Floating Hover Glass Tooltip */}
-      {hoveredDomain && currentHoverKpi && (
-        <div
-          className="absolute z-20 pointer-events-none transform -translate-x-1/2 -translate-y-full -mt-4 transition-transform duration-75"
-          style={{ left: `${tooltipPos.x}px`, top: `${tooltipPos.y}px` }}
-        >
-          <div className="glass-panel p-3.5 rounded-2xl border-2 shadow-2xl bg-polar-navy/95 min-w-[250px] text-xs font-mono" style={{ borderColor: hoveredDomain.color }}>
-            <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-polar-border/60">
-              <span className="font-black text-sm text-white">{hoveredDomain.name}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase" style={{ background: `${hoveredDomain.color}25`, color: hoveredDomain.color }}>
+      {/* ── Holographic SVG Leader Line & Reticle Overlay ── */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
+        <defs>
+          <filter id="tracerGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Outer targeting reticle ring */}
+        <circle
+          ref={reticleCircleRef}
+          r={30}
+          fill="none"
+          stroke={hoveredDomain ? hoveredDomain.color : '#00f2fe'}
+          strokeWidth={1.8}
+          strokeDasharray="5 3"
+          opacity={0.85}
+          style={{ display: 'none' }}
+          filter="url(#tracerGlow)"
+        />
+
+        {/* High-tech laser tracer line connecting domain to the offset hover card */}
+        <line
+          ref={calloutLineRef}
+          stroke={hoveredDomain ? hoveredDomain.color : '#00f2fe'}
+          strokeWidth={1.8}
+          strokeDasharray="4 3"
+          opacity={0.75}
+          style={{ display: 'none' }}
+          filter="url(#tracerGlow)"
+        />
+      </svg>
+
+      {/* ── Floating Holographic Callout Card (Offset at a safe standoff distance so all links are viewed perfectly) ── */}
+      <div
+        ref={calloutRef}
+        className="absolute top-0 left-0 z-30 pointer-events-none transition-opacity duration-150"
+        style={{ display: 'none', willChange: 'transform' }}
+      >
+        {hoveredDomain && currentHoverKpi && (
+          <div
+            className="p-4 rounded-2xl border-2 shadow-2xl bg-[#020b18]/90 w-[300px] text-xs font-mono backdrop-blur-xl"
+            style={{
+              borderColor: hoveredDomain.color,
+              boxShadow: `0 0 35px ${hoveredDomain.color}35`
+            }}
+          >
+            {/* Header: Signature Color Dot, Name, Role Badge */}
+            <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-polar-border/60">
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0 animate-pulse"
+                  style={{ background: hoveredDomain.color, boxShadow: `0 0 10px ${hoveredDomain.color}` }}
+                />
+                <span className="font-black text-sm text-white truncate">{hoveredDomain.name}</span>
+              </div>
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider flex-shrink-0"
+                style={{ background: `${hoveredDomain.color}25`, color: hoveredDomain.color, border: `1px solid ${hoveredDomain.color}40` }}
+              >
                 {hoveredDomain.role}
               </span>
             </div>
 
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-base font-black text-white font-mono">{currentHoverKpi.kpi}</span>
+            {/* Live Telemetry KPI */}
+            <div className="mt-2.5 flex items-baseline justify-between">
+              <span className="text-xl font-black text-white font-mono tracking-tight">
+                {currentHoverKpi.kpi}
+              </span>
               <span className="text-[10px] text-slate-400">{currentHoverKpi.sub}</span>
             </div>
+            <div className="mt-0.5 text-[10.5px] text-cyan-300 font-semibold">{currentHoverKpi.status}</div>
 
-            <div className="mt-1 text-[10px] text-cyan-300 font-medium">{currentHoverKpi.status}</div>
+            {/* Causal Conduit Breakdown: Incoming Drivers (Cyan) & Outgoing Impacts (Amber) */}
+            <div className="mt-3 pt-2.5 border-t border-polar-border/40 space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-[8.5px] font-bold text-cyan-300 flex-shrink-0 px-1.5 py-0.5 rounded bg-cyan-950/90 border border-cyan-500/50 shadow-[0_0_6px_#00f2fe30]">
+                  ▲ {incomingDomains.length} DRIVERS
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {incomingDomains.length > 0 ? (
+                    incomingDomains.map((d) => (
+                      <span
+                        key={d.id}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/50 text-cyan-200 border border-cyan-500/30"
+                      >
+                        {d.shortName}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[9px] text-slate-500 italic">Root Primary Driver</span>
+                  )}
+                </div>
+              </div>
 
-            <div className="mt-2.5 pt-2 border-t border-polar-border/40 flex items-center justify-between text-[10.5px] text-slate-300">
-              <span className="text-cyan-400 font-bold">Click node to open page</span>
-              <ExternalLink className="w-3 h-3 text-cyan-300" />
+              <div className="flex items-start gap-2">
+                <span className="text-[8.5px] font-bold text-amber-300 flex-shrink-0 px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/50 shadow-[0_0_6px_#fbbf2430]">
+                  ▼ {outgoingDomains.length} IMPACTS
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {outgoingDomains.length > 0 ? (
+                    outgoingDomains.map((d) => (
+                      <span
+                        key={d.id}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/50 text-amber-200 border border-amber-500/30"
+                      >
+                        {d.shortName}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[9px] text-slate-500 italic">Terminal Domain</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Direct Click Navigation Prompt */}
+            <div className="mt-3 pt-2 border-t border-polar-border/40 flex items-center justify-between text-[11px] text-slate-300">
+              <span className="text-cyan-400 font-bold">Click node to open dashboard</span>
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-300" />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
