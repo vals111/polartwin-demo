@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../../store/telemetryStore';
-import { ExternalLink, RotateCcw, Play, Pause, Compass } from 'lucide-react';
+import { ExternalLink, RotateCcw, Play, Pause } from 'lucide-react';
 
 interface Domain3DDef {
   id: string;
@@ -723,28 +723,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     <div ref={containerRef} className="relative w-full rounded-2xl overflow-hidden bg-[#020814] border border-polar-border/60 select-none">
       <canvas ref={canvasRef} className="w-full block" style={{ height: '680px' }} />
 
-      {/* 3D View Controls HUD Bar */}
-      <div className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2">
-        <div className="px-3.5 py-2 rounded-xl bg-polar-dark/95 border border-polar-border/80 backdrop-blur-md flex items-center gap-2 text-xs font-mono text-slate-300 shadow-xl">
-          <Compass className="w-4 h-4 text-cyan-400 animate-spin-slow" />
-          <span className="font-bold text-white tracking-wide">3D Antarctic Spatial Twin</span>
-          <span className="text-slate-500">•</span>
-          <span className="text-[11px] text-cyan-300">Drag to Orbit • Scroll to Zoom • Click Node to Enter</span>
-        </div>
 
-        {/* Dynamic Interactive Flow Legend */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-polar-dark/90 border border-polar-border/70 backdrop-blur-md text-xs font-mono">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f2fe]" />
-            <span className="text-[11px] text-cyan-200 font-bold">Incoming Drivers</span>
-          </div>
-          <span className="text-slate-600">|</span>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
-            <span className="text-[11px] text-amber-200 font-bold">Outgoing Impacts</span>
-          </div>
-        </div>
-      </div>
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         <button
