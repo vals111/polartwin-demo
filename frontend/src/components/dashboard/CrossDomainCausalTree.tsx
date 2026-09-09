@@ -504,9 +504,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             </span>
           </div>
 
-          <h1 className="text-lg lg:text-xl font-bold text-white flex items-center gap-2.5">
-            <Layers className="w-5 h-5" style={{ color: accentColor }} />
-            <span>9 Interconnected Operational Domains</span>
+          <h1 className="text-lg lg:text-xl font-bold text-white flex items-center gap-2.5 font-mono">
+            <GitCommit className="w-5 h-5 text-cyan-400" />
+            <span>Inter-Domain Causal Propagation Architecture</span>
           </h1>
         </div>
 
@@ -553,18 +553,12 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── SUBHEADER ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3">
-        <h2 className="text-base lg:text-lg font-bold text-slate-200 flex items-center gap-2 font-mono">
-          <GitCommit className="w-4 h-4 text-cyan-400" />
-          <span>Inter-Domain Causal Propagation Architecture</span>
-        </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center gap-2 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>Hover over any domain to reveal its causal links</span>
-          </span>
-        </div>
+      {/* ── HOVER GUIDANCE CALLOUT ── */}
+      <div className="flex items-center justify-end pb-3">
+        <span className="text-xs font-mono text-cyan-300 font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center gap-2 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+          <span>Hover over any domain to reveal its causal links</span>
+        </span>
       </div>
 
       {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
