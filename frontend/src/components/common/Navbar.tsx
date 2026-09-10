@@ -4,19 +4,17 @@ import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import { useUiStore } from '../../store/uiStore';
-import { Shield, Radio, Activity, LogOut, ChevronDown } from 'lucide-react';
+import { Shield, LogOut } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedStationId, selectStation, stations } = useStationStore();
   const { user, role, logout } = useAuthStore();
-  const { isConnected, liveRisk, liveSnapshot } = useTelemetryStore();
+  const { liveRisk } = useTelemetryStore();
   const { isSidebarOpen, toggleSidebar } = useUiStore();
 
   const currentRisk = liveRisk[selectedStationId];
-  const currentSnap = liveSnapshot[selectedStationId];
-  const readiness = currentSnap?.station_ops?.overall_readiness ?? 92.5;
 
   const handleStationChange = (stId: string) => {
     selectStation(stId);
@@ -91,22 +89,6 @@ export const Navbar: React.FC = () => {
 
       {/* Live System Metrics & Connectivity */}
       <div className="flex items-center space-x-4">
-        {/* WebSocket Stream Indicator */}
-        <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/60 px-3 py-1.5 rounded-md">
-          <span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 live-pulse' : 'bg-red-500'}`} />
-          <span className="text-xs font-mono text-slate-300">
-            {isConnected ? 'LIVE TWIN' : 'DISCONNECTED'}
-          </span>
-        </div>
-
-        {/* Overall Station Readiness */}
-        <div className="hidden lg:flex items-center space-x-2 bg-slate-900/60 border border-slate-800/60 px-3 py-1.5 rounded-md">
-          <Activity className="w-4 h-4 text-cyan-400" />
-          <div className="text-xs">
-            <span className="text-slate-400 mr-1.5">Readiness:</span>
-            <span className="font-mono font-bold text-white">{readiness}%</span>
-          </div>
-        </div>
 
         {/* Station Risk Pill */}
         <div className={`hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-md border text-xs font-mono font-semibold ${getRiskBadgeColor(currentRisk?.level)}`}>
