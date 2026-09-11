@@ -83,6 +83,7 @@ def get_live_telemetry_snapshot(
         "water": state.get("water"),
         "equipment": state.get("equipment"),
         "station_ops": state.get("station_ops"),
+        "logistics": state.get("logistics"),
         "telemetry": {
             "temperature": state["environment"]["temperature"],
             "wind_speed": state["environment"]["wind_speed"],
@@ -135,4 +136,16 @@ def refresh_station_weather(
     if station_id in engine.station_states:
         engine.station_states[station_id] = apply_live_weather(engine.station_states[station_id], data)
     return data
+
+@router.get("/logistics/{station_id}")
+def get_station_logistics(
+    station_id: str,
+    user = Depends(require_viewer)
+):
+    """
+    Returns the real-time logistics, convoy fleet, inbound cargo,
+    and route waypoint progression for the specified station.
+    """
+    state = get_current_state(station_id)
+    return state.get("logistics", {})
 

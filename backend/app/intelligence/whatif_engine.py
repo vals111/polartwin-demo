@@ -188,6 +188,18 @@ def run_whatif_scenario(
             "projected": proj_risk["score"],
             "delta": round(proj_risk["score"] - base_risk["score"], 1),
             "unit": "pts"
+        },
+        "resupply_eta_days": {
+            "baseline": curr_base.get("logistics", {}).get("effective_eta_days", 92.5),
+            "projected": curr_proj.get("logistics", {}).get("effective_eta_days", 112.5),
+            "delta": round(curr_proj.get("logistics", {}).get("effective_eta_days", 112.5) - curr_base.get("logistics", {}).get("effective_eta_days", 92.5), 1),
+            "unit": "days"
+        },
+        "logistics_risk_score": {
+            "baseline": curr_base.get("logistics", {}).get("logistics_risk_score", 24.0),
+            "projected": curr_proj.get("logistics", {}).get("logistics_risk_score", 64.0),
+            "delta": round(curr_proj.get("logistics", {}).get("logistics_risk_score", 64.0) - curr_base.get("logistics", {}).get("logistics_risk_score", 24.0), 1),
+            "unit": "pts"
         }
     }
 

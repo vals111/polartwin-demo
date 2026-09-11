@@ -79,7 +79,8 @@ async def simulation_tick_job():
                 "fuel": state["fuel"],
                 "water": state["water"],
                 "equipment": state["equipment"],
-                "station_ops": state["station_ops"]
+                "station_ops": state["station_ops"],
+                "logistics": state.get("logistics")
             })
 
             # 4. Broadcast risk update

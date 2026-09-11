@@ -63,6 +63,10 @@ export const telemetryApi = {
     const res = await apiClient.get(`/telemetry/live/${stationId}`);
     return res.data;
   },
+  getLogistics: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/telemetry/logistics/${stationId}`);
+    return res.data;
+  },
   getWeather: async (stationId = 'maitri') => {
     const res = await apiClient.get(`/telemetry/weather/${stationId}`);
     return res.data;

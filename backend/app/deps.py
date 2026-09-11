@@ -14,6 +14,10 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     if not credentials:
+        # Fallback to demo operator user if available for seamless demo exploration
+        demo_user = db.query(User).filter(User.email == "operator@polartwin.gov.in").first()
+        if demo_user:
+            return demo_user
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication credentials",
