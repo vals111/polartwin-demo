@@ -14,9 +14,15 @@ def compute_predictive_maintenance(station_state: Dict[str, Any]) -> Dict[str, A
     # eta: characteristic life in operating hours
     asset_profiles = {
         "generator": {"beta": 2.4, "eta": 8500, "critical_vib_threshold": 4.5},
+        "power": {"beta": 2.4, "eta": 8500, "critical_vib_threshold": 4.5},
         "pump": {"beta": 2.1, "eta": 6200, "critical_vib_threshold": 3.8},
+        "utility": {"beta": 2.0, "eta": 7500, "critical_vib_threshold": 3.5},
         "hvac": {"beta": 1.8, "eta": 9000, "critical_vib_threshold": 3.0},
-        "spectrometer": {"beta": 1.5, "eta": 12000, "critical_vib_threshold": 2.0}
+        "spectrometer": {"beta": 1.5, "eta": 12000, "critical_vib_threshold": 2.0},
+        "scientific": {"beta": 1.5, "eta": 14000, "critical_vib_threshold": 2.0},
+        "research": {"beta": 1.6, "eta": 11000, "critical_vib_threshold": 2.0},
+        "transport": {"beta": 2.2, "eta": 6000, "critical_vib_threshold": 4.0},
+        "waste": {"beta": 2.3, "eta": 5500, "critical_vib_threshold": 4.2}
     }
 
     analyzed_assets = []

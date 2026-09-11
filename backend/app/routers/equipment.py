@@ -33,10 +33,12 @@ def get_station_equipment(
     user = Depends(require_viewer)
 ):
     state = get_current_state(station_id)
+    equip = state.get("equipment", {})
     return {
         "station_id": station_id,
-        "avg_health": state["equipment"]["avg_health"],
-        "items": state["equipment"]["items"],
+        "avg_health": equip.get("avg_health", 93.5),
+        "items": equip.get("items", []),
+        "fleet_stats": equip.get("fleet_stats", {}),
         "maintenance": state.get("maintenance", {})
     }
 
