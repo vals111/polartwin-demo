@@ -1,18 +1,194 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { telemetryApi, scenariosApi } from '../api/client';
+import * as echarts from 'echarts';
 import {
   Archive, Package, CheckCircle2, AlertTriangle, ShieldCheck,
-  Clock, ArrowRight, ExternalLink, RefreshCw, Layers,
-  Activity, Wrench, Shield, ShoppingCart, Search, Filter,
-  AlertOctagon, TrendingDown, Calendar, Box, Tag, MapPin,
-  SlidersHorizontal, Play, X, ArrowUpRight, BarChart3,
-  Info, Flame, Droplets, HeartPulse, Microscope, Cpu,
-  Check, AlertCircle
+  Clock, ArrowRight, RefreshCw, Layers, Activity, Wrench,
+  Shield, Search, Filter, AlertOctagon, TrendingDown,
+  Box, Tag, Play, X, Sparkles, Flame, Droplets,
+  HeartPulse, Microscope, Cpu, AlertCircle, Brain
 } from 'lucide-react';
 
+// ── Stock Level Hexagon Grid ─────────────────────────────────────────────────
+const StockHexGrid: React.FC<{
+  items: { label: string; pct: number; color: string; status: string }[];
+}> = ({ items }) => {
+  const hexW = 80, hexH = 70;
+  const cols = Math.min(4, items.length);
+
+  return (
+    <div className="flex flex-wrap gap-3 justify-center">
+      {items.map((item, i) => {
+        const clamp = Math.max(0, Math.min(100, item.pct));
+        const fillColor = clamp < 15 ? '#ef4444' : clamp < 30 ? '#f59e0b' : item.color;
+        const pts = hexPoints(hexW / 2, hexH / 2, Math.min(hexW, hexH) / 2 - 4);
+        const fillPts = hexPoints(hexW / 2, hexH / 2, (Math.min(hexW, hexH) / 2 - 4) * (clamp / 100));
+
+        return (
+          <div key={i} className="flex flex-col items-center gap-1.5 group cursor-pointer">
+            <div className="relative" style={{ width: hexW, height: hexH }}>
+              <svg width={hexW} height={hexH} viewBox={`0 0 ${hexW} ${hexH}`}>
+                {/* Background hex */}
+                <polygon points={pts} fill="rgba(10,15,30,0.8)" stroke="rgba(255,255,255,0.08)" strokeWidth={1.5} />
+                {/* Fill hex (scaled from center) */}
+                <polygon points={fillPts} fill={`${fillColor}33`} stroke={fillColor} strokeWidth={1.5}
+                  style={{ filter: `drop-shadow(0 0 4px ${fillColor}88)` }} />
+                {/* Percentage */}
+                <text x={hexW / 2} y={hexH / 2 + 4} textAnchor="middle"
+                  fill="white" fontSize="13" fontWeight="900" fontFamily="monospace">{clamp.toFixed(0)}%</text>
+              </svg>
+              {/* Status dot */}
+              {item.status === 'CRITICAL' && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-polar-dark animate-pulse" />
+              )}
+              {item.status === 'LOW' && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-500 border border-polar-dark" />
+              )}
+            </div>
+            <div className="text-[9px] font-mono text-slate-400 text-center max-w-[88px] leading-tight group-hover:text-slate-200 transition-colors">{item.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+function hexPoints(cx: number, cy: number, r: number): string {
+  return Array.from({ length: 6 }, (_, i) => {
+    const angle = (Math.PI / 3) * i - Math.PI / 6;
+    return `${(cx + r * Math.cos(angle)).toFixed(1)},${(cy + r * Math.sin(angle)).toFixed(1)}`;
+  }).join(' ');
+}
+
+// ── Inventory Treemap EChart ─────────────────────────────────────────────────
+const InventoryTreemap: React.FC<{ categories: any[] }> = ({ categories }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inst = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (inst.current) inst.current.dispose();
+    const chart = echarts.init(ref.current, 'dark');
+    inst.current = chart;
+
+    chart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: {
+        formatter: (p: any) => `<b>${p.data.name}</b><br/>${p.data.value} items · ${p.data.pct?.toFixed(0) || 0}% stocked`,
+        backgroundColor: 'rgba(10,15,30,0.95)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11 },
+      },
+      series: [{
+        type: 'treemap',
+        data: categories.map(c => ({
+          name: c.name,
+          value: c.total_items,
+          pct: c.stocked_pct,
+          itemStyle: {
+            color: c.stocked_pct < 20 ? '#ef444433' : c.stocked_pct < 40 ? '#f59e0b33' : `${c.color}33`,
+            borderColor: c.stocked_pct < 20 ? '#ef4444' : c.stocked_pct < 40 ? '#f59e0b' : c.color,
+            borderWidth: 2,
+          },
+          label: {
+            show: true,
+            formatter: `{b}\n{c} items`,
+            color: '#e2e8f0', fontSize: 11, fontFamily: 'monospace',
+          },
+        })),
+        width: '100%', height: '100%',
+        roam: false, breadcrumb: { show: false },
+        nodeClick: false,
+      }],
+    });
+
+    const onResize = () => chart.resize();
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); chart.dispose(); };
+  }, [categories]);
+
+  return <div ref={ref} className="w-full h-64" />;
+};
+
+// ── Stock Level Bar Chart ────────────────────────────────────────────────────
+const StockBarsChart: React.FC<{ items: any[] }> = ({ items }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inst = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (inst.current) inst.current.dispose();
+    const chart = echarts.init(ref.current, 'dark');
+    inst.current = chart;
+
+    const sorted = [...items].sort((a, b) => a.stock_pct - b.stock_pct).slice(0, 12);
+
+    chart.setOption({
+      backgroundColor: 'transparent',
+      grid: { top: 10, bottom: 10, left: 140, right: 40 },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(10,15,30,0.95)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11 },
+        formatter: (p: any) => `${p[0].name}: <b>${p[0].value.toFixed(1)}%</b>`,
+      },
+      xAxis: {
+        type: 'value', max: 100,
+        axisLabel: { color: '#64748b', fontSize: 9, fontFamily: 'monospace', formatter: (v: number) => `${v}%` },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+      },
+      yAxis: {
+        type: 'category', data: sorted.map(i => i.name),
+        axisLabel: { color: '#94a3b8', fontSize: 9, fontFamily: 'monospace' },
+        axisLine: { show: false },
+      },
+      series: [{
+        type: 'bar', barMaxWidth: 18,
+        data: sorted.map(i => ({
+          value: i.stock_pct,
+          itemStyle: {
+            color: i.stock_pct < 15 ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#ef444488' }, { offset: 1, color: '#ef4444' }])
+              : i.stock_pct < 30 ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#f59e0b88' }, { offset: 1, color: '#f59e0b' }])
+                : new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#10b98188' }, { offset: 1, color: '#10b981' }]),
+            borderRadius: [0, 4, 4, 0],
+          },
+        })),
+        markLine: {
+          silent: true,
+          data: [{ xAxis: 20, lineStyle: { color: '#ef444466', type: 'dashed', width: 1 }, label: { formatter: 'Critical', color: '#ef4444', fontSize: 8, fontFamily: 'monospace' } }],
+        },
+      }],
+    });
+
+    const onResize = () => chart.resize();
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); chart.dispose(); };
+  }, [items]);
+
+  return <div ref={ref} className="w-full h-72" />;
+};
+
+// ── Category Icon Map ────────────────────────────────────────────────────────
+const categoryIcon = (cat: string) => {
+  const map: Record<string, React.ReactElement> = {
+    'Energy': <Flame className="w-4 h-4" />,
+    'Medical': <HeartPulse className="w-4 h-4" />,
+    'Mechanical': <Wrench className="w-4 h-4" />,
+    'Electronics': <Cpu className="w-4 h-4" />,
+    'Science': <Microscope className="w-4 h-4" />,
+    'Food': <Box className="w-4 h-4" />,
+    'Safety': <Shield className="w-4 h-4" />,
+    'Water': <Droplets className="w-4 h-4" />,
+  };
+  return map[cat] || <Package className="w-4 h-4" />;
+};
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export const InventoryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -22,1460 +198,417 @@ export const InventoryPage: React.FC = () => {
   const { stations } = useStationStore();
   const { liveSnapshot } = useTelemetryStore();
 
+  const [localInventory, setLocalInventory] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'items' | 'critical' | 'whatif'>('overview');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [whatIfLoading, setWhatIfLoading] = useState(false);
+  const [whatIfResult, setWhatIfResult] = useState<any>(null);
+  const [scenarioType, setScenarioType] = useState('stockout');
+
   const station = stations.find((s) => s.station_id === stationId) || {
     station_id: stationId,
     name: isMaitri ? 'Maitri Antarctic Station' : 'Bharati Antarctic Station',
-    location_type: isMaitri ? 'inland' : 'coastal',
   };
 
-  // State from WebSocket liveSnapshot or local fallback
-  const snapshot = liveSnapshot[stationId];
-  const [localInventory, setLocalInventory] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  // Filters and search
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-
-  // Selected modals
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [selectedJob, setSelectedJob] = useState<any | null>(null);
-  const [showReadinessModal, setShowReadinessModal] = useState<boolean>(false);
-  const [forecastItem, setForecastItem] = useState<any | null>(null);
-
-  // What-If Simulation State
-  const [whatIfLoading, setWhatIfLoading] = useState<boolean>(false);
-  const [whatIfResult, setWhatIfResult] = useState<any | null>(null);
-  const [activeScenarioName, setActiveScenarioName] = useState<string>('');
-
-  // Initial fetch for inventory data if not yet populated in snapshot
   useEffect(() => {
-    let isMounted = true;
-    const fetchInventoryData = async () => {
+    let mounted = true;
+    const load = async () => {
       try {
         setIsLoading(true);
         const data = await telemetryApi.getInventory(stationId);
-        if (isMounted && data && Object.keys(data).length > 0) {
-          setLocalInventory(data);
-          // Set default forecast item
-          if (data.items && data.items.length > 0) {
-            setForecastItem(data.items[0]);
-          }
-        }
-      } catch (err) {
-        console.warn('Could not fetch inventory endpoint directly, using snapshot fallback:', err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+        if (mounted && data) setLocalInventory(data);
+      } catch {} finally { if (mounted) setIsLoading(false); }
     };
-    fetchInventoryData();
+    load();
     setWhatIfResult(null);
-    return () => {
-      isMounted = false;
-    };
+    return () => { mounted = false; };
   }, [stationId]);
 
-  // Merge live snapshot with fallback
+  const snapshot = liveSnapshot[stationId];
   const inv = snapshot?.inventory || localInventory;
-  const log = snapshot?.logistics;
 
-  // Key metrics
-  const totalSkus = inv?.total_skus ?? (isMaitri ? 1420 : 1850);
-  const facilityName = inv?.facility_name ?? (isMaitri ? 'Heated Module Container Store' : 'Automated RFID Smart Matrix');
-  const partsReadiness = inv?.parts_readiness_pct ?? (isMaitri ? 94.0 : 97.0);
-  const stockoutCount = inv?.stockout_count ?? 0;
-  const criticalItemsLow = inv?.critical_items_low ?? 0;
-  const approachingCount = inv?.approaching_threshold_count ?? 2;
-  const upcomingDeliveryDays = log?.effective_eta_days ?? inv?.upcoming_delivery_days ?? (isMaitri ? 91.5 : 103.5);
-  const dependentDeliveryCount = inv?.dependent_delivery_items_count ?? 12;
-  const overallCapacityPct = inv?.overall_capacity_pct ?? 67.4;
+  const totalItems = inv?.total_items ?? (isMaitri ? 3840 : 4620);
+  const criticalLow = inv?.critical_low_items ?? (isMaitri ? 12 : 8);
+  const stockedPct = inv?.overall_stocked_pct ?? (isMaitri ? 78.4 : 82.1);
+  const pendingReorder = inv?.pending_reorder ?? (isMaitri ? 34 : 28);
+  const readinessScore = inv?.readiness_score ?? (isMaitri ? 87.2 : 91.4);
 
-  const storageCapacity = inv?.storage_capacity ?? {
-    critical_spares: { used_pct: 68.0, total_capacity_units: 190, current_units: 110 },
-    consumables: { used_pct: 74.0, total_capacity_units: 3600, current_units: 2230 },
-    medical: { used_pct: 42.0, total_capacity_units: 320, current_units: 192 },
-    research: { used_pct: 81.0, total_capacity_units: 1515, current_units: 858 },
-    maintenance_hardware: { used_pct: 52.0, total_capacity_units: 435, current_units: 198 }
-  };
+  // Inventory categories
+  const categories = useMemo(() => inv?.categories || [
+    { name: 'Energy & Thermal', total_items: isMaitri ? 320 : 410, stocked_pct: isMaitri ? 82 : 85, color: '#f59e0b', icon: 'Energy' },
+    { name: 'Mechanical Spares', total_items: isMaitri ? 880 : 1050, stocked_pct: isMaitri ? 74 : 80, color: '#06b6d4', icon: 'Mechanical' },
+    { name: 'Electronics & IT', total_items: isMaitri ? 560 : 680, stocked_pct: isMaitri ? 72 : 78, color: '#818cf8', icon: 'Electronics' },
+    { name: 'Science Equipment', total_items: isMaitri ? 420 : 520, stocked_pct: isMaitri ? 91 : 93, color: '#10b981', icon: 'Science' },
+    { name: 'Medical Supplies', total_items: isMaitri ? 310 : 360, stocked_pct: isMaitri ? 88 : 92, color: '#f43f5e', icon: 'Medical' },
+    { name: 'Food & Sustenance', total_items: isMaitri ? 680 : 820, stocked_pct: isMaitri ? 76 : 79, color: '#a78bfa', icon: 'Food' },
+    { name: 'Safety & PPE', total_items: isMaitri ? 280 : 340, stocked_pct: isMaitri ? 94 : 96, color: '#22c55e', icon: 'Safety' },
+    { name: 'Water Consumables', total_items: isMaitri ? 390 : 440, stocked_pct: isMaitri ? 68 : 73, color: '#38bdf8', icon: 'Water' },
+  ], [inv, isMaitri]);
 
-  const readinessBreakdown = inv?.readiness_breakdown ?? {
-    maintenance_coverage: 100.0,
-    critical_spares: isMaitri ? 96.0 : 98.0,
-    emergency_supplies: 100.0,
-    research_consumables: isMaitri ? 89.0 : 93.0
-  };
+  // Individual item list
+  const items = useMemo(() => inv?.items || [
+    { id: 'i01', name: 'AGO Diesel Fuel Additives', category: 'Energy & Thermal', stock_pct: 82, qty: 164, unit: 'drums', status: 'ADEQUATE', days_remaining: 90 },
+    { id: 'i02', name: 'Generator Injector Kits', category: 'Mechanical Spares', stock_pct: 24, qty: 6, unit: 'sets', status: 'LOW', days_remaining: 28 },
+    { id: 'i03', name: 'Trace Heating Cable (20m)', category: 'Water Consumables', stock_pct: 18, qty: 4, unit: 'rolls', status: 'CRITICAL', days_remaining: 12 },
+    { id: 'i04', name: 'UV Steriliser Lamps', category: 'Water Consumables', stock_pct: 55, qty: 11, unit: 'lamps', status: 'ADEQUATE', days_remaining: 60 },
+    { id: 'i05', name: 'Fire Suppression Charges', category: 'Safety & PPE', stock_pct: 95, qty: 38, unit: 'units', status: 'FULL', days_remaining: 365 },
+    { id: 'i06', name: 'Medical Oxygen Cylinders', category: 'Medical Supplies', stock_pct: 88, qty: 22, unit: 'cylinders', status: 'ADEQUATE', days_remaining: 120 },
+    { id: 'i07', name: 'Network Switch (Managed)', category: 'Electronics & IT', stock_pct: 40, qty: 2, unit: 'units', status: 'LOW', days_remaining: 45 },
+    { id: 'i08', name: 'Atmospheric Sensor Modules', category: 'Science Equipment', stock_pct: 92, qty: 46, unit: 'modules', status: 'FULL', days_remaining: 200 },
+    { id: 'i09', name: 'LPG Cooking Gas Cylinders', category: 'Energy & Thermal', stock_pct: 62, qty: 31, unit: 'cylinders', status: 'ADEQUATE', days_remaining: 75 },
+    { id: 'i10', name: 'Freeze-Dried Ration Packs', category: 'Food & Sustenance', stock_pct: 76, qty: 912, unit: 'packs', status: 'ADEQUATE', days_remaining: 182 },
+    { id: 'i11', name: 'Diesel Transfer Pump Seals', category: 'Mechanical Spares', stock_pct: 12, qty: 3, unit: 'kits', status: 'CRITICAL', days_remaining: 8 },
+    { id: 'i12', name: 'Emergency Beacon (EPIRB)', category: 'Safety & PPE', stock_pct: 100, qty: 4, unit: 'units', status: 'FULL', days_remaining: 730 },
+  ], [inv]);
 
-  const items: any[] = useMemo(() => inv?.items || [], [inv?.items]);
-  const maintenanceJobs: any[] = useMemo(() => inv?.maintenance_jobs || [], [inv?.maintenance_jobs]);
-  const anomalies: any[] = useMemo(() => inv?.anomalies || [], [inv?.anomalies]);
-  const recommendations: any[] = useMemo(() => inv?.recommendations || [], [inv?.recommendations]);
-  const impactChain = inv?.impact_chain;
+  const hexItems = categories.map((c: any) => ({
+    label: c.name.split(' ')[0] + (c.name.split(' ').length > 1 ? ' ' + c.name.split(' ')[1].slice(0, 4) : ''),
+    pct: c.stocked_pct,
+    color: c.color,
+    status: c.stocked_pct < 20 ? 'CRITICAL' : c.stocked_pct < 30 ? 'LOW' : 'OK',
+  }));
 
-  // Keep forecastItem in sync or default to first item
-  useEffect(() => {
-    if (!forecastItem && items.length > 0) {
-      setForecastItem(items[0]);
-    } else if (forecastItem && items.length > 0) {
-      const updated = items.find((it: any) => it.id === forecastItem.id);
-      if (updated) setForecastItem(updated);
-    }
-  }, [items, forecastItem]);
+  const criticalItems = items.filter((i: any) => i.status === 'CRITICAL' || i.status === 'LOW');
 
-  // Filter items
-  const filteredItems = useMemo(() => {
-    return items.filter((item: any) => {
-      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-      const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
-      const matchesSearch = !searchQuery.trim() ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.storage_location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.used_by && item.used_by.some((u: string) => u.toLowerCase().includes(searchQuery.toLowerCase())));
-      return matchesCategory && matchesStatus && matchesSearch;
-    });
-  }, [items, selectedCategory, selectedStatus, searchQuery]);
+  const filteredItems = items.filter((i: any) => {
+    const matchSearch = searchQuery === '' || i.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchCat = selectedCategory === 'all' || i.category === selectedCategory;
+    return matchSearch && matchCat;
+  });
 
-  // Count items with resupply gap
-  const resupplyGapItems = useMemo(() => {
-    return items.filter((it: any) => (it.resupply_gap_days ?? 0) > 0 || it.days_remaining < upcomingDeliveryDays);
-  }, [items, upcomingDeliveryDays]);
-
-  // Count expiring items (< 90 days)
-  const expiringItems = useMemo(() => {
-    return items.filter((it: any) => (it.days_to_expiry ?? 999) <= 90);
-  }, [items]);
-
-  // Execute What-If scenario
-  const handleRunWhatIf = async (scenarioType: string, paramVal: any, title: string) => {
+  const handleWhatIf = async () => {
     setWhatIfLoading(true);
-    setActiveScenarioName(title);
     try {
-      const perturbation: any = {};
-      if (scenarioType === 'resupply_delay') {
-        perturbation.type = 'resupply_delay';
-        perturbation.days = paramVal;
-      } else if (scenarioType === 'consumption_surge') {
-        perturbation.type = 'consumption_surge';
-        perturbation.multiplier = paramVal;
-      } else if (scenarioType === 'spare_unavailability') {
-        perturbation.type = 'spare_unavailability';
-      }
-
-      const response = await scenariosApi.execute(stationId, {
-        perturbation,
-        duration_ticks: 36
+      const res = await scenariosApi.execute(stationId, { type: scenarioType, value: 2 });
+      setWhatIfResult(res || {
+        scenario_name: scenarioType === 'stockout' ? 'Critical Part Stockout Event' : 'Emergency Medical Supply Draw',
+        impact: { items_affected: scenarioType === 'stockout' ? 8 : 3, readiness_delta: -12, procurement_lead_days: 45 },
+        recommended_action: scenarioType === 'stockout'
+          ? 'Initiate emergency procurement via air cargo. Cannibalize non-critical equipment spares. Notify logistics chain for priority resupply inclusion.'
+          : 'Alert station medical officer. Request emergency medevac if required. Activate next-resupply medical priority flag.',
       });
-      setWhatIfResult(response.result);
-    } catch (err) {
-      console.error('What-If simulation failed:', err);
-      // Construct realistic simulation comparison fallback
-      const baseReadiness = partsReadiness;
-      const projReadiness = scenarioType === 'resupply_delay' ? Math.max(72, baseReadiness - 11.5) : Math.max(76, baseReadiness - 8.0);
-      const baseStockout = stockoutCount;
-      const projStockout = scenarioType === 'spare_unavailability' ? 1 : 0;
-      const baseCriticalLow = criticalItemsLow;
-      const projCriticalLow = baseCriticalLow + (scenarioType === 'consumption_surge' ? 3 : 2);
-
-      setWhatIfResult({
-        title: `${title} — Digital Twin Evaluation`,
-        ticks_simulated: 36,
-        comparison: {
-          parts_readiness_pct: {
-            baseline: baseReadiness,
-            projected: projReadiness,
-            delta: round(projReadiness - baseReadiness, 1),
-            unit: '%'
-          },
-          stockout_count: {
-            baseline: baseStockout,
-            projected: projStockout,
-            delta: projStockout - baseStockout,
-            unit: 'items'
-          },
-          critical_items_low: {
-            baseline: baseCriticalLow,
-            projected: projCriticalLow,
-            delta: projCriticalLow - baseCriticalLow,
-            unit: 'items'
-          },
-          station_risk_score: {
-            baseline: 24.2,
-            projected: 46.5,
-            delta: 22.3,
-            unit: 'pts'
-          },
-          station_readiness_score: {
-            baseline: 92.5,
-            projected: 84.1,
-            delta: -8.4,
-            unit: '%'
-          }
-        },
-        recommended_action: scenarioType === 'resupply_delay'
-          ? 'Initiate contingency parts pooling from Bharati via Ka-32 heavy sling if required before winter close-down.'
-          : scenarioType === 'consumption_surge'
-          ? 'Limit auxiliary generator non-essential test runs and increase lube oil filtration cycle time by 25%.'
-          : 'Place high-priority airlift requisition for 6208-2RS bearing kit on next intra-continental ski-plane flight.'
-      });
-    } finally {
-      setWhatIfLoading(false);
-    }
+    } catch { setWhatIfResult({ scenario_name: 'Error', recommended_action: 'Simulation unavailable.' }); }
+    finally { setWhatIfLoading(false); }
   };
 
-  const round = (val: number, decimals: number) => {
-    const factor = Math.pow(10, decimals);
-    return Math.round(val * factor) / factor;
+  const statusColor: Record<string, string> = {
+    FULL: '#10b981', ADEQUATE: '#06b6d4', LOW: '#f59e0b', CRITICAL: '#ef4444',
   };
+  const readinessColor = readinessScore > 90 ? '#10b981' : readinessScore > 75 ? '#f59e0b' : '#ef4444';
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16 px-4 lg:px-0">
-      {/* 1. Header Banner & Top Controls */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden shadow-2xl">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div className="space-y-5 max-w-7xl mx-auto pb-12">
+
+      {/* ── Header ── */}
+      <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 opacity-5 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 70% 30%, #a78bfa 0%, transparent 60%)' }} />
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Operational Domain • Storage, Spares & Parts Inventory
+              <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold bg-violet-500/20 text-violet-300 border border-violet-500/40 flex items-center gap-1.5">
+                <Archive className="w-3 h-3" /> Inventory & Supply Chain Command
               </span>
-              <span className="text-[10px] font-mono text-slate-400">
-                {station.name} • {facilityName}
+              <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+                {station.name}
               </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-polar-dark/80 text-cyan-400 border border-polar-border">
-                Live Simulation Tick Active
-              </span>
+              {criticalLow > 0 && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-bold bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse flex items-center gap-1">
+                  <AlertOctagon className="w-3 h-3" /> {criticalLow} Critical-Low Items
+                </span>
+              )}
             </div>
-
-            <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-              <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40">
-                <Archive className="w-7 h-7 text-emerald-400" />
-              </div>
-              Storage, Spares & Parts Inventory
+            <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
+              <Archive className="w-8 h-8 text-violet-400" /> Inventory Command Digital Twin
             </h1>
-
-            <p className="text-xs font-mono text-slate-400 mt-2 max-w-3xl leading-relaxed">
-              Real-time physical stock levels, bin/rack locations, consumption forecasting, CMMS work-order parts staging, and cross-domain resupply gap modeling across 9 months of Antarctic isolation.
+            <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
+              {totalItems.toLocaleString()} SKUs · {categories.length} categories · Station readiness: {readinessScore.toFixed(1)}%
             </p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Corrected: All 16 Domains */}
-            <button
-              onClick={() => navigate(`/station/${stationId}/domains`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/90 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all shadow-md hover:shadow-cyan-500/10 cursor-pointer"
-              title="Navigate to comprehensive 16-domain operational overview"
-            >
-              <Layers className="w-4 h-4 text-cyan-400" />
-              <span>All 16 Domains</span>
+          <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
+            <button onClick={() => navigate(`/station/${stationId}/domains`)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all cursor-pointer">
+              <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
-
-            {/* Station Switcher */}
-            <button
-              onClick={() => navigate(isMaitri ? '/station/bharati/inventory' : '/station/maitri/inventory')}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 flex items-center gap-2 transition-all shadow-md hover:shadow-emerald-500/20 cursor-pointer"
-              title={`Switch to ${isMaitri ? 'Bharati (Automated RFID)' : 'Maitri (Container Store)'}`}
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Switch to {isMaitri ? 'Bharati' : 'Maitri'}</span>
+            <button onClick={() => navigate(`/station/${stationId}/decision?domain=inventory`)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
+            </button>
+            <button onClick={() => navigate(isMaitri ? '/station/bharati/inventory' : '/station/maitri/inventory')}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-violet-400/50 text-white flex items-center gap-2 transition-all cursor-pointer">
+              <RefreshCw className="w-4 h-4" /> Switch Station
             </button>
           </div>
         </div>
 
-        {/* 2. Top Status KPI Strip (Dynamic & Interactive Drill-down) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-5 border-t border-polar-border/50 text-xs font-mono">
-          {/* Stockout Count */}
-          <div
-            onClick={() => setSelectedStatus(stockoutCount > 0 ? 'OUT_OF_STOCK' : 'all')}
-            className="p-4 rounded-xl bg-polar-dark/70 border border-polar-border relative overflow-hidden group hover:border-emerald-500/40 transition-all cursor-pointer"
-            title="Click to filter by stockouts and critical inventory"
-          >
-            <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase tracking-wider">
-              <span>Stockout Count</span>
-              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                stockoutCount > 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
-              }`}>
-                {stockoutCount > 0 ? `${stockoutCount} Active Alert` : 'Zero Stockouts'}
-              </span>
-            </div>
-            <div className={`text-2xl font-black font-mono mt-1 ${
-              stockoutCount > 0 ? 'text-rose-400' : 'text-emerald-400'
-            }`}>
-              {stockoutCount} <span className="text-xs font-normal text-slate-400">Items</span>
-            </div>
-            <div className="text-[11px] text-slate-300 mt-1 flex items-center justify-between">
-              <span>Critical Monitored: <b className="text-white">{inv?.active_critical_skus ?? 184}</b></span>
-              <span className="text-amber-400 font-bold">{approachingCount} Watch</span>
-            </div>
-            <div className="text-[10px] text-emerald-300/90 mt-2 truncate border-t border-slate-800 pt-1.5 flex items-center justify-between">
-              <span>100% Core Machine Coverage</span>
-              <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
-          </div>
-
-          {/* Total Active SKUs */}
-          <div
-            onClick={() => { setSelectedCategory('all'); setSelectedStatus('all'); }}
-            className="p-4 rounded-xl bg-polar-dark/70 border border-polar-border relative overflow-hidden group hover:border-cyan-500/40 transition-all cursor-pointer"
-            title="Click to view full SKU catalogue"
-          >
-            <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase tracking-wider">
-              <span>Total Active SKUs</span>
-              <span className="text-cyan-400 font-bold text-[10px]">
-                {isMaitri ? 'Heated Racks' : 'RFID Smart Bins'}
-              </span>
-            </div>
-            <div className="text-2xl font-black font-mono text-white mt-1">
-              {totalSkus.toLocaleString()} <span className="text-xs font-normal text-slate-400">SKUs</span>
-            </div>
-            <div className="text-[10px] text-slate-300 mt-1 grid grid-cols-2 gap-1">
-              <span>Critical: <b className="text-emerald-400">{inv?.active_critical_skus ?? 184}</b></span>
-              <span>Low Stock: <b className="text-amber-400">{criticalItemsLow}</b></span>
-            </div>
-            <div className="text-[10px] text-slate-400 mt-2 truncate border-t border-slate-800 pt-1.5 flex items-center justify-between">
-              <span>Expiring: <b className="text-amber-300">{expiringItems.length}</b> • Quarantined: 0</span>
-              <ArrowUpRight className="w-3 h-3 text-cyan-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
-          </div>
-
-          {/* Parts Readiness (Clickable!) */}
-          <div
-            onClick={() => setShowReadinessModal(true)}
-            className="p-4 rounded-xl bg-polar-dark/70 border border-polar-border relative overflow-hidden group hover:border-teal-500/60 transition-all cursor-pointer shadow-sm hover:shadow-teal-500/10"
-            title="Click to view operational readiness decomposition"
-          >
-            <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase tracking-wider">
-              <span>Parts Readiness</span>
-              <span className="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[9px] font-bold">
-                Operational
-              </span>
-            </div>
-            <div className="text-2xl font-black font-mono text-cyan-300 mt-1 flex items-baseline gap-1">
-              {partsReadiness.toFixed(1)}%
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1 flex justify-between">
-              <span>Maintenance: <b className="text-white">{readinessBreakdown.maintenance_coverage}%</b></span>
-              <span>Spares: <b className="text-teal-300">{readinessBreakdown.critical_spares}%</b></span>
-            </div>
-            <div className="text-[10px] text-teal-300 mt-2 flex items-center justify-between border-t border-slate-800 pt-1.5">
-              <span>Click for readiness audit</span>
-              <ArrowUpRight className="w-3 h-3 text-teal-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </div>
-          </div>
-
-          {/* Upcoming Delivery & Resupply Dependency */}
-          <div
-            onClick={() => navigate(`/station/${stationId}/logistics`)}
-            className="p-4 rounded-xl bg-polar-dark/70 border border-polar-border relative overflow-hidden group hover:border-amber-500/40 transition-all cursor-pointer"
-            title="Click to inspect logistics resupply voyage"
-          >
-            <div className="flex justify-between items-center text-slate-400 text-[10px] uppercase tracking-wider">
-              <span>Upcoming Delivery</span>
-              <span className="text-amber-400 font-bold text-[10px]">Expedition Vessel</span>
-            </div>
-            <div className="text-2xl font-black font-mono text-amber-300 mt-1">
-              {upcomingDeliveryDays.toFixed(1)} <span className="text-xs font-normal text-slate-400">Days</span>
-            </div>
-            <div className="text-[10px] text-slate-300 mt-1 truncate">
-              {dependentDeliveryCount} Critical items depend on shipment
-            </div>
-            <div className="text-[10px] text-slate-400 mt-2 truncate border-t border-slate-800 pt-1.5 flex items-center justify-between">
-              <span>View Logistics Domain →</span>
-              <ExternalLink className="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Storage Facility Capacity & Category Health Overview */}
-      <div className="glass-panel p-5 rounded-2xl border border-polar-border space-y-4 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Box className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-white">
-              Storage Facility Capacity Utilization ({facilityName})
-            </h2>
-          </div>
-          <span className="text-[11px] font-mono text-slate-400">
-            Overall Facility Utilization: <b className="text-white">{overallCapacityPct}%</b>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Critical Spares */}
-          <div className="p-3 rounded-xl bg-polar-dark/80 border border-slate-800 space-y-1.5 text-xs font-mono">
-            <div className="flex justify-between items-center text-slate-400 text-[10px]">
-              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <Wrench className="w-3 h-3" /> Machine Spares
-              </span>
-              <span className="font-bold text-white">{storageCapacity.critical_spares.used_pct}%</span>
-            </div>
-            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-              <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${storageCapacity.critical_spares.used_pct}%` }} />
-            </div>
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{storageCapacity.critical_spares.current_units} / {storageCapacity.critical_spares.total_capacity_units} Units</span>
-              <span className="text-emerald-300">Optimal</span>
-            </div>
-          </div>
-
-          {/* Consumables */}
-          <div className="p-3 rounded-xl bg-polar-dark/80 border border-slate-800 space-y-1.5 text-xs font-mono">
-            <div className="flex justify-between items-center text-slate-400 text-[10px]">
-              <span className="flex items-center gap-1.5 text-cyan-400 font-bold">
-                <Droplets className="w-3 h-3" /> Consumable Fluids
-              </span>
-              <span className="font-bold text-white">{storageCapacity.consumables.used_pct}%</span>
-            </div>
-            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-              <div className="bg-cyan-400 h-full rounded-full" style={{ width: `${storageCapacity.consumables.used_pct}%` }} />
-            </div>
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{storageCapacity.consumables.current_units} / {storageCapacity.consumables.total_capacity_units} L</span>
-              <span className="text-cyan-300">Adequate</span>
-            </div>
-          </div>
-
-          {/* Medical */}
-          <div className="p-3 rounded-xl bg-polar-dark/80 border border-slate-800 space-y-1.5 text-xs font-mono">
-            <div className="flex justify-between items-center text-slate-400 text-[10px]">
-              <span className="flex items-center gap-1.5 text-rose-400 font-bold">
-                <HeartPulse className="w-3 h-3" /> Medical & Survival
-              </span>
-              <span className="font-bold text-white">{storageCapacity.medical.used_pct}%</span>
-            </div>
-            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-              <div className="bg-rose-400 h-full rounded-full" style={{ width: `${storageCapacity.medical.used_pct}%` }} />
-            </div>
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{storageCapacity.medical.current_units} / {storageCapacity.medical.total_capacity_units} Packs</span>
-              <span className="text-amber-300">Expiry Watch</span>
-            </div>
-          </div>
-
-          {/* Research */}
-          <div className="p-3 rounded-xl bg-polar-dark/80 border border-slate-800 space-y-1.5 text-xs font-mono">
-            <div className="flex justify-between items-center text-slate-400 text-[10px]">
-              <span className="flex items-center gap-1.5 text-purple-400 font-bold">
-                <Microscope className="w-3 h-3" /> Research Reagents
-              </span>
-              <span className="font-bold text-white">{storageCapacity.research.used_pct}%</span>
-            </div>
-            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-              <div className="bg-purple-400 h-full rounded-full" style={{ width: `${storageCapacity.research.used_pct}%` }} />
-            </div>
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{storageCapacity.research.current_units} / {storageCapacity.research.total_capacity_units} Vials</span>
-              <span className="text-purple-300">High Cap (81%)</span>
-            </div>
-          </div>
-
-          {/* Maintenance Hardware */}
-          <div className="p-3 rounded-xl bg-polar-dark/80 border border-slate-800 space-y-1.5 text-xs font-mono">
-            <div className="flex justify-between items-center text-slate-400 text-[10px]">
-              <span className="flex items-center gap-1.5 text-amber-400 font-bold">
-                <Cpu className="w-3 h-3" /> Electrical Hardware
-              </span>
-              <span className="font-bold text-white">{storageCapacity.maintenance_hardware.used_pct}%</span>
-            </div>
-            <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-              <div className="bg-amber-400 h-full rounded-full" style={{ width: `${storageCapacity.maintenance_hardware.used_pct}%` }} />
-            </div>
-            <div className="flex justify-between text-[9px] text-slate-400">
-              <span>{storageCapacity.maintenance_hardware.current_units} / {storageCapacity.maintenance_hardware.total_capacity_units} Units</span>
-              <span className="text-emerald-300">Nominal</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Interactive Depletion & Consumption Forecast Chart */}
-      {forecastItem && (
-        <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-polar-border pb-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                  Live Depletion Curve & Forecast Horizon: <span className="text-cyan-300">{forecastItem.name}</span>
-                </h3>
-              </div>
-              <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-                Current Stock: <b className="text-white">{forecastItem.quantity} {forecastItem.unit}</b> • Burn Rate: <b className="text-cyan-300">{forecastItem.daily_consumption} {forecastItem.unit}/day</b> • Days to Stockout: <b className="text-white">~{forecastItem.days_remaining}d</b>
-              </p>
-            </div>
-
-            {/* Quick Item Picker for Forecast */}
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="text-slate-400 text-[11px]">Select Item:</span>
-              <select
-                value={forecastItem.id}
-                onChange={(e) => {
-                  const it = items.find((x: any) => x.id === e.target.value);
-                  if (it) setForecastItem(it);
-                }}
-                className="bg-polar-dark border border-polar-border rounded-lg px-2.5 py-1 text-slate-200 text-xs focus:outline-none focus:border-cyan-400"
-              >
-                {items.map((it: any) => (
-                  <option key={it.id} value={it.id}>
-                    {it.name} ({it.quantity} {it.unit})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* SVG Visual Depletion Curve */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
-            <div className="lg:col-span-3 bg-polar-dark/90 p-4 rounded-xl border border-slate-800 relative">
-              <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 mb-2">
-                <span>Current Stock ({forecastItem.quantity} {forecastItem.unit})</span>
-                <span className="text-amber-400">Reorder Threshold ({forecastItem.reorder_point} {forecastItem.unit})</span>
-                <span className="text-rose-400">Min Safe Stock ({forecastItem.min_safe_stock} {forecastItem.unit})</span>
-              </div>
-
-              {/* Chart Canvas */}
-              <div className="h-44 w-full relative">
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 500 160" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="depletionGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.8" />
-                      <stop offset="60%" stopColor="#38bdf8" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.8" />
-                    </linearGradient>
-                    <linearGradient id="depletionFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Threshold Lines */}
-                  {/* Reorder line */}
-                  <line
-                    x1="0"
-                    y1={Math.max(10, 150 - (forecastItem.reorder_point / (forecastItem.capacity || 100)) * 130)}
-                    x2="500"
-                    y2={Math.max(10, 150 - (forecastItem.reorder_point / (forecastItem.capacity || 100)) * 130)}
-                    stroke="#f59e0b"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                  />
-                  {/* Min safe line */}
-                  <line
-                    x1="0"
-                    y1={Math.max(10, 150 - (forecastItem.min_safe_stock / (forecastItem.capacity || 100)) * 130)}
-                    x2="500"
-                    y2={Math.max(10, 150 - (forecastItem.min_safe_stock / (forecastItem.capacity || 100)) * 130)}
-                    stroke="#f43f5e"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                  />
-
-                  {/* Depletion Curve Path */}
-                  {forecastItem.depletion_curve && forecastItem.depletion_curve.length > 1 && (
-                    <>
-                      <polygon
-                        points={`0,160 ${forecastItem.depletion_curve.map((pt: any, i: number) => {
-                          const x = (i / (forecastItem.depletion_curve.length - 1)) * 500;
-                          const y = Math.max(10, 150 - (pt.stock / (forecastItem.capacity || 100)) * 130);
-                          return `${x},${y}`;
-                        }).join(' ')} 500,160`}
-                        fill="url(#depletionFill)"
-                      />
-                      <polyline
-                        fill="none"
-                        stroke="url(#depletionGrad)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        points={forecastItem.depletion_curve.map((pt: any, i: number) => {
-                          const x = (i / (forecastItem.depletion_curve.length - 1)) * 500;
-                          const y = Math.max(10, 150 - (pt.stock / (forecastItem.capacity || 100)) * 130);
-                          return `${x},${y}`;
-                        }).join(' ')}
-                      />
-                      {/* Data Dots */}
-                      {forecastItem.depletion_curve.map((pt: any, i: number) => {
-                        const x = (i / (forecastItem.depletion_curve.length - 1)) * 500;
-                        const y = Math.max(10, 150 - (pt.stock / (forecastItem.capacity || 100)) * 130);
-                        return (
-                          <circle
-                            key={i}
-                            cx={x}
-                            cy={y}
-                            r={i === 0 ? "5" : "3.5"}
-                            className={i === 0 ? "fill-teal-300 stroke-slate-900" : "fill-cyan-400 stroke-slate-900"}
-                            strokeWidth="2"
-                          />
-                        );
-                      })}
-                    </>
-                  )}
-                </svg>
-              </div>
-
-              <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-2 border-t border-slate-800/80 pt-1.5">
-                <span>Day 0 (Today)</span>
-                <span>Day +15</span>
-                <span>Day +30</span>
-                <span>Day +45</span>
-                <span>Day +60</span>
-                <span>Day +75</span>
-                <span>Day +90 (Horizon)</span>
-              </div>
-            </div>
-
-            {/* Forecast Decision Card */}
-            <div className="p-4 rounded-xl bg-polar-navy/60 border border-polar-border space-y-3 text-xs font-mono">
-              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
-                Digital Twin Forecast Logic
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-slate-300">
-                  <span>Reorder Date:</span>
-                  <b className="text-amber-400">Day +{Math.max(1, Math.round((forecastItem.quantity - forecastItem.reorder_point) / (forecastItem.daily_consumption || 1)))}</b>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Minimum Stock Date:</span>
-                  <b className="text-rose-400">Day +{Math.max(1, Math.round((forecastItem.quantity - forecastItem.min_safe_stock) / (forecastItem.daily_consumption || 1)))}</b>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Resupply Arrival:</span>
-                  <b className="text-cyan-300">Day +{upcomingDeliveryDays.toFixed(0)}</b>
-                </div>
-                <div className="flex justify-between text-slate-300 border-t border-slate-800 pt-1">
-                  <span>Resupply Buffer:</span>
-                  <b className={(forecastItem.days_remaining - upcomingDeliveryDays) >= 0 ? 'text-emerald-400' : 'text-rose-400 font-bold'}>
-                    {(forecastItem.days_remaining - upcomingDeliveryDays) >= 0
-                      ? `+${Math.round(forecastItem.days_remaining - upcomingDeliveryDays)}d Safe`
-                      : `GAP: ${Math.abs(Math.round(forecastItem.days_remaining - upcomingDeliveryDays))}d Alert!`}
-                  </b>
-                </div>
-              </div>
-
-              <div className="p-2 rounded bg-polar-dark border border-slate-800 text-[10px] text-slate-400 leading-relaxed">
-                <b className="text-slate-200">Prescriptive Rule: </b>
-                {forecastItem.days_remaining < upcomingDeliveryDays
-                  ? `Stock will deplete before expedition charter arrives. Immediate reorder prioritization flagged.`
-                  : `Current stock safely bridges the polar isolation window until annual offload.`}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Filter & Search Controls */}
-      <div className="glass-panel p-4 rounded-2xl border border-polar-border flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        {/* Category Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+        {/* KPI Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-polar-border/50">
           {[
-            { id: 'all', label: 'All Items' },
-            { id: 'critical_spares', label: 'Machine Spares' },
-            { id: 'consumables', label: 'Consumables & Fluids' },
-            { id: 'medical', label: 'Medical & Survival' },
-            { id: 'research', label: 'Research Supplies' },
-            { id: 'maintenance_hardware', label: 'Electrical Hardware' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
-                selectedCategory === cat.id
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                  : 'bg-polar-dark/60 text-slate-400 hover:text-white border border-polar-border'
-              }`}
-            >
-              {cat.label}
-            </button>
+            { label: 'Overall Stocked', val: `${stockedPct.toFixed(1)}%`, sub: `${totalItems.toLocaleString()} total SKUs`, color: stockedPct > 80 ? '#10b981' : '#f59e0b', icon: <Package className="w-4 h-4" /> },
+            { label: 'Critical Low', val: criticalLow.toString(), sub: 'Items below 15% threshold', color: criticalLow > 5 ? '#ef4444' : criticalLow > 0 ? '#f59e0b' : '#10b981', icon: <AlertOctagon className="w-4 h-4" /> },
+            { label: 'Readiness Score', val: `${readinessScore.toFixed(1)}%`, sub: `Operational preparedness`, color: readinessColor, icon: <ShieldCheck className="w-4 h-4" /> },
+            { label: 'Pending Reorder', val: pendingReorder.toString(), sub: 'SKUs awaiting procurement', color: '#f59e0b', icon: <TrendingDown className="w-4 h-4" /> },
+          ].map((kpi) => (
+            <div key={kpi.label} className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
+                <span className="uppercase">{kpi.label}</span>
+                <span style={{ color: kpi.color }}>{kpi.icon}</span>
+              </div>
+              <div className="text-lg font-black font-mono" style={{ color: kpi.color }}>{kpi.val}</div>
+              <div className="text-[10px] font-mono text-slate-500 mt-0.5">{kpi.sub}</div>
+            </div>
           ))}
         </div>
-
-        {/* Search & Status Filter */}
-        <div className="flex items-center gap-2">
-          {/* Status Dropdown */}
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-polar-dark border border-polar-border rounded-xl px-3 py-1.5 text-xs font-mono text-slate-300 focus:outline-none focus:border-emerald-400"
-          >
-            <option value="all">All Statuses</option>
-            <option value="OPTIMAL">Optimal</option>
-            <option value="WATCH">Watch</option>
-            <option value="LOW">Low Stock</option>
-            <option value="CRITICAL">Critical</option>
-            <option value="OUT_OF_STOCK">Out of Stock</option>
-          </select>
-
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            <input
-              type="text"
-              placeholder="Search SKU or Bin..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-polar-dark border border-polar-border rounded-xl pl-8 pr-3 py-1.5 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 w-40 sm:w-48"
-            />
-          </div>
-        </div>
       </div>
 
-      {/* 6. Inventory Items Grid (Clickable to Inspect) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredItems.map((item: any) => {
-          const isSelected = selectedItem?.id === item.id;
-          const isOptimal = item.status === 'OPTIMAL';
-          const isWatch = item.status === 'WATCH';
-          const isLow = item.status === 'LOW';
-          const isCritical = item.status === 'CRITICAL';
-          const isOutOfStock = item.status === 'OUT_OF_STOCK';
-
-          return (
-            <div
-              key={item.id}
-              onClick={() => {
-                setSelectedItem(item);
-                setForecastItem(item);
-              }}
-              className={`glass-panel p-4 rounded-2xl border transition-all cursor-pointer group shadow-md hover:shadow-emerald-500/10 ${
-                isSelected
-                  ? 'border-emerald-500 bg-polar-dark/95'
-                  : 'border-polar-border bg-polar-dark/70 hover:border-emerald-400/60'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block truncate">
-                    {item.category_label} • {item.storage_location}
-                  </span>
-                  <h4 className="font-bold text-white text-xs font-mono group-hover:text-emerald-300 transition-colors">
-                    {item.name}
-                  </h4>
-                </div>
-                <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold shrink-0 ${
-                  isOutOfStock ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
-                  isCritical ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
-                  isLow ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
-                  isWatch ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' :
-                  'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                }`}>
-                  {item.status}
-                </span>
-              </div>
-
-              {/* Quantity and Capacity Bar */}
-              <div className="mt-3 space-y-1.5">
-                <div className="flex justify-between items-baseline text-xs font-mono">
-                  <span className="text-slate-300">Stock Level:</span>
-                  <span className="font-black text-white text-base">
-                    {typeof item.quantity === 'number' ? item.quantity.toLocaleString() : item.quantity}{' '}
-                    <span className="text-xs font-normal text-slate-400">{item.unit}</span>
-                  </span>
-                </div>
-                <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      isOutOfStock ? 'bg-rose-500' :
-                      isCritical ? 'bg-rose-400' :
-                      isLow ? 'bg-amber-400' :
-                      isWatch ? 'bg-yellow-400' : 'bg-emerald-400'
-                    }`}
-                    style={{ width: `${Math.min(100, (item.quantity / (item.capacity || item.quantity * 1.5)) * 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] font-mono text-slate-400">
-                  <span>Min: {item.min_safe_stock} {item.unit}</span>
-                  <span>Reorder: {item.reorder_point} {item.unit}</span>
-                  <span>Cap: {item.capacity} {item.unit}</span>
-                </div>
-              </div>
-
-              {/* Consumption & Days Remaining */}
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t border-slate-800/80 text-[10px] font-mono">
-                <div>
-                  <span className="text-slate-400">Monthly Usage:</span>{' '}
-                  <b className="text-slate-200">{item.monthly_consumption} {item.unit}</b>
-                </div>
-                <div>
-                  <span className="text-slate-400">Depletion:</span>{' '}
-                  <b className={item.days_remaining < upcomingDeliveryDays ? 'text-rose-400 font-bold' : 'text-cyan-300'}>
-                    ~{item.days_remaining} Days
-                  </b>
-                </div>
-              </div>
-
-              {/* Equipment Used By Tag */}
-              {item.used_by && item.used_by.length > 0 && (
-                <div className="mt-2 text-[10px] font-mono text-slate-400 truncate">
-                  <span className="text-slate-500">Used by: </span>
-                  <span className="text-slate-300">{item.used_by[0]}</span>
-                </div>
-              )}
-
-              {/* Resupply Gap Tag if exists */}
-              {(item.resupply_gap_days ?? 0) > 0 && (
-                <div className="mt-2 p-1.5 rounded bg-rose-950/40 border border-rose-500/40 text-[9px] font-mono text-rose-300 flex items-center justify-between">
-                  <span>Resupply Gap Warning!</span>
-                  <b className="text-rose-400">+{item.resupply_gap_days}d Shortfall</b>
-                </div>
-              )}
-
-              {/* Footer action trigger */}
-              <div className="mt-2.5 flex items-center justify-between text-[10px] font-mono text-emerald-400/90 pt-1.5 border-t border-slate-800/60">
-                <span>Click for operational details</span>
-                <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredItems.length === 0 && (
-        <div className="glass-panel p-8 rounded-2xl border border-polar-border text-center space-y-2">
-          <Package className="w-8 h-8 text-slate-500 mx-auto" />
-          <div className="text-sm font-mono text-slate-300 font-bold">No inventory items matched your filter</div>
-          <div className="text-xs font-mono text-slate-500">Reset category or status filters to view all catalogued items.</div>
-          <button
-            onClick={() => { setSelectedCategory('all'); setSelectedStatus('all'); setSearchQuery(''); }}
-            className="mt-2 px-3 py-1.5 rounded-lg bg-polar-dark text-xs font-mono text-cyan-400 border border-polar-border"
-          >
-            Reset Filters
+      {/* ── Tab Bar ── */}
+      <div className="flex gap-2 flex-wrap">
+        {(['overview', 'items', 'critical', 'whatif'] as const).map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer ${activeTab === tab
+              ? 'bg-violet-500/20 border-violet-500/60 text-violet-300'
+              : 'bg-polar-dark/60 border-polar-border text-slate-400 hover:text-white hover:border-white/20'}`}>
+            {tab === 'overview' ? '🗂 Category Overview' : tab === 'items' ? '📋 Item Browser' : tab === 'critical' ? '🚨 Critical Stock' : '🧪 What-If Sim'}
           </button>
+        ))}
+      </div>
+
+      {/* ── Overview Tab ── */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Hex grid */}
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-violet-400 font-bold mb-5">
+              Stock Level by Category — Hex Grid
+            </div>
+            <StockHexGrid items={hexItems} />
+            {/* Legend */}
+            <div className="flex items-center gap-4 mt-5 pt-4 border-t border-polar-border/40 text-[9px] font-mono">
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" />≥50% OK</div>
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400" />15–30% LOW</div>
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />&lt;15% CRITICAL</div>
+            </div>
+          </div>
+
+          {/* Treemap */}
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4">
+              Inventory Volume Distribution — Treemap
+            </div>
+            <InventoryTreemap categories={categories} />
+            {/* Category summary */}
+            <div className="mt-3 space-y-2">
+              {categories.slice(0, 4).map((c: any) => (
+                <div key={c.name} className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.color }} />
+                  <div className="text-[10px] font-mono text-slate-400 flex-1">{c.name}</div>
+                  <div className="h-1.5 w-24 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40 shrink-0">
+                    <div className="h-full rounded-full" style={{ width: `${c.stocked_pct}%`, background: c.color }} />
+                  </div>
+                  <div className="text-[10px] font-mono font-bold w-8 text-right" style={{ color: c.color }}>{c.stocked_pct}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* 7. CMMS Maintenance Job Staging & Work Orders */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-5 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                CMMS Maintenance Job Staging (Inventory → Maintenance Dependency)
-              </h3>
+      {/* ── Items Browser Tab ── */}
+      {activeTab === 'items' && (
+        <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search inventory items..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-polar-dark border border-polar-border text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-violet-400/50 transition-colors"
+              />
             </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Spare part availability directly gates whether scheduled preventative maintenance and equipment overhauls can proceed.
-            </p>
+            <select
+              value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
+              className="px-4 py-2 rounded-xl bg-polar-dark border border-polar-border text-sm font-mono text-slate-300 focus:outline-none focus:border-violet-400/50 cursor-pointer">
+              <option value="all">All Categories</option>
+              {categories.map((c: any) => <option key={c.name} value={c.name}>{c.name}</option>)}
+            </select>
           </div>
-          <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded border border-emerald-500/30">
-            100% Staged for Active Tasks
-          </span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {maintenanceJobs.map((job: any) => {
-            const isReady = job.parts_status === 'READY';
-            const isBlocked = job.parts_status === 'BLOCKED';
+          {/* Stock bars chart */}
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">
+              Lowest Stock Items (sorted by % remaining)
+            </div>
+            <StockBarsChart items={filteredItems} />
+          </div>
 
-            return (
-              <div
-                key={job.work_order_id}
-                onClick={() => setSelectedJob(job)}
-                className="p-4 rounded-xl bg-polar-dark/80 border border-polar-border hover:border-emerald-400/60 transition-all cursor-pointer group space-y-3"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold text-cyan-400">{job.work_order_id}</span>
-                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold ${
-                        job.priority === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'
-                      }`}>
-                        {job.priority}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-white text-xs font-mono group-hover:text-emerald-300 transition-colors">
-                      {job.title}
-                    </h4>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold shrink-0 ${
-                    isReady ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
-                    isBlocked ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
-                    'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  }`}>
-                    {job.parts_status}
-                  </span>
-                </div>
-
-                {/* Target Asset & Schedule */}
-                <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-400 bg-polar-navy/40 p-2 rounded-lg border border-slate-800">
-                  <div>
-                    <span>Asset: </span> <b className="text-slate-200">{job.target_asset}</b>
-                  </div>
-                  <div>
-                    <span>Scheduled: </span> <b className="text-amber-400">In {job.scheduled_in_days} Days</b>
-                  </div>
-                </div>
-
-                {/* Required Parts List */}
-                <div className="space-y-1 text-xs font-mono">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase">Required Bill of Materials:</div>
-                  {job.required_parts.map((p: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-center text-[11px] p-1.5 rounded bg-polar-dark border border-slate-800">
-                      <span className="text-slate-300">{p.name}</span>
-                      <span className="font-bold text-emerald-400">
-                        {p.qty_required} / {p.qty_available} {p.unit} (Available)
-                      </span>
-                    </div>
+          {/* Item table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs font-mono">
+              <thead>
+                <tr className="border-b border-polar-border">
+                  {['Item Name', 'Category', 'Stock %', 'Qty', 'Days Remaining', 'Status'].map(h => (
+                    <th key={h} className="text-left text-[10px] uppercase text-slate-500 pb-2 pr-4">{h}</th>
                   ))}
-                </div>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredItems.map((item: any) => {
+                  const sc = statusColor[item.status] || '#64748b';
+                  return (
+                    <tr key={item.id} className="border-b border-polar-border/20 hover:bg-white/[0.02] transition-colors">
+                      <td className="py-2 pr-4 text-white font-medium">{item.name}</td>
+                      <td className="py-2 pr-4 text-slate-500">{item.category}</td>
+                      <td className="py-2 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-16 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
+                            <div className="h-full rounded-full" style={{ width: `${item.stock_pct}%`, background: sc }} />
+                          </div>
+                          <span style={{ color: sc }}>{item.stock_pct}%</span>
+                        </div>
+                      </td>
+                      <td className="py-2 pr-4 text-slate-300">{item.qty} {item.unit}</td>
+                      <td className="py-2 pr-4 text-slate-300">{item.days_remaining}d</td>
+                      <td className="py-2">
+                        <span className="px-2 py-0.5 rounded text-[9px] font-bold border"
+                          style={{ borderColor: `${sc}44`, background: `${sc}11`, color: sc }}>{item.status}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-                <div className="text-[10px] font-mono text-slate-400 pt-1 flex justify-between items-center border-t border-slate-800">
-                  <span>Assigned: <b className="text-slate-300">{job.assigned_technician}</b></span>
-                  <span className="text-emerald-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                    Job Details <ArrowRight className="w-3 h-3" />
+      {/* ── Critical Stock Tab ── */}
+      {activeTab === 'critical' && (
+        <div className="space-y-4">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-rose-400 font-bold glass-panel px-4 py-3 rounded-2xl border border-rose-500/30 flex items-center gap-2">
+            <AlertOctagon className="w-4 h-4" /> {criticalItems.length} Items Requiring Immediate Attention
+          </div>
+          {criticalItems.map((item: any) => {
+            const sc = statusColor[item.status] || '#64748b';
+            return (
+              <div key={item.id} className="glass-panel p-5 rounded-2xl border shadow-xl"
+                style={{ borderColor: `${sc}33` }}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0"
+                      style={{ borderColor: `${sc}44`, background: `${sc}11`, color: sc }}>
+                      {categoryIcon(item.category.split(' ')[0])}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white">{item.name}</div>
+                      <div className="text-[10px] font-mono text-slate-500">{item.category}</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded border font-bold shrink-0"
+                    style={{ borderColor: `${sc}44`, background: `${sc}11`, color: sc }}>
+                    {item.status}
                   </span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div className="text-center p-2 rounded-lg bg-polar-dark/60 border border-polar-border">
+                    <div className="text-[9px] font-mono text-slate-500 uppercase">Stock Level</div>
+                    <div className="text-base font-black font-mono" style={{ color: sc }}>{item.stock_pct}%</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-polar-dark/60 border border-polar-border">
+                    <div className="text-[9px] font-mono text-slate-500 uppercase">Quantity</div>
+                    <div className="text-base font-black font-mono text-white">{item.qty} {item.unit}</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-polar-dark/60 border border-polar-border">
+                    <div className="text-[9px] font-mono text-slate-500 uppercase">Days Left</div>
+                    <div className="text-base font-black font-mono" style={{ color: sc }}>{item.days_remaining}d</div>
+                  </div>
+                </div>
+                <div className="h-2.5 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
+                  <div className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${item.stock_pct}%`, background: `linear-gradient(to right, ${sc}88, ${sc})`, boxShadow: `0 0 8px ${sc}44` }} />
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 mt-2">
+                  ⚡ Action: Include in next resupply manifest · Notify logistics chain
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* 8. Cross-Domain Digital Twin Impact Chain: Inventory → Risk */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                Cross-Domain Digital Twin Impact Chain
-              </h3>
-            </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Physical inventory levels gate maintenance capability, preventing single-point equipment breakdown and containing station risk.
-            </p>
-          </div>
-          <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded border border-emerald-500/30">
-            Causal Coupling Validated
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 pt-2 text-xs font-mono">
-          {/* Node 1 */}
-          <div className="p-3.5 rounded-xl bg-polar-dark/80 border border-emerald-500/40 space-y-1.5">
-            <div className="text-[9px] text-emerald-400 font-bold uppercase">1. Inventory Stock</div>
-            <div className="font-bold text-white">1,420 Active SKUs</div>
-            <div className="text-[10px] text-slate-400">Zero Critical Stockouts</div>
-            <div className="text-[9px] text-emerald-300 bg-emerald-950/40 p-1 rounded border border-emerald-900/50 mt-1">
-              Adequate buffer in heated store
-            </div>
-          </div>
-
-          {/* Node 2 */}
-          <div className="p-3.5 rounded-xl bg-polar-dark/80 border border-teal-500/40 space-y-1.5">
-            <div className="text-[9px] text-teal-400 font-bold uppercase">2. Maintenance</div>
-            <div className="font-bold text-teal-300">100% Job Staging</div>
-            <div className="text-[10px] text-slate-400">4 Work Orders Ready</div>
-            <div className="text-[9px] text-teal-300 bg-teal-950/40 p-1 rounded border border-teal-900/50 mt-1">
-              Overhaul kits staged in bins
-            </div>
-          </div>
-
-          {/* Node 3 */}
-          <div className="p-3.5 rounded-xl bg-polar-dark/80 border border-cyan-500/40 space-y-1.5">
-            <div className="text-[9px] text-cyan-400 font-bold uppercase">3. Equipment</div>
-            <div className="font-bold text-white">94.2% Fleet Health</div>
-            <div className="text-[10px] text-slate-400">G-1, G-2, PistenBully</div>
-            <div className="text-[9px] text-cyan-300 bg-cyan-950/40 p-1 rounded border border-cyan-900/50 mt-1">
-              Zero unserviced wear & tear
-            </div>
-          </div>
-
-          {/* Node 4 */}
-          <div className="p-3.5 rounded-xl bg-polar-dark/80 border border-blue-500/40 space-y-1.5">
-            <div className="text-[9px] text-blue-400 font-bold uppercase">4. Operations</div>
-            <div className="font-bold text-white">92.5% Station Readiness</div>
-            <div className="text-[10px] text-slate-400">Power & Water Continuous</div>
-            <div className="text-[9px] text-blue-300 bg-blue-950/40 p-1 rounded border border-blue-900/50 mt-1">
-              Heating loops fully operational
-            </div>
-          </div>
-
-          {/* Node 5 */}
-          <div className="p-3.5 rounded-xl bg-polar-dark/80 border border-rose-500/40 space-y-1.5">
-            <div className="text-[9px] text-rose-400 font-bold uppercase">5. Station Risk</div>
-            <div className="font-bold text-rose-400">18.4 / 100 LOW</div>
-            <div className="text-[10px] text-slate-400">Inventory delta: +0.4 pts</div>
-            <div className="text-[9px] text-rose-300 bg-rose-950/40 p-1 rounded border border-rose-900/50 mt-1">
-              Within safe operational band
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 9. Anomalies & Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Inventory Anomalies */}
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <h3 className="text-xs font-mono font-bold uppercase text-white">Inventory Anomaly Detection</h3>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">
-              {anomalies.length} Active
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {anomalies.map((anom: any) => (
-              <div key={anom.id} className="p-3.5 rounded-xl bg-polar-dark/80 border border-amber-500/40 space-y-2 text-xs font-mono">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-bold text-amber-300">{anom.item_name}</span>
-                    <div className="text-[10px] text-slate-400">{anom.anomaly_type} (+{anom.deviation_pct}%)</div>
-                  </div>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
-                    {anom.severity}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-300 leading-relaxed">
-                  <b className="text-slate-400">Root Cause: </b>{anom.root_cause}
-                </div>
-                <div className="p-2 rounded bg-amber-950/30 border border-amber-500/30 text-[10px] text-amber-200">
-                  <b className="text-amber-400">Action: </b>{anom.recommended_action}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Prescriptive Recommendations */}
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-xs font-mono font-bold uppercase text-white">Explainable Recommendations</h3>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-              {recommendations.length} Recommendations
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {recommendations.map((rec: any) => (
-              <div key={rec.id} className="p-3 rounded-xl bg-polar-dark/80 border border-polar-border space-y-1.5 text-xs font-mono">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-white text-xs">{rec.title}</span>
-                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
-                    rec.priority === 'HIGH' ? 'bg-rose-500/20 text-rose-300' :
-                    rec.priority === 'MEDIUM' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-700 text-slate-300'
-                  }`}>
-                    {rec.priority} Priority
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  {rec.reason}
-                </p>
-                <div className="text-[10px] text-emerald-400 pt-1 border-t border-slate-800 flex justify-between items-center">
-                  <span>Action: {rec.suggested_action}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 10. Functional What-If Simulation Sandbox */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-polar-border pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                What-If Scenario Sandbox (Cloned Digital Twin State)
-              </h3>
-            </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Simulate supply disruption, extreme consumption surges, or lost critical machine spares without altering the live twin.
-            </p>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 self-start sm:self-auto">
-            Zero Live Twin Mutation
-          </span>
-        </div>
-
-        {/* Quick Scenario Triggers */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            onClick={() => handleRunWhatIf('resupply_delay', 20, 'Resupply Delayed +20 Days')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-amber-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs font-mono text-white group-hover:text-amber-300">
-                +20d Resupply Delay
-              </span>
-              <Play className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] font-mono text-slate-400 mt-1">
-              Simulate vessel delayed in pack ice drift. Tests safety buffer threshold.
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleRunWhatIf('consumption_surge', 1.30, '+30% Winter Consumption Surge')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs font-mono text-white group-hover:text-cyan-300">
-                +30% Winter Blizzard Surge
-              </span>
-              <Play className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] font-mono text-slate-400 mt-1">
-              Elevated generator runtime, hydronic glycol burn, and filter clogging.
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleRunWhatIf('spare_unavailability', null, 'Critical Spare Unavailability')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-rose-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs font-mono text-white group-hover:text-rose-300">
-                Critical Spare Unavailable
-              </span>
-              <Play className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] font-mono text-slate-400 mt-1">
-              Simulate damaged blower bearing in storage. Tests CMMS task blocking.
-            </div>
-          </button>
-        </div>
-
-        {/* Loading Spinner */}
-        {whatIfLoading && (
-          <div className="p-4 rounded-xl bg-polar-dark/60 border border-slate-800 flex items-center justify-center gap-2 text-xs font-mono text-cyan-400 animate-pulse">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span>Cloning Twin State & Simulating Scenario Trajectory...</span>
-          </div>
-        )}
-
-        {/* Results Comparison Grid */}
-        {whatIfResult && (
-          <div className="p-4 rounded-xl bg-polar-navy/70 border border-cyan-500/50 space-y-3 animate-fadeIn">
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-xs font-mono text-white uppercase tracking-wider">
-                Scenario Result: {whatIfResult.title}
-              </span>
-              <button
-                onClick={() => setWhatIfResult(null)}
-                className="text-slate-400 hover:text-white text-xs font-mono"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs font-mono">
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Parts Readiness</div>
-                <div className="text-slate-300 mt-0.5">Base: <b className="text-white">{whatIfResult.comparison.parts_readiness_pct?.baseline ?? partsReadiness}%</b></div>
-                <div className="text-amber-400 font-bold">Proj: {whatIfResult.comparison.parts_readiness_pct?.projected ?? 82.5}%</div>
-                <div className="text-[9px] text-amber-300 font-bold">{whatIfResult.comparison.parts_readiness_pct?.delta ?? -11.5}% Drop</div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Stockouts</div>
-                <div className="text-slate-300 mt-0.5">Base: <b className="text-white">{whatIfResult.comparison.stockout_count?.baseline ?? 0}</b></div>
-                <div className="text-rose-400 font-bold">Proj: {whatIfResult.comparison.stockout_count?.projected ?? 1}</div>
-                <div className="text-[9px] text-rose-300 font-bold">+{whatIfResult.comparison.stockout_count?.delta ?? 1} Alert</div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Low Stock SKUs</div>
-                <div className="text-slate-300 mt-0.5">Base: <b className="text-white">{whatIfResult.comparison.critical_items_low?.baseline ?? criticalItemsLow}</b></div>
-                <div className="text-amber-400 font-bold">Proj: {whatIfResult.comparison.critical_items_low?.projected ?? 3}</div>
-                <div className="text-[9px] text-amber-300 font-bold">+{whatIfResult.comparison.critical_items_low?.delta ?? 3} Items</div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Station Risk</div>
-                <div className="text-slate-300 mt-0.5">Base: <b className="text-white">{whatIfResult.comparison.station_risk_score?.baseline ?? 24.2}</b></div>
-                <div className="text-amber-400 font-bold">Proj: {whatIfResult.comparison.station_risk_score?.projected ?? 46.5}</div>
-                <div className="text-[9px] text-amber-300 font-bold">+{whatIfResult.comparison.station_risk_score?.delta ?? 22.3} pts</div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Readiness</div>
-                <div className="text-slate-300 mt-0.5">Base: <b className="text-white">{whatIfResult.comparison.station_readiness_score?.baseline ?? 92.5}%</b></div>
-                <div className="text-amber-400 font-bold">Proj: {whatIfResult.comparison.station_readiness_score?.projected ?? 84.1}%</div>
-                <div className="text-[9px] text-amber-300 font-bold">{whatIfResult.comparison.station_readiness_score?.delta ?? -8.4}%</div>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-500/40 text-[11px] font-mono text-slate-300">
-              <b className="text-amber-300">Prescriptive Mitigation Action: </b>
-              {whatIfResult.recommended_action}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ============================================================ */}
-      {/* MODAL 1: Operational Inventory Item Intelligence Modal */}
-      {/* ============================================================ */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="glass-panel max-w-xl w-full p-6 rounded-2xl border border-polar-border bg-polar-dark/95 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-polar-border pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40">
-                  <Package className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-mono font-bold text-white">
-                    {selectedItem.name}
-                  </h3>
-                  <div className="text-[11px] font-mono text-slate-400">
-                    Category: {selectedItem.category_label} • Location: {selectedItem.storage_location}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Current Stock</div>
-                <div className="text-lg font-bold text-white mt-0.5">
-                  {selectedItem.quantity} {selectedItem.unit}
-                </div>
-                <div className="text-[10px] text-emerald-300">Capacity: {selectedItem.capacity} {selectedItem.unit}</div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Status & Criticality</div>
-                <div className="text-sm font-bold text-emerald-400 mt-1">
-                  {selectedItem.status} • {selectedItem.criticality}
-                </div>
-                <div className="text-[10px] text-slate-400">Condition: {selectedItem.condition}</div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Consumption Burn Rate</div>
-                <div className="text-xs font-bold text-cyan-300 mt-1">
-                  {selectedItem.daily_consumption} {selectedItem.unit}/day ({selectedItem.monthly_consumption}/mo)
-                </div>
-                <div className="text-[10px] text-slate-400">Estimated Days Left: ~{selectedItem.days_remaining}d</div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Safety Thresholds</div>
-                <div className="text-xs font-bold text-amber-300 mt-1">
-                  Min: {selectedItem.min_safe_stock} • Reorder: {selectedItem.reorder_point}
-                </div>
-                <div className="text-[10px] text-slate-400">Shelf-life Expiry: {selectedItem.expiry_date}</div>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-polar-dark border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Dependent Subsystems & Equipment:</div>
-                <div className="text-white font-semibold mt-1">
-                  {selectedItem.used_by ? selectedItem.used_by.join(' • ') : 'General Station Infrastructure'}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-polar-dark border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Associated CMMS Task:</div>
-                <div className="text-cyan-300 font-semibold mt-1">{selectedItem.dependent_maintenance_task}</div>
-              </div>
-
-              {/* Resupply link */}
-              <div className="p-3 rounded-xl bg-polar-navy/70 border border-polar-border flex justify-between items-center">
-                <div>
-                  <div className="text-slate-400 text-[10px] uppercase">Incoming Expedition Resupply:</div>
-                  <div className="text-white font-bold mt-0.5">+{selectedItem.incoming_qty} {selectedItem.unit}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-slate-400 text-[10px] uppercase">ETA Days:</div>
-                  <div className="text-amber-400 font-bold mt-0.5">{upcomingDeliveryDays.toFixed(1)} Days</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 transition-all cursor-pointer"
-              >
-                Close Item Details
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
-      {/* ============================================================ */}
-      {/* MODAL 2: CMMS Maintenance Job Staging Modal */}
-      {/* ============================================================ */}
-      {selectedJob && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="glass-panel max-w-lg w-full p-6 rounded-2xl border border-polar-border bg-polar-dark/95 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-polar-border pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-cyan-500/20 border border-cyan-500/40">
-                  <Wrench className="w-5 h-5 text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-mono font-bold text-white">
-                    {selectedJob.title}
-                  </h3>
-                  <div className="text-[11px] font-mono text-cyan-400">
-                    Work Order: {selectedJob.work_order_id} • Priority: {selectedJob.priority}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedJob(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* ── What-If Tab ── */}
+      {activeTab === 'whatif' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-5">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-violet-400 font-bold flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Inventory Disruption Simulator
             </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Target Asset</div>
-                <div className="text-sm font-bold text-white mt-1">{selectedJob.target_asset}</div>
-              </div>
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border">
-                <div className="text-slate-400 text-[10px] uppercase">Assigned Tech</div>
-                <div className="text-sm font-bold text-cyan-300 mt-1">{selectedJob.assigned_technician}</div>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs font-mono">
-              <div className="text-[10px] font-bold text-slate-400 uppercase">Required Bill of Materials & Reservation:</div>
-              {selectedJob.required_parts.map((p: any, i: number) => (
-                <div key={i} className="p-2.5 rounded-lg bg-polar-dark border border-slate-800 flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-slate-200">{p.name}</div>
-                    <div className="text-[10px] text-slate-400">Quota Required: {p.qty_required} {p.unit}</div>
-                  </div>
-                  <div className="text-right">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                      {p.qty_available} Available
-                    </span>
-                  </div>
+            <div className="space-y-3">
+              {[
+                { key: 'stockout', label: '📦 Critical Part Stockout', desc: 'Key spare runs to zero before resupply' },
+                { key: 'medical_draw', label: '💊 Emergency Medical Draw', desc: 'Medical emergency requiring full supply depletion' },
+                { key: 'delayed_resupply', label: '🚛 Resupply Delayed 45+ Days', desc: 'All categories enter depletion mode' },
+              ].map(s => (
+                <div key={s.key} onClick={() => setScenarioType(s.key)}
+                  className={`p-3 rounded-xl border cursor-pointer transition-all ${scenarioType === s.key
+                    ? 'bg-violet-500/10 border-violet-500/50 text-violet-300'
+                    : 'bg-polar-dark/50 border-polar-border text-slate-400 hover:border-white/20'}`}>
+                  <div className="text-xs font-mono font-bold">{s.label}</div>
+                  <div className="text-[10px] font-mono mt-0.5 opacity-70">{s.desc}</div>
                 </div>
               ))}
             </div>
-
-            <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border text-xs font-mono text-slate-300">
-              <b className="text-cyan-400">Operational Impact: </b>
-              {selectedJob.operational_impact}
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setSelectedJob(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 transition-all cursor-pointer"
-              >
-                Close Work Order
-              </button>
-            </div>
+            <button onClick={handleWhatIf} disabled={whatIfLoading}
+              className="w-full py-3 rounded-xl text-sm font-mono font-bold bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/40 text-violet-300 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50">
+              {whatIfLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {whatIfLoading ? 'Simulating...' : 'Run Simulation'}
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* MODAL 3: Parts Readiness Decomposition Modal */}
-      {/* ============================================================ */}
-      {showReadinessModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="glass-panel max-w-lg w-full p-6 rounded-2xl border border-polar-border bg-polar-dark/95 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-polar-border pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-teal-500/20 border border-teal-500/40">
-                  <ShieldCheck className="w-5 h-5 text-teal-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-mono font-bold text-white">
-                    Parts Readiness Audit
-                  </h3>
-                  <div className="text-[11px] font-mono text-teal-300">
-                    Calculated Overall Readiness: <b className="text-white">{partsReadiness.toFixed(1)}%</b>
-                  </div>
-                </div>
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4">Simulation Output</div>
+            {!whatIfResult ? (
+              <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm font-mono text-center gap-3">
+                <Archive className="w-10 h-10 opacity-20" />
+                <p>Select a scenario and run simulation to see inventory impact analysis.</p>
               </div>
-              <button
-                onClick={() => setShowReadinessModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="text-xs font-mono space-y-3">
-              <div className="space-y-2">
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-slate-400">Scheduled Maintenance Coverage:</span>
-                    <span className="font-bold text-emerald-400">{readinessBreakdown.maintenance_coverage}%</span>
-                  </div>
-                  <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                    <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${readinessBreakdown.maintenance_coverage}%` }} />
-                  </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/40">
+                  <div className="text-xs font-mono font-bold text-violet-300">{whatIfResult.scenario_name}</div>
                 </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-slate-400">Critical Machine Spares & Seals:</span>
-                    <span className="font-bold text-cyan-400">{readinessBreakdown.critical_spares}%</span>
+                {whatIfResult.impact && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border text-center">
+                      <div className="text-[9px] font-mono text-slate-400">Items Affected</div>
+                      <div className="text-lg font-black font-mono text-rose-400 mt-1">{whatIfResult.impact.items_affected}</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border text-center">
+                      <div className="text-[9px] font-mono text-slate-400">Readiness Drop</div>
+                      <div className="text-lg font-black font-mono text-amber-400 mt-1">{whatIfResult.impact.readiness_delta}%</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border text-center">
+                      <div className="text-[9px] font-mono text-slate-400">Procurement Lead</div>
+                      <div className="text-lg font-black font-mono text-cyan-400 mt-1">{whatIfResult.impact.procurement_lead_days}d</div>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                    <div className="bg-cyan-400 h-full rounded-full" style={{ width: `${readinessBreakdown.critical_spares}%` }} />
+                )}
+                <div className="p-4 rounded-xl bg-polar-dark/60 border border-polar-border">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 mb-2 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Recommended Action
                   </div>
+                  <p className="text-xs font-mono text-slate-300 leading-relaxed">{whatIfResult.recommended_action}</p>
                 </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-slate-400">Emergency Trauma & Survival Stock:</span>
-                    <span className="font-bold text-emerald-400">{readinessBreakdown.emergency_supplies}%</span>
-                  </div>
-                  <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                    <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${readinessBreakdown.emergency_supplies}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-slate-400">Scientific Research Consumables:</span>
-                    <span className="font-bold text-purple-400">{readinessBreakdown.research_consumables}%</span>
-                  </div>
-                  <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                    <div className="bg-purple-400 h-full rounded-full" style={{ width: `${readinessBreakdown.research_consumables}%` }} />
-                  </div>
-                </div>
+                <button onClick={() => setWhatIfResult(null)}
+                  className="w-full py-2 rounded-xl text-xs font-mono text-slate-400 border border-polar-border hover:border-white/20 hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                  <X className="w-3.5 h-3.5" /> Clear Results
+                </button>
               </div>
-
-              <div className="p-3.5 rounded-xl bg-polar-navy/70 border border-polar-border text-[11px] text-slate-300 leading-relaxed">
-                <b className="text-teal-300">Readiness Assessment: </b>
-                Current stock across all 5 operational storage categories satisfies station wintering parameters. All four upcoming scheduled CMMS work orders possess full parts reservation.
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setShowReadinessModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark hover:bg-slate-800 border border-polar-border text-white transition-all cursor-pointer"
-              >
-                Close Audit
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 };
-
-export default InventoryPage;

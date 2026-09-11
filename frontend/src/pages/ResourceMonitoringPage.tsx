@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { TankLevelBar } from '../components/charts/TankLevelBar';
 import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { EChartsLine } from '../components/charts/EChartsLine';
 import { EChartsBar } from '../components/charts/EChartsBar';
 import { SparklineChart } from '../components/charts/SparklineChart';
-import { Fuel, Droplet, BatteryCharging, Apple, Clock, AlertTriangle, CheckCircle, ShipWheel, Zap } from 'lucide-react';
+import { Fuel, Droplet, BatteryCharging, Apple, Clock, AlertTriangle, CheckCircle, ShipWheel, Zap, Layers, RefreshCw, Brain } from 'lucide-react';
 
 // ── Resupply Countdown Ring ────────────────────────────────────────────────
 const ResupplyCountdown: React.FC<{ days: number; maxDays?: number }> = ({
@@ -62,6 +62,7 @@ const genBurnTrend = (base: number, n = 30): { time: string; value: number }[] =
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const ResourceMonitoringPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const stationId = id || 'maitri';
   const { liveSnapshot } = useTelemetryStore();
   const snapshot = liveSnapshot[stationId];
@@ -118,7 +119,7 @@ export const ResourceMonitoringPage: React.FC = () => {
               Consumable life-support monitoring against the annual {isMaitri ? 'overland convoy' : 'marine vessel'} resupply window.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 bg-polar-dark px-3 py-2 rounded-xl border border-polar-border text-xs font-mono text-slate-300">
               <Clock className="w-3.5 h-3.5" style={{ color: accentColor }} />
               <span>Resupply in <strong style={{ color: accentColor }}>{resupplyDays}d</strong></span>
@@ -127,6 +128,18 @@ export const ResourceMonitoringPage: React.FC = () => {
               <Zap className="w-3.5 h-3.5 text-amber-400" />
               <span>Load: <strong className="text-amber-300">{genLoad} kW</strong></span>
             </div>
+            <button onClick={() => navigate(`/station/${stationId}/domains`)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-1.5 transition-all cursor-pointer">
+              <Layers className="w-3.5 h-3.5 text-cyan-400" /> All Domains
+            </button>
+            <button onClick={() => navigate(`/station/${stationId}/decision?domain=energy`)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              <Brain className="w-3.5 h-3.5 text-purple-400" /> Decision Intel
+            </button>
+            <button onClick={() => navigate(isMaitri ? '/station/bharati/energy' : '/station/maitri/energy')}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-1.5 transition-all cursor-pointer">
+              <RefreshCw className="w-3.5 h-3.5" /> Switch Station
+            </button>
           </div>
         </div>
       </div>

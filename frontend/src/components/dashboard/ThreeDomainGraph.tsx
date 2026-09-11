@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import { ExternalLink, RotateCcw, Play, Pause, X, Pin } from 'lucide-react';
+import { TREE_NODES } from './CrossDomainCausalTree';
+import { OperationalDomainCard } from './OperationalDomainCard';
 
 interface Domain3DDef {
   id: string;
@@ -68,9 +70,11 @@ const CONNECTIONS_3D: Connection3DDef[] = [
 
 interface Props {
   stationId: string;
+  domainData?: Record<string, any>;
+  onSelectDomain?: (domainId: string) => void;
 }
 
-export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
+export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSelectDomain }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
@@ -82,25 +86,19 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
   const isMaitri = stationId === 'maitri';
   const snapshot = liveSnapshot[stationId];
 
+  const [selectedDomain, setSelectedDomain] = useState<Domain3DDef>(DOMAINS_3D[0]);
+  const selectedDomainRef = useRef<Domain3DDef>(DOMAINS_3D[0]);
   const [hoveredDomain, setHoveredDomain] = useState<Domain3DDef | null>(null);
-  const [pinnedDomain, setPinnedDomain] = useState<Domain3DDef | null>(null);
-  const [autoRotate, setAutoRotate] = useState<boolean>(true);
+  const hoveredDomainRef = useRef<Domain3DDef | null>(null);
 
   const controlsRef = useRef<OrbitControls | null>(null);
-  const hoveredDomainRef = useRef<Domain3DDef | null>(null);
-  const pinnedDomainRef = useRef<Domain3DDef | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHoveringCardRef = useRef<boolean>(false);
   const updateGraphStatesRef = useRef<((id: string | null) => void) | null>(null);
-  const autoRotateRef = useRef<boolean>(autoRotate);
 
   useEffect(() => {
-    autoRotateRef.current = autoRotate;
-  }, [autoRotate]);
-
-  useEffect(() => {
-    pinnedDomainRef.current = pinnedDomain;
-  }, [pinnedDomain]);
+    selectedDomainRef.current = selectedDomain;
+  }, [selectedDomain]);
 
   // Compute live telemetry for hovered tooltip
   const liveTelemetry = (domainId: string) => {
@@ -168,7 +166,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     controls.dampingFactor = 0.06;
     controls.maxDistance = 1200;
     controls.minDistance = 280;
-    controls.autoRotate = autoRotate;
+    controls.autoRotate = true;
     controls.autoRotateSpeed = 0.75;
     controls.maxPolarAngle = Math.PI * 0.85;
     controls.minPolarAngle = Math.PI * 0.15;
@@ -590,10 +588,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         if (hoveredDomainRef.current?.id !== dom.id) {
           hoveredDomainRef.current = dom;
           setHoveredDomain(dom);
-          // If no domain is explicitly pinned, activate this hovered domain
-          if (!pinnedDomainRef.current) {
-            updateGraphStates(dom.id);
-          }
+          updateGraphStates(dom.id);
         }
         renderer.domElement.style.cursor = 'pointer';
       } else {
@@ -604,11 +599,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
             if (isHoveringCardRef.current) return;
             hoveredDomainRef.current = null;
             setHoveredDomain(null);
-            if (pinnedDomainRef.current) {
-              updateGraphStates(pinnedDomainRef.current.id);
-            } else {
-              updateGraphStates(null);
-            }
+            updateGraphStates(selectedDomainRef.current ? selectedDomainRef.current.id : null);
           }, 350);
         }
         renderer.domElement.style.cursor = 'grab';
@@ -626,28 +617,9 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       if (intersects.length > 0) {
         const hit = intersects[0].object as THREE.Mesh;
         const dom = hit.userData.domain as Domain3DDef;
-        if (pinnedDomainRef.current?.id === dom.id) {
-          // Clicking the already pinned domain unpins it
-          pinnedDomainRef.current = null;
-          setPinnedDomain(null);
-          if (!hoveredDomainRef.current) {
-            updateGraphStates(null);
-          }
-        } else {
-          // Pin this domain permanently
-          pinnedDomainRef.current = dom;
-          setPinnedDomain(dom);
-          updateGraphStates(dom.id);
-        }
-      } else {
-        // Click on empty 3D space: unpin and clear hover
-        if (pinnedDomainRef.current !== null) {
-          pinnedDomainRef.current = null;
-          setPinnedDomain(null);
-          hoveredDomainRef.current = null;
-          setHoveredDomain(null);
-          updateGraphStates(null);
-        }
+        selectedDomainRef.current = dom;
+        setSelectedDomain(dom);
+        updateGraphStates(dom.id);
       }
     };
 
@@ -710,12 +682,11 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         }
       });
 
-      // Auto-rotation pauses automatically when a globe or card is hovered/pinned so it never rotates out from under cursor!
-      const isTargetActive = !!(pinnedDomainRef.current || hoveredDomainRef.current || isHoveringCardRef.current);
-      controls.autoRotate = autoRotateRef.current && !isTargetActive;
+      // Orbit continuously rotates uninterruptedly
+      controls.autoRotate = true;
 
-      // Project active (pinned or hovered) 3D node to screen space with SMART STANDOFF DISTANCE
-      const targetDomain = pinnedDomainRef.current || hoveredDomainRef.current;
+      // Project active 3D node to screen space with SMART STANDOFF DISTANCE
+      const targetDomain = hoveredDomainRef.current || selectedDomainRef.current;
       if (targetDomain && calloutRef.current) {
         const v = new THREE.Vector3(...targetDomain.pos);
         v.project(camera);
@@ -734,8 +705,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
           const nx = (v.x * 0.5 + 0.5) * currentW;
           const ny = (-v.y * 0.5 + 0.5) * height;
 
-          const cardW = 310;
-          const cardH = 265;
+          const cardW = 430;
+          const cardH = 240;
 
           // ── SMART OUTWARD STANDOFF CALCULATION ──
           // Links congregate inward toward other constellation domains.
@@ -826,8 +797,100 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
     }
   };
 
-  const activeDomain = pinnedDomain || hoveredDomain;
-  const currentKpi = activeDomain ? liveTelemetry(activeDomain.id) : null;
+  // Fallback Live KPIs per domain
+  const fallbackData = useMemo(() => {
+    const env = snapshot?.environment;
+    const eng = snapshot?.energy;
+    const fl = snapshot?.fuel;
+    const wt = snapshot?.water;
+    const eq = snapshot?.equipment;
+    const pers = snapshot?.personnel;
+    const comm = snapshot?.communication;
+
+    return {
+      environment: {
+        score: 86,
+        primaryKpi: `${env?.temperature?.toFixed(1) ?? (isMaitri ? -25.2 : -18.4)}°C`,
+        primaryLabel: 'Ambient Temp',
+        chillC: isMaitri ? -38.4 : -31.2,
+        windSpeed: env?.wind_speed ?? (isMaitri ? 32 : 44),
+        windGust: env?.wind_gust ?? (isMaitri ? 54 : 68),
+      },
+      logistics: {
+        score: 88,
+        primaryKpi: isMaitri ? '88 Days' : '102 Days',
+        primaryLabel: 'Resupply ETA',
+        journeyProgressPct: isMaitri ? 65 : 40,
+        transportMode: isMaitri ? '100km PistenBully Polar Convoy' : 'MV Vasiliy Golovnin Polar Sea Shuttle',
+      },
+      fuel: {
+        score: 95,
+        primaryKpi: `${fl?.fuel_percentage?.toFixed(1) ?? (isMaitri ? 78.0 : 85.7)}%`,
+        primaryLabel: 'Reserve Level',
+        currentLiters: fl?.current_level ?? (isMaitri ? 142000 : 180000),
+        burnRateLh: fl?.consumption_rate_l_per_hr ?? (isMaitri ? 17.5 : 21.2),
+        daysRemaining: fl?.days_remaining ?? (isMaitri ? 18 : 24),
+      },
+      inventory: {
+        score: 97,
+        primaryKpi: '0 Stockouts',
+        primaryLabel: 'Spares Safety Buffer',
+        medicalStockDays: isMaitri ? 180 : 240,
+        oilStockLiters: isMaitri ? 1200 : 1800,
+      },
+      equipment: {
+        score: 93,
+        primaryKpi: `${eq?.avg_health?.toFixed(1) ?? (isMaitri ? 93.5 : 96.2)}%`,
+        primaryLabel: 'Fleet Health',
+        activeMachinesCount: isMaitri ? 6 : 8,
+        vibrationMmS: isMaitri ? 2.1 : 1.4,
+      },
+      energy: {
+        score: 94,
+        primaryKpi: `${eng?.generator_load ?? (isMaitri ? 68 : 82)} kW`,
+        primaryLabel: 'Generator Load',
+        solarKw: eng?.solar_output ?? (isMaitri ? 22 : 28),
+        batterySoc: eng?.battery_level ?? (isMaitri ? 92 : 96),
+        freqHz: eng?.grid_frequency ?? (isMaitri ? 50.08 : 50.02),
+      },
+      water: {
+        score: 92,
+        primaryKpi: `${wt?.storage_liters?.toLocaleString() ?? (isMaitri ? '18,500' : '24,000')} L`,
+        primaryLabel: 'Potable Storage',
+        percentage: wt?.percentage ?? (isMaitri ? 82 : 88),
+        pipeTempC: wt?.pipe_temp_c ?? (isMaitri ? 3.8 : 4.6),
+        freezeRisk: wt?.freeze_risk ?? 'LOW',
+      },
+      personnel: {
+        score: 96,
+        primaryKpi: `${pers?.headcount ?? (isMaitri ? 25 : 30)} Crew`,
+        primaryLabel: 'Total Occupancy',
+        occupancyPct: pers?.occupancy_pct ?? (isMaitri ? 62.5 : 75.0),
+        totalPersonnel: pers?.headcount ?? (isMaitri ? 25 : 30),
+        onDutyCount: isMaitri ? 18 : 22,
+        roleBreakdown: [
+          { label: 'Science', pct: 40, color: '#38bdf8' },
+          { label: 'Eng', pct: 32, color: '#10b981' },
+          { label: 'Medical', pct: 12, color: '#ec4899' },
+          { label: 'Galley', pct: 16, color: '#f59e0b' }
+        ],
+      },
+      communication: {
+        score: 98,
+        primaryKpi: `${comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160)} Mbps`,
+        primaryLabel: 'LEO Constellation',
+        bandwidthMbps: comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160),
+        latencyMs: comm?.latency_ms ?? (isMaitri ? 78 : 65),
+        syncState: comm?.sync_state ?? 'SYNCED',
+      }
+    };
+  }, [snapshot, isMaitri]);
+
+  const activeDomain = hoveredDomain || selectedDomain;
+  const treeNode = activeDomain ? TREE_NODES.find((n) => n.id === activeDomain.id) : null;
+  const activeDomainData = activeDomain
+    ? (domainData && domainData[activeDomain.id]) || (fallbackData as any)[activeDomain.id]
+    : null;
 
   // Compute active incoming drivers and outgoing impacts for the active domain
   const incomingDomains = activeDomain
@@ -847,18 +910,6 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
       <canvas ref={canvasRef} className="w-full block" style={{ height: '680px' }} />
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-        <button
-          onClick={() => setAutoRotate(!autoRotate)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all flex items-center gap-1.5 shadow-md ${
-            autoRotate
-              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-cyan-500/10'
-              : 'bg-polar-dark/90 text-slate-400 border-polar-border hover:text-white'
-          }`}
-          title="Toggle Auto-Rotation"
-        >
-          {autoRotate ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-          <span>{autoRotate ? 'Orbiting' : 'Paused'}</span>
-        </button>
 
         <button
           onClick={handleResetCamera}
@@ -907,7 +958,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         />
       </svg>
 
-      {/* ── Floating Holographic Callout Card (Offset at a safe standoff distance so all links are viewed perfectly) ── */}
+      {/* ── Floating Holographic Callout Card (Exact Replica of 2D Operational Domain Card) ── */}
       <div
         ref={calloutRef}
         className="absolute top-0 left-0 z-30 pointer-events-auto transition-opacity duration-150"
@@ -921,155 +972,40 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId }) => {
         }}
         onMouseLeave={() => {
           isHoveringCardRef.current = false;
-          if (!pinnedDomainRef.current) {
-            hoverTimeoutRef.current = setTimeout(() => {
-              hoverTimeoutRef.current = null;
-              if (isHoveringCardRef.current) return;
-              hoveredDomainRef.current = null;
-              setHoveredDomain(null);
-              updateGraphStatesRef.current?.(null);
-            }, 250);
-          }
+          hoverTimeoutRef.current = setTimeout(() => {
+            hoverTimeoutRef.current = null;
+            if (isHoveringCardRef.current) return;
+            hoveredDomainRef.current = null;
+            setHoveredDomain(null);
+            updateGraphStatesRef.current?.(selectedDomainRef.current.id);
+          }, 250);
         }}
       >
-        {activeDomain && currentKpi && (
-          <div
-            className="p-4 rounded-2xl border-2 shadow-2xl bg-[#020b18]/95 w-[310px] text-xs font-mono backdrop-blur-xl transition-all"
-            style={{
-              borderColor: activeDomain.color,
-              boxShadow: `0 0 35px ${activeDomain.color}40`
-            }}
-          >
-            {/* Header: Signature Color Dot, Name, Role Badge & Pin/Unpin action */}
-            <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-polar-border/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className="w-3 h-3 rounded-full flex-shrink-0 animate-pulse"
-                  style={{ background: activeDomain.color, boxShadow: `0 0 10px ${activeDomain.color}` }}
-                />
-                <span className="font-black text-sm text-white truncate">{activeDomain.name}</span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                {pinnedDomain ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPinnedDomain(null);
-                      pinnedDomainRef.current = null;
-                      if (!hoveredDomainRef.current) {
-                        updateGraphStatesRef.current?.(null);
-                      } else {
-                        updateGraphStatesRef.current?.(hoveredDomainRef.current.id);
-                      }
-                    }}
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 transition-colors text-[9px] font-bold cursor-pointer"
-                    title="Click to Unpin"
-                  >
-                    <Pin className="w-2.5 h-2.5 fill-cyan-400" />
-                    <span>PINNED</span>
-                    <X className="w-2.5 h-2.5 ml-0.5" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPinnedDomain(activeDomain);
-                      pinnedDomainRef.current = activeDomain;
-                      updateGraphStatesRef.current?.(activeDomain.id);
-                    }}
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 border border-slate-700 hover:border-cyan-500/40 transition-colors text-[9px] font-bold cursor-pointer"
-                    title="Pin permanently"
-                  >
-                    <Pin className="w-2.5 h-2.5" />
-                    <span>PIN</span>
-                  </button>
-                )}
-                <span
-                  className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
-                  style={{ background: `${activeDomain.color}25`, color: activeDomain.color, border: `1px solid ${activeDomain.color}40` }}
-                >
-                  {activeDomain.role}
-                </span>
-              </div>
-            </div>
-
-            {/* Live Telemetry KPI */}
-            <div className="mt-2.5 flex items-baseline justify-between">
-              <span className="text-xl font-black text-white font-mono tracking-tight">
-                {currentKpi.kpi}
-              </span>
-              <span className="text-[10px] text-slate-400">{currentKpi.sub}</span>
-            </div>
-            <div className="mt-0.5 text-[10.5px] text-cyan-300 font-semibold">{currentKpi.status}</div>
-
-            {/* Causal Conduit Breakdown: Incoming Drivers (Cyan) & Outgoing Impacts (Amber) */}
-            <div className="mt-3 pt-2.5 border-t border-polar-border/40 space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="text-[8.5px] font-bold text-cyan-300 flex-shrink-0 px-1.5 py-0.5 rounded bg-cyan-950/90 border border-cyan-500/50 shadow-[0_0_6px_#00f2fe30]">
-                  ▲ {incomingDomains.length} DRIVERS
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {incomingDomains.length > 0 ? (
-                    incomingDomains.map((d) => (
-                      <button
-                        key={d.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPinnedDomain(d);
-                          pinnedDomainRef.current = d;
-                          updateGraphStatesRef.current?.(d.id);
-                        }}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950/60 hover:bg-cyan-800 text-cyan-200 border border-cyan-500/30 hover:border-cyan-400 transition-colors cursor-pointer"
-                        title={`Focus ${d.shortName}`}
-                      >
-                        {d.shortName}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-[9px] text-slate-500 italic">Root Primary Driver</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-[8.5px] font-bold text-amber-300 flex-shrink-0 px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/50 shadow-[0_0_6px_#fbbf2430]">
-                  ▼ {outgoingDomains.length} IMPACTS
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {outgoingDomains.length > 0 ? (
-                    outgoingDomains.map((d) => (
-                      <button
-                        key={d.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPinnedDomain(d);
-                          pinnedDomainRef.current = d;
-                          updateGraphStatesRef.current?.(d.id);
-                        }}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 hover:bg-amber-800 text-amber-200 border border-amber-500/30 hover:border-amber-400 transition-colors cursor-pointer"
-                        title={`Focus ${d.shortName}`}
-                      >
-                        {d.shortName}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-[9px] text-slate-500 italic">Terminal Domain</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Direct Click Navigation Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/station/${stationId}/${activeDomain.route}`);
+        {activeDomain && treeNode && activeDomainData && (
+          <div className="w-[430px] shadow-2xl backdrop-blur-xl transition-all relative">
+            <OperationalDomainCard
+              node={treeNode}
+              data={activeDomainData}
+              stationId={stationId}
+              isHovered={true}
+              showFooterButtons={false}
+              causalConduits={{
+                incoming: incomingDomains,
+                outgoing: outgoingDomains,
+                onFocusDomain: (d) => {
+                  setSelectedDomain(d);
+                  selectedDomainRef.current = d;
+                  updateGraphStatesRef.current?.(d.id);
+                }
               }}
-              className="mt-3 pt-2 border-t border-polar-border/40 w-full flex items-center justify-between text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer group"
-            >
-              <span className="text-cyan-400 font-bold group-hover:underline">Open {activeDomain.shortName} Dashboard</span>
-              <ExternalLink className="w-3.5 h-3.5 text-cyan-300 group-hover:translate-x-0.5 transition-transform" />
-            </button>
+              onClick={() => navigate(`/station/${stationId}/${treeNode.route}`)}
+              onSelectDomain={onSelectDomain}
+              className="border-2 shadow-2xl cursor-pointer w-full"
+              style={{
+                borderColor: activeDomain.color,
+                boxShadow: `0 0 35px ${activeDomain.color}35`,
+              }}
+            />
           </div>
         )}
       </div>

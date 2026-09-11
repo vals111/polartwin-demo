@@ -23,6 +23,17 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 401 responses by purging expired tokens
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('polartwin_token');
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Authentication
 export const authApi = {
   login: async (email: string, password: string) => {
@@ -97,7 +108,29 @@ export const resourcesApi = {
   getWater: async (stationId = 'maitri') => {
     const res = await apiClient.get(`/resources/${stationId}/water`);
     return res.data;
-  }
+  },
+  getPersonnel: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/resources/${stationId}/personnel`);
+    return res.data;
+  },
+  personnelWhatIf: async (stationId = 'maitri', scenarioType: string, params: Record<string, any> = {}) => {
+    const res = await apiClient.post(`/resources/${stationId}/personnel/whatif`, {
+      scenario_type: scenarioType,
+      params,
+    });
+    return res.data;
+  },
+  getCommunication: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/resources/${stationId}/communication`);
+    return res.data;
+  },
+  communicationWhatIf: async (stationId = 'maitri', scenarioType: string, params: Record<string, any> = {}) => {
+    const res = await apiClient.post(`/resources/${stationId}/communication/whatif`, {
+      scenario_type: scenarioType,
+      params,
+    });
+    return res.data;
+  },
 };
 
 // Equipment

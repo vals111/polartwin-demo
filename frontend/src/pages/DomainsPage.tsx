@@ -1,42 +1,44 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
+import { useStationStore } from '../store/stationStore';
+import * as echarts from 'echarts';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  RefreshCw, GitCompare, X
+  RefreshCw, GitCompare, X, ExternalLink, Activity, ArrowUpRight, ArrowDownRight,
+  Compass, Thermometer, ShieldCheck, AlertTriangle, Play, ChevronRight,
+  Layers, Clock, CheckCircle2, BatteryCharging, Flame, Box, Maximize2,
+  TrendingUp, Shield, Cpu, Waves, Brain
 } from 'lucide-react';
 import { CrossDomainCausalTree } from '../components/dashboard/CrossDomainCausalTree';
 
-interface DomainRelationship {
-  upstreamIds: string[];
-  downstreamIds: string[];
-  driverSummary: string;
-  impactSummary: string;
-}
+// ── Domain Configurations ───────────────────────────────────────────────────
 
 interface DomainConfig {
   id: string;
   name: string;
-  category: 'energy' | 'environment' | 'fuel' | 'equipment' | 'water' | 'logistics' | 'personnel' | 'comms' | 'inventory';
+  category: string;
   icon: any;
   route: string;
-  relationships: DomainRelationship;
+  color: string;
+  accentRgb: string;
+  shortDesc: string;
+  upstream: string[];
+  downstream: string[];
 }
 
-// Exactly 9 interconnected operational domains in exact specified order
 const NINE_DOMAINS: DomainConfig[] = [
   {
     id: 'energy',
     name: 'Energy & Power',
     category: 'energy',
     icon: Zap,
-    route: 'resources',
-    relationships: {
-      upstreamIds: ['environment', 'fuel', 'equipment'],
-      downstreamIds: ['water', 'logistics', 'communication'],
-      driverSummary: 'Ambient temperature drives habitat heating; solar PV offsets diesel generation; generator mechanical health governs output reliability.',
-      impactSummary: 'Powers critical water line trace heaters, communications radome, life support blowers, and science instrumentation.'
-    }
+    route: 'energy',
+    color: '#f59e0b',
+    accentRgb: '245, 158, 11',
+    shortDesc: 'Diesel Generation, Solar PV & Microgrid Battery Reserve',
+    upstream: ['environment', 'fuel', 'equipment'],
+    downstream: ['water', 'logistics', 'communication']
   },
   {
     id: 'environment',
@@ -44,25 +46,35 @@ const NINE_DOMAINS: DomainConfig[] = [
     category: 'environment',
     icon: CloudSnow,
     route: 'environment',
-    relationships: {
-      upstreamIds: [],
-      downstreamIds: ['energy', 'water', 'logistics', 'communication'],
-      driverSummary: 'Antarctic polar vortex and regional katabatic drafts dictating extreme temperature, barometric drops, and blizzard fronts.',
-      impactSummary: 'Directly dictates heating power demand, water conduit freeze hazard, convoy/vessel arrival delays, and satellite tracking link attenuation.'
-    }
+    color: '#00e5ff',
+    accentRgb: '0, 229, 255',
+    shortDesc: 'Polar Atmosphere, Katabatic Wind Chill & Storm Severity',
+    upstream: [],
+    downstream: ['energy', 'water', 'logistics', 'communication']
   },
   {
     id: 'fuel',
-    name: 'Fuel',
+    name: 'Fuel Depot',
     category: 'fuel',
     icon: Fuel,
     route: 'fuel',
-    relationships: {
-      upstreamIds: ['logistics'],
-      downstreamIds: ['energy', 'equipment'],
-      driverSummary: 'Annual maritime polar expedition resupply delivers bulk Antarctic-grade low-freeze diesel (AGO).',
-      impactSummary: 'Provides primary thermal and electrical lifeline for diesel generation and boiler loops; fuel purity affects filter life and injector wear.'
-    }
+    color: '#ef4444',
+    accentRgb: '239, 68, 68',
+    shortDesc: 'Antarctic Low-Freeze Diesel (AGO) Storage & Autonomy',
+    upstream: ['logistics'],
+    downstream: ['energy', 'equipment']
+  },
+  {
+    id: 'water',
+    name: 'Water Supply & Thermal Line',
+    category: 'water',
+    icon: Droplet,
+    route: 'water',
+    color: '#38bdf8',
+    accentRgb: '56, 189, 248',
+    shortDesc: 'Glacial Melt / Seawater RO Desalination & Pipe Trace Heating',
+    upstream: ['environment', 'energy'],
+    downstream: ['personnel', 'equipment']
   },
   {
     id: 'equipment',
@@ -70,25 +82,11 @@ const NINE_DOMAINS: DomainConfig[] = [
     category: 'equipment',
     icon: Wrench,
     route: 'equipment',
-    relationships: {
-      upstreamIds: ['inventory', 'personnel'],
-      downstreamIds: ['energy', 'water', 'fuel'],
-      driverSummary: 'Preventive technician work orders and spare parts availability maintain MTBF and component health across generators and pumps.',
-      impactSummary: 'Mechanical degradation directly risks generator continuous output, water pump flow, and fuel transfer pressurization.'
-    }
-  },
-  {
-    id: 'water',
-    name: 'Water',
-    category: 'water',
-    icon: Droplet,
-    route: 'water',
-    relationships: {
-      upstreamIds: ['environment', 'energy'],
-      downstreamIds: ['personnel', 'equipment'],
-      driverSummary: 'External ambient cold risks intake freeze; energy grid continuously powers 4.2 kW trace heating elements along intake lines.',
-      impactSummary: 'Supplies expedition crew hydration, hygiene, kitchen galley, and closed-loop heating/boiler makeup water.'
-    }
+    color: '#10b981',
+    accentRgb: '16, 185, 129',
+    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
+    upstream: ['inventory', 'personnel'],
+    downstream: ['energy', 'water', 'fuel']
   },
   {
     id: 'logistics',
@@ -96,12 +94,11 @@ const NINE_DOMAINS: DomainConfig[] = [
     category: 'logistics',
     icon: Truck,
     route: 'logistics',
-    relationships: {
-      upstreamIds: ['environment'],
-      downstreamIds: ['fuel', 'inventory'],
-      driverSummary: 'Maritime pack ice thickness, coastal gales, and overland crevasse routes determine vessel and convoy traverse speeds.',
-      impactSummary: 'Critical replenishment pipeline for fuel reserves, food rations, equipment spare assemblies, and expedition personnel rotation.'
-    }
+    color: '#f97316',
+    accentRgb: '249, 115, 22',
+    shortDesc: 'Overland Traverse Convoys, Cargo Resupply & Vessel ETA',
+    upstream: ['environment'],
+    downstream: ['fuel', 'inventory']
   },
   {
     id: 'personnel',
@@ -109,25 +106,23 @@ const NINE_DOMAINS: DomainConfig[] = [
     category: 'personnel',
     icon: Users,
     route: 'personnel',
-    relationships: {
-      upstreamIds: ['water', 'energy'],
-      downstreamIds: ['energy', 'water', 'equipment'],
-      driverSummary: 'Living quarters thermal stability, oxygen/CO2 life support, and potable water sustain expedition crew health.',
-      impactSummary: 'Occupancy patterns directly drive diurnal energy spikes (galley meal hours), domestic water draw, and maintenance task execution.'
-    }
+    color: '#a855f7',
+    accentRgb: '168, 85, 247',
+    shortDesc: 'Crew Headcount, Circadian Diurnal Demand & Life Support',
+    upstream: ['water', 'energy'],
+    downstream: ['energy', 'water', 'equipment']
   },
   {
     id: 'communication',
-    name: 'Communication',
+    name: 'Satellite Communication',
     category: 'comms',
     icon: Radio,
     route: 'communication',
-    relationships: {
-      upstreamIds: ['energy', 'environment'],
-      downstreamIds: [],
-      driverSummary: 'Continuous microgrid power sustains radome de-icing heaters; blizzards and atmospheric ionization attenuate RF tracking links.',
-      impactSummary: 'Ensures real-time Digital Twin SCADA telemetry streaming to NCAOR Goa, mission control coordination, and emergency telemedicine.'
-    }
+    color: '#3b82f6',
+    accentRgb: '59, 130, 246',
+    shortDesc: 'LEO Polar Satellite Tracking, Bandwidth QoS & Telemetry Sync',
+    upstream: ['energy', 'environment'],
+    downstream: []
   },
   {
     id: 'storage',
@@ -135,14 +130,15 @@ const NINE_DOMAINS: DomainConfig[] = [
     category: 'inventory',
     icon: Archive,
     route: 'inventory',
-    relationships: {
-      upstreamIds: ['logistics'],
-      downstreamIds: ['equipment', 'personnel'],
-      driverSummary: 'Annual resupply manifests restock critical machine parts, consumable fluids, and polar medical kits.',
-      impactSummary: 'Guarantees 100% parts readiness for corrective repairs, preventively averting equipment failure during winter isolation.'
-    }
+    color: '#14b8a6',
+    accentRgb: '20, 184, 166',
+    shortDesc: 'Critical Spares Safety Buffer, Consumable Fluids & Parts Readiness',
+    upstream: ['logistics'],
+    downstream: ['equipment', 'personnel']
   }
 ];
+
+// ── Main DomainsPage Component ───────────────────────────────────────────────
 
 export const DomainsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,13 +147,19 @@ export const DomainsPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { liveSnapshot } = useTelemetryStore();
-  const [compareModalOpen, setCompareModalOpen] = useState<boolean>(false);
-
   const otherStationId = isMaitri ? 'bharati' : 'maitri';
   const snapshot = liveSnapshot[stationId];
   const otherSnapshot = liveSnapshot[otherStationId];
 
-  // Helper to extract domain-specific metrics for any station
+  // Modals & Active Inspector State
+  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
+  const [compareModalOpen, setCompareModalOpen] = useState<boolean>(false);
+
+  // Chart ref for the detail inspector modal
+  const detailChartRef = useRef<HTMLDivElement>(null);
+  const detailChartInst = useRef<echarts.ECharts | null>(null);
+
+  // Extract domain data with real fallbacks
   const getDomainData = (targetStationId: string) => {
     const isM = targetStationId === 'maitri';
     const snap = liveSnapshot[targetStationId];
@@ -171,266 +173,127 @@ export const DomainsPage: React.FC = () => {
     return {
       energy: {
         score: ops?.domain_readiness?.energy ?? (isM ? 94 : 97),
-        status: isM ? 'Gen #1 Active (Optimal)' : 'Triple CHP Microgrid (Optimal)',
-        healthBadge: isM ? 'Heritage Manual Switchgear' : 'Automated SCADA Sync',
+        status: isM ? 'Gen #1 Active' : 'Triple CHP Sync',
         primaryKpi: `${eng?.generator_load ?? (isM ? 68 : 82)} kW`,
         primaryLabel: 'Generator Load',
-        demandKw: eng?.total_demand ?? (isM ? 64 : 76),
         solarKw: eng?.solar_output ?? (isM ? 22 : 28),
-        solarSharePct: Math.round(((eng?.solar_output ?? (isM ? 22 : 28)) / (eng?.generator_load ?? (isM ? 68 : 82))) * 100),
         batterySoc: eng?.battery_level ?? (isM ? 92 : 96),
-        activeUnits: isM ? 'Gen #1 Active (8,420h) • Gen #2 Standby' : 'CHP #1 & #2 Active • CHP #3 Hot Standby',
         freqHz: eng?.grid_frequency ?? (isM ? 50.08 : 50.02),
-        voltageV: isM ? 415.2 : 415.0,
-        efficiencyKwhL: isM ? 3.88 : 4.12,
-        forecastText: isM ? '+18 kW spike @ 18:30 (Galley & Science Lab)' : '+22 kW spike @ 19:00 (SWRO Desal & Cold Storage)',
+        activeUnits: isM ? 'Dual 100kVA Kirloskar' : 'Triple 100kVA CHP Automation',
         trend: isM ? [62, 64, 65, 68, 70, 68] : [74, 76, 78, 82, 84, 82],
-        situation: isM
-          ? 'Dual 100kVA Kirloskar diesel generators with Gen #1 currently carrying 68 kW baseline load. Rooftop solar PV is contributing 22 kW in 19.5h polar daylight, keeping the 120 kWh battery buffer at 92% state-of-charge.'
-          : 'Triple 100kVA Combined Heat & Power (CHP) automation plant with exhaust heat recovery loop supplying 82 kW station microgrid. Integrated 35 kW bifacial PV array contributes 28 kW with 96% battery reserve.',
-        drivers: [
-          'Katabatic cold draft (-25.2°C ambient) sustains 32 kW habitat heating draw',
-          'Summer solar elevation (+14.2°) provides 22 kW clean solar PV offset',
-          'Galley preparation cycles generate periodic 15-20 kW load surges'
-        ],
-        impact: 'Powers life support atmosphere blowers, 800m water line trace heating, science laboratories, and high-frequency communication radomes.',
-        action: isM ? 'Verify Gen #2 fuel day tank pre-heaters and auto-start sync relays.' : 'Inspect CHP heat exchanger differential pressure on thermal loop #2.'
+        architecture: isM ? 'Heritage Dual Diesel Gensets + 22 kW Rooftop Solar PV' : 'Combined Heat & Power (CHP) Loop + 35 kW Bifacial Solar Array'
       },
       environment: {
         score: ops?.domain_readiness?.environment ?? (isM ? 86 : 89),
-        status: env?.condition ?? (isM ? 'Partly Cloudy • Katabatic Gale' : 'Coastal Squall • Low Vis'),
-        healthBadge: isM ? 'Schirmacher Oasis Microclimate' : 'Larsemann Hills Maritime',
+        status: env?.condition ?? (isM ? 'Partly Cloudy' : 'Coastal Squall'),
         primaryKpi: `${env?.temperature?.toFixed(1) ?? (isM ? -25.2 : -18.4)}°C`,
         primaryLabel: 'Ambient Temp',
+        chillC: isM ? -38.4 : -31.2,
         windSpeed: env?.wind_speed ?? (isM ? 32 : 44),
         windGust: env?.wind_gust ?? (isM ? 54 : 68),
-        windChill: isM ? -38.4 : -31.2,
         pressureHpa: env?.pressure ?? (isM ? 984 : 992),
-        humidityPct: env?.humidity ?? (isM ? 62 : 78),
-        visibilityKm: env?.visibility ?? (isM ? 18 : 12),
         stormIndex: env?.storm_severity ?? (isM ? 0.28 : 0.38),
-        sunElevation: isM ? '+14.2°' : '+16.0°',
-        photoperiod: isM ? '19.5h daylight' : '20.2h daylight',
-        forecastText: isM ? 'Katabatic gusts peaking 62 km/h at 22:00; blizzard probability < 15%' : 'Coastal fog bank rolling in from Prydz Bay in 4h; visibility dropping to 4 km',
         trend: isM ? [-23.5, -24.1, -24.8, -25.2, -25.0, -25.2] : [-16.8, -17.2, -18.0, -18.4, -18.2, -18.4],
-        situation: isM
-          ? 'Schirmacher Oasis cold desert climate with descending katabatic winds from the Antarctic ice sheet. Barometric pressure is steady at 984 hPa with clean visibility across the nunatak.'
-          : 'Larsemann Hills coastal maritime environment facing oceanic gale squalls from Prydz Bay. Salt spray and blowing snow are causing intermittent surface icing on external catwalks.',
-        drivers: [
-          'Polar continental high-pressure cell driving katabatic drainage winds',
-          'Summer Antarctic photoperiod with 19.5 hours continuous sun elevation',
-          'Thermal delta between exposed bedrock oasis and glacial ice shelf'
-        ],
-        impact: 'Extreme wind chill (-38.4°C) elevates thermal transmission loss through habitat walls and accelerates freeze risks along external water supply piping.',
-        action: 'Monitor barometric trend for sudden drops indicating polar plateau blizzard formation.'
+        architecture: isM ? 'Schirmacher Oasis Bedrock Plateau • Katabatic Drafts' : 'Larsemann Hills Coastal Ridge • Marine Gale Squalls'
       },
       fuel: {
         score: ops?.domain_readiness?.fuel ?? (isM ? 95 : 98),
-        status: isM ? 'Bunded Tank Farm (Nominal)' : 'Automated SCADA Farm (Optimal)',
-        healthBadge: `${fl?.reserve_zone ?? 'Watch'} Zone`,
+        status: `${fl?.reserve_zone ?? 'Watch'} Zone`,
         primaryKpi: `${fl?.fuel_percentage?.toFixed(1) ?? (isM ? 78.0 : 85.7)}%`,
         primaryLabel: 'Reserve Level',
         currentLiters: fl?.current_level ?? (isM ? 142000 : 180000),
         capacityLiters: fl?.total_capacity ?? (isM ? 182000 : 210000),
         burnRateLh: fl?.consumption_rate_l_per_hr ?? (isM ? 17.5 : 21.2),
         daysRemaining: fl?.days_remaining ?? (isM ? 18 : 24),
-        safeBufferThresholdPct: 30,
         resupplyEtaDays: fl?.resupply_eta_days ?? (isM ? 88 : 102),
-        gapDays: (fl?.days_remaining ?? (isM ? 18 : 24)) - (fl?.resupply_eta_days ?? (isM ? 88 : 102)),
-        fuelTempC: fl?.fuel_temperature ?? (isM ? -4.2 : 2.1),
-        forecastText: isM ? 'Current burn rate reaches 30% safety reserve in 18 days; bridging protocol active' : 'CHP thermal recovery loop maintains fuel temp at +2.1°C without electric heaters',
         trend: isM ? [80.2, 79.6, 79.1, 78.6, 78.2, 78.0] : [87.4, 87.0, 86.6, 86.2, 85.9, 85.7],
-        situation: isM
-          ? 'Antarctic Grade Low-Freeze Diesel (AGO) stored in 6 bunded steel tanks. Current inventory is 142,000 L (78% capacity). Operating burn rate of 17.5 L/hr leaves 18 days of runway before entering the critical 30% emergency reserve.'
-          : 'Modern double-walled containerized fuel storage with automated SCADA valve routing matrix. 180,000 L in stock (85.7%) with jacket water heating maintaining positive fuel viscosity.',
-        drivers: [
-          'Dual generator operating demand drawing 420 L/day continuous fuel feed',
-          'Sub-zero ambient temperature requiring tank suction pre-heaters',
-          '88-day transit countdown until annual resupply vessel arrives at ice edge'
-        ],
-        impact: 'Fuel is the core survival commodity. Any unmitigated leak or surge in burn rate directly degrades the station bridging runway before summer resupply.',
-        action: 'Conduct daily soundings of tank #3 bund; verify fuel return heater line circulation.'
-      },
-      equipment: {
-        score: ops?.domain_readiness?.equipment ?? (isM ? 93.5 : 96.2),
-        status: isM ? '5 Nominal • 1 Watch' : '7 Nominal • 1 Watch',
-        healthBadge: isM ? '1 Critical Asset Watch' : 'Fleet Status Optimal',
-        primaryKpi: `${eq?.avg_health ?? (isM ? 93.5 : 96.2)}%`,
-        primaryLabel: 'Fleet Health',
-        totalAssets: isM ? 6 : 8,
-        nominalAssets: isM ? 5 : 7,
-        watchAssets: 1,
-        lowestAsset: isM ? 'Incinerator Draft Blower' : 'SWRO High-Pressure Pump #2',
-        lowestHealth: isM ? 72 : 78,
-        lowestIssue: isM ? 'Bearing vibration alert • replacement scheduled' : 'Intake filter cavitation indicator',
-        mtbfHours: isM ? 4200 : 6100,
-        activeTasks: isM ? 2 : 1,
-        forecastText: isM ? 'Blower bearing swap scheduled tomorrow 09:00; spares 100% staged' : 'Routine filter cartridge backwash scheduled in 12 operating hours',
-        trend: isM ? [95.0, 94.8, 94.2, 93.8, 93.6, 93.5] : [97.1, 96.8, 96.5, 96.4, 96.3, 96.2],
-        situation: isM
-          ? 'Continuous condition monitoring on diesel generator sets, HVAC blowers, air handlers, and fuel pumps. Overall fleet health is 93.5% with 5 units nominal and 1 asset on watch.'
-          : 'Advanced digital asset telemetry tracking triple CHP engines, high-pressure desalination pumps, and air handling units with integrated vibration spectrum analysis.',
-        drivers: [
-          'Operating run hours on active primary machinery',
-          'Continuous sub-zero thermal cycling stressing metallic seals',
-          'Preventive CMMS maintenance execution on schedule'
-        ],
-        impact: 'Health degradation in active generators or water trace relays directly risks heat and potable water production.',
-        action: 'Stage replacement bearings and puller kit for Incinerator Draft Blower maintenance window.'
+        architecture: isM ? '6 Bunded Above-Ground Steel Tanks with Tank Suction Pre-heaters' : 'Double-Walled ISO Containerized SCADA Farm with Heat Recovery'
       },
       water: {
         score: ops?.domain_readiness?.water ?? (isM ? 92 : 95),
-        status: isM ? 'Lake Zub Melt Conduit (Active)' : 'SWRO Desalination (Active)',
-        healthBadge: isM ? 'Trace Heaters Engaged' : 'Sub-Ice Seawater Intake',
+        status: isM ? 'Trace Heat 4.2 kW Active' : 'SWRO Desal Batching',
         primaryKpi: `${wt?.storage_liters?.toLocaleString() ?? (isM ? '18,500' : '24,000')} L`,
-        primaryLabel: 'Storage Reserve',
-        capacityLiters: wt?.max_storage_liters ?? (isM ? 25000 : 32000),
-        fillPct: wt?.percentage ?? (isM ? 74.0 : 75.0),
-        dailyConsumptionL: wt?.daily_consumption_l ?? (isM ? 850 : 1100),
-        pipeTempC: wt?.pipe_temp_c ?? (isM ? 3.8 : 8.5),
-        freezeThresholdC: 0.0,
-        freezeMarginC: isM ? 3.8 : 8.5,
-        traceDrawKw: isM ? 4.2 : 2.8,
-        daysBuffer: isM ? 21.8 : 21.8,
-        intakeMode: isM ? '800m Heated Surface Line from Lake Zub' : 'Quilty Bay SWRO Desal (24 L/min)',
-        forecastText: isM ? 'Pipe temperature stable at 3.8°C with 4.2 kW trace heat; freeze safety margin > 3.5°C' : 'SWRO batch cycle running at 1,440 L/hr; reservoir expected 100% full by 21:00',
+        primaryLabel: 'Potable Storage',
+        percentage: wt?.percentage ?? (isM ? 82.0 : 88.0),
+        pipeTempC: wt?.pipe_temp_c ?? (isM ? 3.8 : 4.6),
+        freezeRisk: wt?.freeze_risk ?? 'LOW',
+        consumptionLd: isM ? 850 : 1020,
         trend: isM ? [19200, 19000, 18800, 18650, 18550, 18500] : [22500, 22800, 23200, 23600, 23900, 24000],
-        situation: isM
-          ? 'Potable water is pumped from freshwater glacial melt at Priyadarshini (Lake Zub) through an insulated 800m surface pipe. Continuous 4.2 kW electrical trace heating maintains line temp at 3.8°C.'
-          : 'High-pressure Seawater Reverse Osmosis (SWRO) plant draws below coastal ice pack in Quilty Bay. Produces 24 L/min of ultra-pure potable water with waste heat recovery.',
-        drivers: [
-          'External katabatic wind speed (-38.4°C wind chill) cooling exposed pipe run',
-          'Expedition crew domestic demand (34 L/person/day across 25 personnel)',
-          'Trace heating electrical reliability on microgrid bus #2'
-        ],
-        impact: 'Loss of trace heating power in -25°C ambient will cause irreversible pipe freeze and rupture within 45 minutes.',
-        action: 'Verify secondary trace heating thermostat setpoint and inspect conduit anchor stilts.'
+        architecture: isM ? 'Priyadarshini (Lake Zub) Pump House with 800m Insulated Heated Pipeline' : 'Quilty Bay Marine Infiltration Intake + Seawater Reverse Osmosis (SWRO)'
+      },
+      equipment: {
+        score: ops?.domain_readiness?.equipment ?? (isM ? 93.5 : 96.2),
+        status: '5 Nominal • 1 Watch',
+        primaryKpi: `${eq?.avg_health?.toFixed(1) ?? (isM ? 93.5 : 96.2)}%`,
+        primaryLabel: 'Fleet Health',
+        activeMachinesCount: isM ? 6 : 8,
+        vibrationMmS: isM ? 2.1 : 1.4,
+        runHoursGen1: isM ? 8420 : 5120,
+        trend: isM ? [95.0, 94.8, 94.2, 93.8, 93.6, 93.5] : [97.1, 96.8, 96.5, 96.4, 96.3, 96.2],
+        architecture: isM ? 'Kirloskar Heavy GenSets, Centrifugal Water Pumps, Oil Burners' : 'Automated CHP Units, High-Pressure RO Pumps, Integrated HVAC'
       },
       logistics: {
-        score: ops?.domain_readiness?.logistics ?? (isM ? 88 : 92),
-        status: isM ? 'On Schedule (+4.5d Delay)' : 'On Schedule (+2.0d Delay)',
-        healthBadge: isM ? '100km Overland Convoy' : 'Direct Maritime Mooring',
-        primaryKpi: isM ? '88 Days ETA' : '102 Days ETA',
-        primaryLabel: 'Resupply Window',
-        vesselName: 'MV Vasiliy Golovnin (Charter)',
-        weatherDelayDays: isM ? 4.5 : 2.0,
-        effectiveEtaDays: isM ? 92.5 : 104.0,
-        routeType: isM ? 'Cape Town → Ice Shelf Barrier → 100km Overland PistenBully Convoy' : 'Cape Town → Prydz Bay → Direct Fast-Ice Barge Discharge',
-        fleetReady: isM ? '3x PistenBully 300 Polar • 1x Ka-32 Heli' : '2x Cargo Barges • 1x Ka-32 Heli',
-        riskScore: isM ? 24 : 16,
-        fuelGapDays: isM ? -70 : -78,
-        forecastText: isM ? 'Vessel departed Cape Town sea trials; overland ice shelf crevasse radar survey verified' : 'Prydz Bay sea-ice satellite imagery indicates optimal fast-ice thickness for direct berthing',
+        score: ops?.domain_readiness?.logistics ?? (isM ? 88 : 94),
+        status: isM ? 'Overland Traverse Active' : 'Coastal Mooring Ready',
+        primaryKpi: isM ? '88 Days' : '102 Days',
+        primaryLabel: 'Resupply ETA',
+        transitDistanceKm: isM ? 100 : 3.5,
+        transportMode: isM ? 'PistenBully Snow Groomer Trains' : 'Fast-Ice Mooring & Ka-32 Helicopter Slings',
+        journeyProgressPct: isM ? 62 : 45,
         trend: isM ? [98, 95, 92, 90, 89, 88] : [112, 109, 107, 105, 103, 102],
-        situation: isM
-          ? 'Annual expedition resupply relies on heavy ice-class charter vessel anchoring at the Princess Astrid Coast ice barrier, followed by 100 km overland traverse with PistenBully tractor trains.'
-          : 'Bharati benefits from deep water coastal access in Quilty Bay, allowing cargo vessels to berth directly against stable fast ice with Ka-32 heavy helicopter sling support.',
-        drivers: [
-          'Southern Ocean sea-ice coverage and pack drift conditions',
-          'Overland crevasse bridge stability across continental ice shelf',
-          'Mechanical reliability of tracked overland transport fleet'
-        ],
-        impact: 'Delivers entire year replenishment of AGO fuel, dry rations, critical spare parts, and rotation scientists.',
-        action: 'Review radar crevasse survey logs for northern approach sector.'
+        architecture: isM ? '100 km Crevasse-Bridged Overland Ice-Shelf Tractor Traverse' : 'Direct Deep-Water Mooring in Quilty Bay with Helipad Cargo Sling'
       },
       personnel: {
-        score: ops?.domain_readiness?.personnel ?? (isM ? 98 : 100),
-        status: isM ? 'All Accounted (1 Rest Alert)' : 'All Accounted (Nominal)',
-        healthBadge: isM ? 'Day 142 Winter-Over' : 'Day 138 Winter-Over',
-        primaryKpi: `${isM ? 25 : 30} Crew`,
-        primaryLabel: 'Headcount',
-        capacityBeds: isM ? 30 : 47,
-        occupancyPct: Math.round(((isM ? 25 : 30) / (isM ? 30 : 47)) * 100),
+        score: ops?.domain_readiness?.personnel ?? (isM ? 96 : 98),
+        status: isM ? '25 Winter-Over Crew' : '30 Winter-Over Crew',
+        primaryKpi: isM ? '25 Personnel' : '30 Personnel',
+        primaryLabel: 'Expedition Headcount',
+        bedCapacity: isM ? 40 : 47,
+        occupancyPct: isM ? 62.5 : 63.8,
+        o2Pct: 20.9,
+        co2Ppm: 420,
         roleBreakdown: isM
           ? [
-              { label: 'Science', count: 10, color: 'bg-pink-400' },
-              { label: 'Engineering', count: 10, color: 'bg-cyan-400' },
-              { label: 'Medical', count: 1, color: 'bg-emerald-400' },
-              { label: 'Logistics/Galley', count: 4, color: 'bg-amber-400' }
+              { label: 'Science', pct: 40, color: '#ec4899' },
+              { label: 'Engineering', pct: 40, color: '#06b6d4' },
+              { label: 'Medical', pct: 8, color: '#10b981' },
+              { label: 'Galley/Ops', pct: 12, color: '#f59e0b' }
             ]
           : [
-              { label: 'Science', count: 12, color: 'bg-pink-400' },
-              { label: 'Engineering', count: 12, color: 'bg-cyan-400' },
-              { label: 'Medical', count: 1, color: 'bg-emerald-400' },
-              { label: 'Logistics/Galley', count: 5, color: 'bg-amber-400' }
+              { label: 'Science', pct: 44, color: '#ec4899' },
+              { label: 'Engineering', pct: 38, color: '#06b6d4' },
+              { label: 'Medical', pct: 6, color: '#10b981' },
+              { label: 'Galley/Ops', pct: 12, color: '#f59e0b' }
             ],
-        activityMultiplier: isM ? 1.0 : 1.05,
-        resourceImpactKw: isM ? '+2.4 kW/person' : '+2.5 kW/person',
-        restAlert: isM ? '1 Tech <4.5h rest (duty relief active)' : '0 rest violations (100% nominal)',
-        medicalBayStatus: 'Operational • 1 Doctor on Duty',
-        forecastText: isM ? 'Diurnal kitchen prep spike expected 18:30; evening science instrumentation run 20:00' : 'Atmospheric LiDAR lab cycle running continuous night shift observations',
         trend: isM ? [25, 25, 25, 25, 25, 25] : [30, 30, 30, 30, 30, 30],
-        situation: isM
-          ? '25 personnel currently wintering over at Maitri (Day 142 of 45th ISEA). All 25 accounted inside main living module. 1 engineer flagged for fatigue relief after generator shift.'
-          : '30 winter-over personnel at Bharati Station. Station operating at 64% bed capacity with optimal circadian rest cycles across all research and engineering teams.',
-        drivers: [
-          'Extreme Antarctic isolation and photoperiod regulation',
-          'Scheduled maintenance shifts and scientific watch rotations',
-          'Habitable atmospheric oxygen, CO2, and indoor heating levels'
-        ],
-        impact: 'Expedition personnel are the direct operational drivers of station maintenance, kitchen load, water draw, and research yield.',
-        action: 'Enforce rest relief protocol for generator watch technician.'
+        architecture: isM ? 'Main Living Module with Galley, Radio Room, Clinic & 4-Person Cabins' : 'Modular Containerized Habitat on Elevated Stilts with Acoustic Insulation'
       },
       communication: {
         score: ops?.domain_readiness?.communication ?? (isM ? 98 : 99),
-        status: isM ? 'Online (QoS Priority)' : 'Online (Dual Radome High-Speed)',
-        healthBadge: isM ? 'LEO Polar Constellation' : 'Dual LEO & Ku-Band Link',
+        status: 'LEO Link Active',
         primaryKpi: isM ? '120 Mbps' : '160 Mbps',
-        primaryLabel: 'Bandwidth',
+        primaryLabel: 'Symmetrical Uplink',
         latencyMs: isM ? 78 : 65,
         packetLossPct: isM ? 0.05 : 0.02,
-        uptimePct: 99.9,
-        syncFreshness: '< 2.0s ago',
-        qosTiers: [
-          { name: 'Tier 1: Life Safety & SCADA', status: 'LIVE (100% Priority)', color: 'text-emerald-400' },
-          { name: 'Tier 2: Science Data Uplink', status: 'Queued (Throttle Active)', color: 'text-cyan-400' },
-          { name: 'Tier 3: Crew Welfare Voice/Data', status: 'Active (Bandwidth Capped)', color: 'text-slate-400' }
+        qosShares: [
+          { label: 'Life Safety SCADA', pct: 25, color: '#10b981' },
+          { label: 'Science Telemetry', pct: 45, color: '#06b6d4' },
+          { label: 'Welfare Voice/Data', pct: 30, color: '#64748b' }
         ],
-        radomeHeater: 'Active (Ice-Free)',
-        backupSystem: 'Inmarsat BGAN & HF Radio Armed',
-        forecastText: isM ? 'Next polar satellite constellation pass overhead in 14m; telemetry latency < 75ms' : 'Dual radomes provide seamless inter-satellite handoff with zero data drop',
         trend: isM ? [118, 120, 119, 121, 120, 120] : [158, 160, 162, 159, 161, 160],
-        situation: isM
-          ? 'Tracking radome on main module roof connected to high-inclination polar LEO constellation. 120 Mbps symmetrical link with 78ms latency streaming Digital Twin telemetry directly to NCAOR Goa.'
-          : 'Bharati dual tracking radome installation providing 160 Mbps redundant satellite connectivity with automatic antenna switching and high-priority scientific streaming to ISRO.',
-        drivers: [
-          'Polar LEO satellite orbital constellation visibility',
-          'Radome heating preventing blizzard snow and ice accumulation',
-          'Quality of Service (QoS) bandwidth reservation for SCADA packets'
-        ],
-        impact: 'Enables remote mission control oversight, real-time Digital Twin synchronization, and emergency telemedicine uplink.',
-        action: 'Verify radome heating amp draw before forecast 22:00 wind peak.'
+        architecture: isM ? 'Single Tracking Radome (De-Iced) + Inmarsat BGAN Secondary' : 'Dual Synchronous Tracking Radomes + C-Band Maritime ISRO Uplink'
       },
       storage: {
         score: ops?.domain_readiness?.inventory ?? (isM ? 94 : 97),
-        status: isM ? 'Fully Stocked (0 Stockouts)' : 'Fully Stocked (0 Stockouts)',
-        healthBadge: isM ? '1,420 Active SKUs' : '1,850 Active SKUs',
+        status: '0 Stockouts (Nominal)',
         primaryKpi: '0 Stockouts',
-        primaryLabel: 'Depletion Risk',
-        readinessScore: isM ? 94 : 97,
+        primaryLabel: 'Depletion Status',
         totalSkus: isM ? 1420 : 1850,
-        criticalItemsCount: isM ? 184 : 240,
-        criticalSpares: [
-          { name: 'Diesel Fuel Filter Cartridges', qty: 48, threshold: 12, unit: 'units', safe: true },
-          { name: 'RO High-Pressure Membrane Seals', qty: 16, threshold: 4, unit: 'sets', safe: true },
-          { name: 'PistenBully Track Pins & Links', qty: 24, threshold: 6, unit: 'units', safe: true }
-        ],
-        consumables: [
-          { name: 'Polar Synthetic Engine Oil 5W-40', qty: 1200, unit: 'Liters' },
-          { name: 'Sub-zero Glycol Antifreeze', qty: 650, unit: 'Liters' }
-        ],
-        jobPartsReadiness: '100% staged for active tasks',
-        forecastText: isM ? 'All parts staged for tomorrow draft blower overhaul; 88-day supply buffer verified' : 'Autonomous RFID inventory matrix confirms zero items below critical reorder threshold',
+        oilStockLiters: 1200,
+        glycolStockLiters: 650,
+        criticalSparesSafePct: 100,
         trend: isM ? [96, 95, 95, 94, 94, 94] : [98, 97, 97, 97, 97, 97],
-        situation: isM
-          ? '1,420 catalogued spare parts and consumables in heated storage modules. All critical spares are well above minimum safety thresholds with zero recorded stockouts.'
-          : 'Automated RFID parts storage matrix at Bharati Station with 1,850 SKUs. Spares coverage includes full redundancy for CHP engines, desalination membranes, and HVAC units.',
-        drivers: [
-          'CMMS preventive maintenance demand scheduling',
-          'Storage container temperature control preventing fluid freeze',
-          'Annual resupply replenishment staging'
-        ],
-        impact: 'A stockout of specialized seals or filters during 9 months of winter isolation could cripple life support or electrical generation.',
-        action: 'Conduct monthly physical cycle count on emergency generator injector nozzles.'
+        architecture: isM ? 'Climate-Controlled Insulated Storage Containers with Manual Tagging' : 'Automated RFID Inventory Staging Matrix with Autonomous Low-Stock Alerts'
       }
     };
   };
@@ -438,15 +301,289 @@ export const DomainsPage: React.FC = () => {
   const currentData = useMemo(() => getDomainData(stationId), [stationId, snapshot]);
   const otherData = useMemo(() => getDomainData(otherStationId), [otherStationId, otherSnapshot]);
 
+  // Selected domain config for the modal inspector
+  const activeDomainConfig = useMemo(
+    () => NINE_DOMAINS.find((d) => d.id === selectedDomainId) || null,
+    [selectedDomainId]
+  );
+  const activeDomainTelemetry = useMemo(
+    () => (activeDomainConfig ? (currentData as any)[activeDomainConfig.id] : null),
+    [activeDomainConfig, currentData]
+  );
+
+  // Initialize ECharts for the domain detail modal
+  useEffect(() => {
+    if (!selectedDomainId || !detailChartRef.current || !activeDomainTelemetry) return;
+
+    if (detailChartInst.current) detailChartInst.current.dispose();
+    const chart = echarts.init(detailChartRef.current, 'dark');
+    detailChartInst.current = chart;
+
+    const dataPoints = activeDomainTelemetry.trend || [80, 82, 85, 84, 88, 86];
+    const timeLabels = ['04:00', '08:00', '12:00', '16:00', '20:00', 'Now'];
+
+    chart.setOption({
+      backgroundColor: 'transparent',
+      animation: true,
+      grid: { top: 20, bottom: 25, left: 45, right: 20 },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(15,23,42,0.95)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11 }
+      },
+      xAxis: {
+        type: 'category',
+        data: timeLabels,
+        axisLabel: { color: '#64748b', fontSize: 10, fontFamily: 'monospace' },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { color: '#64748b', fontSize: 10, fontFamily: 'monospace' },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+      },
+      series: [
+        {
+          name: activeDomainConfig?.name || 'Telemetry',
+          type: 'line',
+          data: dataPoints,
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: 6,
+          lineStyle: { color: activeDomainConfig?.color || '#00e5ff', width: 3 },
+          itemStyle: { color: activeDomainConfig?.color || '#00e5ff' },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: `${activeDomainConfig?.color || '#00e5ff'}55` },
+              { offset: 1, color: `${activeDomainConfig?.color || '#00e5ff'}05` }
+            ])
+          }
+        }
+      ]
+    });
+
+    const handleResize = () => chart.resize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.dispose();
+    };
+  }, [selectedDomainId, activeDomainTelemetry, activeDomainConfig]);
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 9 Interconnected Operational Domains Causal Tree with integrated Mission-Control header */}
+    <div className="space-y-8 max-w-7xl mx-auto pb-16">
+      {/* ── 1. Topological Causal Propagation Tree with Embedded Visual Instruments ── */}
       <CrossDomainCausalTree
         stationId={stationId}
         onOpenCompare={() => setCompareModalOpen(true)}
+        onSelectDomain={(id) => setSelectedDomainId(id)}
+        selectedDomainId={selectedDomainId}
+        domainData={currentData}
       />
 
+      {/* ── 4. Interactive Visual Domain Studio Modal / Drawer ────────────────── */}
+      {selectedDomainId && activeDomainConfig && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-4xl rounded-3xl border border-cyan-500/50 bg-[#071326]/95 shadow-[0_0_50px_rgba(6,182,212,0.3)] p-6 relative max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-polar-border">
+              <div className="flex items-center gap-3">
+                <div
+                  className="p-3 rounded-xl border flex-shrink-0"
+                  style={{
+                    background: `rgba(${activeDomainConfig.accentRgb}, 0.2)`,
+                    borderColor: activeDomainConfig.color,
+                    color: activeDomainConfig.color
+                  }}
+                >
+                  <activeDomainConfig.icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border"
+                      style={{
+                        background: `rgba(${activeDomainConfig.accentRgb}, 0.15)`,
+                        borderColor: activeDomainConfig.color,
+                        color: activeDomainConfig.color
+                      }}
+                    >
+                      LIVE DOMAIN STUDIO
+                    </span>
+                    <span className="text-xs font-mono text-slate-400">
+                      {isMaitri ? 'Maitri Station (Inland)' : 'Bharati Station (Coastal)'}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white mt-0.5">
+                    {activeDomainConfig.name} Operational Telemetry
+                  </h3>
+                </div>
+              </div>
 
+              <button
+                onClick={() => setSelectedDomainId(null)}
+                className="p-2 rounded-xl bg-polar-dark border border-polar-border text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="space-y-6 mt-6">
+              {/* Telemetry Curve & Key KPIs */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* Left: 24-Hour Telemetry Curve */}
+                <div className="lg:col-span-2 p-4 rounded-2xl bg-polar-dark/80 border border-polar-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4 text-cyan-400" />
+                      24-Hour Trend Telemetry Curve
+                    </span>
+                    <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                      Real-Time Physics Engine
+                    </span>
+                  </div>
+                  <div ref={detailChartRef} style={{ height: 210, width: '100%' }} />
+                </div>
+
+                {/* Right: Quick KPI Card */}
+                <div className="p-4 rounded-2xl bg-polar-dark/80 border border-polar-border flex flex-col justify-between">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase text-slate-400 font-bold mb-1">
+                      Primary Operational State
+                    </div>
+                    <div className="text-3xl font-black text-white font-mono">
+                      {activeDomainTelemetry?.primaryKpi}
+                    </div>
+                    <div className="text-xs font-mono text-cyan-400 mt-1">
+                      {activeDomainTelemetry?.primaryLabel}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-polar-border/60 space-y-2 text-xs font-mono">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Readiness Score:</span>
+                        <span className="text-emerald-400 font-bold">{activeDomainTelemetry?.score}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Status:</span>
+                        <span className="text-white font-bold truncate max-w-[150px]">{activeDomainTelemetry?.status}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Domain page + Decision Intelligence buttons */}
+                  <div className="mt-4 flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedDomainId(null);
+                        navigate(`/station/${stationId}/${activeDomainConfig.route}`);
+                      }}
+                      className="w-full py-2.5 rounded-xl font-mono text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <span>Launch Full Domain Page</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedDomainId(null);
+                        navigate(`/station/${stationId}/decision?domain=${activeDomainConfig.id}`);
+                      }}
+                      className="w-full py-2 rounded-xl font-mono text-xs font-bold bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <Brain className="w-3.5 h-3.5" />
+                      <span>Decision Intelligence</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual Causal Coupling Conduits */}
+              <div className="p-4 rounded-2xl bg-polar-dark/80 border border-polar-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-amber-400" />
+                    Cross-Domain Causal Dependency Conduits
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Causal Drivers &amp; Downstream Consumers
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Upstream Drivers */}
+                  <div className="p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-500/30">
+                    <div className="text-[10px] font-mono uppercase text-cyan-400 font-bold mb-2 flex items-center gap-1.5">
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                      Upstream Feeder Domains (Drivers)
+                    </div>
+                    {activeDomainConfig.upstream.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {activeDomainConfig.upstream.map((upId) => {
+                          const upCfg = NINE_DOMAINS.find((d) => d.id === upId);
+                          return (
+                            <span
+                              key={upId}
+                              className="px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-xs font-mono text-cyan-300 flex items-center gap-1.5"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                              {upCfg?.name || upId}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-xs font-mono text-slate-400">
+                        Root External Driver (No upstream station dependencies)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Downstream Consumers */}
+                  <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/30">
+                    <div className="text-[10px] font-mono uppercase text-amber-400 font-bold mb-2 flex items-center gap-1.5">
+                      <ArrowDownRight className="w-3.5 h-3.5" />
+                      Downstream Dependent Domains (Impacted)
+                    </div>
+                    {activeDomainConfig.downstream.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {activeDomainConfig.downstream.map((downId) => {
+                          const downCfg = NINE_DOMAINS.find((d) => d.id === downId);
+                          return (
+                            <span
+                              key={downId}
+                              className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-xs font-mono text-amber-300 flex items-center gap-1.5"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              {downCfg?.name || downId}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-xs font-mono text-slate-400">
+                        Terminal Telemetry Sink (Feeds Mission Control Oversight)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Station Architecture Blueprint */}
+              <div className="p-4 rounded-2xl bg-polar-dark/80 border border-polar-border space-y-2">
+                <span className="text-[10px] font-mono uppercase text-slate-400 font-bold">
+                  Antarctic Architectural Implementation • {isMaitri ? 'Maitri Inland Base' : 'Bharati Coastal Base'}
+                </span>
+                <p className="text-xs font-mono text-slate-200 leading-relaxed">
+                  {activeDomainTelemetry?.architecture}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 5. Visual Station Operational Comparison Studio (Maitri vs Bharati) ─ */}
       {compareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="glass-panel w-full max-w-5xl rounded-3xl border border-cyan-500/40 bg-polar-navy/95 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
@@ -458,7 +595,7 @@ export const DomainsPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-white">
-                    Station Operational Comparison • Maitri vs Bharati
+                    Station Operational Comparison • Maitri (Inland) vs Bharati (Coastal)
                   </h3>
                   <p className="text-xs font-mono text-slate-400">
                     Side-by-side Digital Twin comparison across all 9 interconnected operational domains.
@@ -499,7 +636,7 @@ export const DomainsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 9-Domain Comparison Table */}
+            {/* 9-Domain Visual Comparison Grid */}
             <div className="mt-6 space-y-3">
               {NINE_DOMAINS.map((dom) => {
                 const Icon = dom.icon;
@@ -507,31 +644,36 @@ export const DomainsPage: React.FC = () => {
                 const bData = !isMaitri ? (currentData as any)[dom.id] : (otherData as any)[dom.id];
 
                 return (
-                  <div key={dom.id} className="p-3.5 rounded-xl bg-polar-dark/60 border border-polar-border hover:border-cyan-500/30 transition-all">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon className="w-4 h-4 text-cyan-400" />
-                      <span className="text-xs font-bold text-white">{dom.name}</span>
+                  <div key={dom.id} className="p-3.5 rounded-xl bg-polar-dark/70 border border-polar-border hover:border-cyan-500/40 transition-all">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4 text-cyan-400" />
+                        <span className="text-xs font-bold text-white">{dom.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {dom.shortDesc}
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-xs font-mono">
                       {/* Maitri column */}
-                      <div className="p-2.5 rounded-lg bg-polar-navy/60 border border-polar-border/40">
-                        <div className="flex justify-between items-baseline mb-1">
+                      <div className="p-3 rounded-lg bg-polar-navy/60 border border-cyan-500/20 space-y-1">
+                        <div className="flex justify-between items-baseline">
                           <span className="text-[10px] text-slate-400 uppercase">Maitri KPI:</span>
-                          <span className="text-sm font-bold text-cyan-300">{mData?.primaryKpi}</span>
+                          <span className="text-sm font-black text-cyan-300">{mData?.primaryKpi}</span>
                         </div>
-                        <div className="text-[10px] text-slate-300 mb-1">{mData?.status}</div>
-                        <div className="text-[9px] text-slate-400">{mData?.healthBadge}</div>
+                        <div className="text-[10px] text-slate-200">{mData?.status}</div>
+                        <div className="text-[9px] text-slate-400 truncate">{mData?.architecture}</div>
                       </div>
 
                       {/* Bharati column */}
-                      <div className="p-2.5 rounded-lg bg-polar-navy/60 border border-polar-border/40">
-                        <div className="flex justify-between items-baseline mb-1">
+                      <div className="p-3 rounded-lg bg-polar-navy/60 border border-blue-500/20 space-y-1">
+                        <div className="flex justify-between items-baseline">
                           <span className="text-[10px] text-slate-400 uppercase">Bharati KPI:</span>
-                          <span className="text-sm font-bold text-blue-300">{bData?.primaryKpi}</span>
+                          <span className="text-sm font-black text-blue-300">{bData?.primaryKpi}</span>
                         </div>
-                        <div className="text-[10px] text-slate-300 mb-1">{bData?.status}</div>
-                        <div className="text-[9px] text-slate-400">{bData?.healthBadge}</div>
+                        <div className="text-[10px] text-slate-200">{bData?.status}</div>
+                        <div className="text-[9px] text-slate-400 truncate">{bData?.architecture}</div>
                       </div>
                     </div>
                   </div>

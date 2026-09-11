@@ -2,185 +2,398 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
-import { useAlertStore } from '../store/alertStore';
 import { resourcesApi, scenariosApi } from '../api/client';
 import * as echarts from 'echarts';
 import {
-  Fuel, Droplet, Flame, AlertTriangle, ShieldCheck, Clock,
-  ArrowRight, ExternalLink, RefreshCw, Thermometer, Layers,
-  ChevronRight, Gauge, Activity, Truck, CheckCircle2, Play,
-  X, Zap, Sun, Wind, Box, Info, ShieldAlert, Microscope,
-  Check, ArrowUpRight, TrendingDown, ThermometerSnowflake,
-  Filter, Sparkles, Radio, AlertOctagon
+  Fuel, Flame, AlertTriangle, ShieldCheck, Clock,
+  ArrowRight, RefreshCw, Thermometer, Layers,
+  Gauge, Activity, Truck, Play, X, Zap, Sun,
+  ArrowUpRight, TrendingDown, ThermometerSnowflake,
+  Sparkles, AlertOctagon, Brain
 } from 'lucide-react';
 
-// ── Interactive Depletion & Forecast ECharts Component ──────────────────────
-const FuelDepletionChart: React.FC<{
-  currentLevel: number;
-  totalCapacity: number;
-  hourlyBurnRate: number;
-  stationId: string;
-}> = ({ currentLevel, totalCapacity, hourlyBurnRate, stationId }) => {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInst = useRef<echarts.ECharts | null>(null);
+// ── Animated 3D Cylinder Tank ───────────────────────────────────────────────
+const CylinderTank: React.FC<{
+  pct: number;
+  label: string;
+  liters: number;
+  capacity: number;
+  status: string;
+  tempC: number;
+  color?: string;
+  selected?: boolean;
+  onClick?: () => void;
+}> = ({ pct, label, liters, capacity, status, tempC, color = '#f59e0b', selected, onClick }) => {
+  const clamp = Math.max(0, Math.min(100, pct));
+  const activeColor = clamp < 15 ? '#ef4444' : clamp < 30 ? '#f59e0b' : color;
+  const statusColor = status === 'ONLINE' ? '#10b981' : status === 'TRANSFERRING' ? '#06b6d4' : '#64748b';
+  const h = 140;
+  const w = 56;
+  const fillH = (clamp / 100) * h;
+
+  return (
+    <div
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1.5 cursor-pointer group transition-all ${selected ? 'scale-105' : 'hover:scale-102'}`}
+    >
+      <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider text-center leading-tight max-w-[64px]">
+        {label}
+      </div>
+      <div className="relative" style={{ width: w, height: h + 16 }}>
+        {/* Tank top ellipse */}
+        <svg width={w} height={16} className="absolute top-0 left-0" style={{ zIndex: 2 }}>
+          <ellipse cx={w / 2} cy={8} rx={w / 2 - 2} ry={7}
+            fill={selected ? `${activeColor}33` : 'rgba(15,23,42,0.9)'}
+            stroke={selected ? activeColor : 'rgba(255,255,255,0.12)'} strokeWidth={1.5} />
+          {status === 'TRANSFERRING' && (
+            <ellipse cx={w / 2} cy={8} rx={w / 2 - 6} ry={4}
+              fill="none" stroke={activeColor} strokeWidth={1} strokeDasharray="3 2"
+              className="animate-spin" style={{ transformOrigin: `${w / 2}px 8px`, animationDuration: '3s' }} />
+          )}
+        </svg>
+
+        {/* Tank body */}
+        <div className="absolute rounded-sm overflow-hidden border border-white/10"
+          style={{
+            top: 8, left: 0, width: w, height: h,
+            background: 'rgba(8,15,30,0.9)',
+            boxShadow: selected ? `0 0 20px ${activeColor}55, inset 0 0 12px rgba(0,0,0,0.5)` : 'inset 0 0 12px rgba(0,0,0,0.5)',
+          }}>
+          {/* Grid lines */}
+          {[25, 50, 75].map(t => (
+            <div key={t} className="absolute left-0 right-0 border-t border-white/5" style={{ bottom: `${t}%` }}>
+              <span className="absolute right-1 text-[7px] font-mono text-white/20" style={{ top: -6 }}>{t}</span>
+            </div>
+          ))}
+          {/* Liquid fill */}
+          <div className="absolute bottom-0 left-0 right-0 transition-all duration-1200 ease-out"
+            style={{
+              height: `${clamp}%`,
+              background: `linear-gradient(to top, ${activeColor}cc 0%, ${activeColor}44 100%)`,
+              boxShadow: `0 -3px 12px ${activeColor}66`,
+            }}>
+            {/* Wave shimmer */}
+            <div className="absolute top-0 left-0 right-0 h-2 animate-pulse opacity-60"
+              style={{ background: `linear-gradient(90deg, transparent, ${activeColor}88, transparent)` }} />
+            {/* Bubble */}
+            {clamp > 10 && (
+              <div className="absolute w-1 h-1 rounded-full animate-bounce"
+                style={{ background: `${activeColor}99`, left: '30%', top: 4, animationDelay: '0.3s' }} />
+            )}
+          </div>
+          {/* Pct label */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[11px] font-black font-mono text-white/70">{clamp.toFixed(0)}%</span>
+          </div>
+          {/* Temp strip */}
+          <div className="absolute top-1 right-1 text-[8px] font-mono text-white/40 flex items-center gap-0.5">
+            <ThermometerSnowflake className="w-2 h-2" />{tempC}°
+          </div>
+        </div>
+
+        {/* Bottom ellipse */}
+        <svg width={w} height={16} className="absolute bottom-0 left-0">
+          <ellipse cx={w / 2} cy={8} rx={w / 2 - 2} ry={7}
+            fill="rgba(8,15,30,0.9)" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+        </svg>
+      </div>
+
+      {/* Status dot */}
+      <div className="flex items-center gap-1">
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: statusColor }} />
+        <span className="text-[8px] font-mono" style={{ color: statusColor }}>{status}</span>
+      </div>
+      <div className="text-[9px] font-mono text-slate-500">{(liters / 1000).toFixed(1)}k/{(capacity / 1000).toFixed(0)}k L</div>
+    </div>
+  );
+};
+
+// ── Radial Burn Rate Gauge ──────────────────────────────────────────────────
+const BurnRadialGauge: React.FC<{
+  value: number; max: number; unit: string; label: string;
+  color?: string; size?: number;
+}> = ({ value, max, unit, label, color = '#f59e0b', size = 120 }) => {
+  const pct = Math.min(1, value / max);
+  const r = size / 2 - 14;
+  const circ = 2 * Math.PI * r;
+  const arcLen = circ * 0.75;
+  const filled = arcLen * pct;
+  const offset = arcLen - filled;
+  const rotation = 135;
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <defs>
+          <linearGradient id={`bg-${label}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={`${color}22`} />
+            <stop offset="100%" stopColor={`${color}44`} />
+          </linearGradient>
+        </defs>
+        {/* Background arc */}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke="rgba(255,255,255,0.06)" strokeWidth={10}
+          strokeLinecap="round" strokeDasharray={`${arcLen} ${circ - arcLen}`}
+          strokeDashoffset={-(circ - arcLen) * 0.125}
+          transform={`rotate(${rotation} ${size / 2} ${size / 2})`} />
+        {/* Value arc */}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={color} strokeWidth={10}
+          strokeLinecap="round" strokeDasharray={`${filled} ${circ - filled}`}
+          strokeDashoffset={offset - (circ - arcLen) * 0.125 + arcLen - filled}
+          transform={`rotate(${rotation} ${size / 2} ${size / 2})`}
+          style={{ filter: `drop-shadow(0 0 6px ${color})`, transition: 'stroke-dashoffset 1s ease' }} />
+        {/* Center */}
+        <text x={size / 2} y={size / 2 - 4} textAnchor="middle"
+          fill="white" fontSize={size * 0.16} fontWeight="900" fontFamily="monospace">
+          {value.toFixed(1)}
+        </text>
+        <text x={size / 2} y={size / 2 + 10} textAnchor="middle"
+          fill={color} fontSize={size * 0.09} fontFamily="monospace">
+          {unit}
+        </text>
+      </svg>
+      <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider text-center">{label}</div>
+    </div>
+  );
+};
+
+// ── Fuel Flow Pipeline ──────────────────────────────────────────────────────
+const FuelFlowPipeline: React.FC<{
+  flowRate: number; pumpStatus: string; dayTankPct: number;
+  sourceTank: string; destination: string; isMaitri: boolean;
+}> = ({ flowRate, pumpStatus, dayTankPct, sourceTank, destination, isMaitri }) => {
+  const isRunning = pumpStatus === 'RUNNING';
+  return (
+    <div className="relative p-4 rounded-xl bg-gradient-to-r from-amber-900/10 via-polar-dark/50 to-emerald-900/10 border border-polar-border">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold mb-3">
+        ⚡ Live Fuel Transfer Loop
+      </div>
+      <div className="flex items-center gap-2 text-xs font-mono">
+        {/* Source Tank */}
+        <div className="flex flex-col items-center gap-1 min-w-[80px]">
+          <div className="w-12 h-16 rounded-lg border border-amber-500/40 bg-amber-500/10 relative overflow-hidden flex items-end">
+            <div className="w-full transition-all duration-1000" style={{ height: '76%', background: 'linear-gradient(to top, #f59e0bcc, #f59e0b44)' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[9px] font-mono text-white/70">76%</span>
+            </div>
+          </div>
+          <span className="text-[9px] text-amber-300 text-center leading-tight max-w-[80px]">{sourceTank.replace('Bulk ', '').replace('Coastal ', '')}</span>
+        </div>
+
+        {/* Pipeline */}
+        <div className="flex-1 flex flex-col items-center gap-1">
+          <div className="text-[9px] text-slate-400 font-mono">{flowRate} L/min</div>
+          <div className="relative w-full h-3 rounded-full bg-polar-darker border border-amber-500/20 overflow-hidden">
+            {isRunning && (
+              <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-amber-400/60 to-transparent animate-[flow_1.5s_linear_infinite]"
+                style={{ animationName: 'flow', animationDuration: '1.5s', animationTimingFunction: 'linear', animationIterationCount: 'infinite' }} />
+            )}
+            <div className="absolute inset-y-0 w-full"
+              style={{
+                background: isRunning
+                  ? 'linear-gradient(90deg, transparent 0%, rgba(245,158,11,0.4) 50%, transparent 100%)'
+                  : 'transparent',
+                animation: isRunning ? 'flow 1.5s linear infinite' : 'none'
+              }} />
+          </div>
+          <div className={`flex items-center gap-1 text-[9px] font-mono ${isRunning ? 'text-emerald-300' : 'text-amber-300'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            PUMP: {pumpStatus}
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <ArrowRight className="w-4 h-4 text-amber-500 shrink-0" />
+
+        {/* Day Tank */}
+        <div className="flex flex-col items-center gap-1 min-w-[80px]">
+          <div className="w-12 h-16 rounded-lg border border-cyan-500/40 bg-cyan-500/10 relative overflow-hidden flex items-end">
+            <div className="w-full transition-all duration-1000" style={{ height: `${dayTankPct}%`, background: 'linear-gradient(to top, #06b6d4cc, #06b6d444)' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[9px] font-mono text-white/70">{dayTankPct.toFixed(0)}%</span>
+            </div>
+          </div>
+          <span className="text-[9px] text-cyan-300 text-center leading-tight max-w-[80px]">{isMaitri ? 'Generator Day Tank' : 'CHP Header Day Tank'}</span>
+        </div>
+
+        <ArrowRight className="w-4 h-4 text-cyan-500 shrink-0" />
+
+        {/* Generator */}
+        <div className="flex flex-col items-center gap-1 min-w-[70px]">
+          <div className="w-12 h-12 rounded-full border-2 border-emerald-500/50 bg-emerald-500/10 flex items-center justify-center">
+            <Zap className="w-5 h-5 text-emerald-400" />
+          </div>
+          <span className="text-[9px] text-emerald-300 text-center">Generator{isMaitri ? '' : '\n/ CHP'}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Burn Rate Waterfall EChart ──────────────────────────────────────────────
+const BurnWaterfallChart: React.FC<{ drivers: any; isMaitri: boolean }> = ({ drivers, isMaitri }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inst = useRef<echarts.ECharts | null>(null);
 
   useEffect(() => {
-    if (!chartRef.current) return;
-    if (chartInst.current) chartInst.current.dispose();
-    const chart = echarts.init(chartRef.current, 'dark');
-    chartInst.current = chart;
+    if (!ref.current) return;
+    if (inst.current) inst.current.dispose();
+    const chart = echarts.init(ref.current, 'dark');
+    inst.current = chart;
 
-    const dailyBurn = Math.max(100, hourlyBurnRate * 24);
-    const daysForward = 30;
-    
-    // Generate 48 hours of historical actuals (sampled every 6 hours: -8 points)
-    const historyPoints: [string, number][] = [];
+    const items = [
+      { name: 'Generator', value: drivers.generator_burn_l_hr || 17.5, color: '#f59e0b' },
+      { name: 'Heating', value: drivers.heating_burn_equiv_l_hr || 8.3, color: '#818cf8' },
+      { name: 'Research', value: drivers.science_burn_equiv_l_hr || 3.1, color: '#06b6d4' },
+      { name: 'Base Load', value: drivers.base_station_load_kw ? drivers.base_station_load_kw * 0.26 : 9.1, color: '#64748b' },
+      { name: 'Aux Boiler', value: drivers.auxiliary_boiler_l_hr || 2.7, color: '#f97316' },
+      { name: '− Solar', value: -(drivers.solar_fuel_saved_l_hr || 4.7), color: '#22c55e' },
+    ];
+
+    chart.setOption({
+      backgroundColor: 'transparent',
+      grid: { top: 10, bottom: 34, left: 70, right: 16 },
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(10,15,30,0.95)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11 },
+        formatter: (p: any) => `${p[0].name}: <b>${Math.abs(p[0].value).toFixed(2)} L/hr</b>`,
+      },
+      xAxis: {
+        type: 'category',
+        data: items.map(i => i.name),
+        axisLabel: { color: '#64748b', fontSize: 9, fontFamily: 'monospace' },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+      },
+      yAxis: {
+        type: 'value',
+        name: 'L/hr',
+        nameTextStyle: { color: '#64748b', fontSize: 9 },
+        axisLabel: { color: '#64748b', fontSize: 9, fontFamily: 'monospace' },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } },
+      },
+      series: [{
+        type: 'bar',
+        data: items.map(i => ({
+          value: i.value,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: i.value < 0 ? '#22c55e' : i.color },
+              { offset: 1, color: i.value < 0 ? '#15803d66' : `${i.color}66` },
+            ]),
+            borderRadius: [4, 4, 0, 0],
+          },
+        })),
+        barWidth: '55%',
+      }],
+    });
+
+    const onResize = () => chart.resize();
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); chart.dispose(); };
+  }, [drivers, isMaitri]);
+
+  return <div ref={ref} className="w-full h-44" />;
+};
+
+// ── 30-Day Forecast EChart ──────────────────────────────────────────────────
+const FuelForecastChart: React.FC<{
+  currentLevel: number; totalCapacity: number; burnRate: number; stationId: string;
+}> = ({ currentLevel, totalCapacity, burnRate, stationId }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const inst = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (inst.current) inst.current.dispose();
+    const chart = echarts.init(ref.current, 'dark');
+    inst.current = chart;
+
+    const dailyBurn = burnRate * 24;
+    const dates: string[] = [];
+    const proj: number[] = [];
+    const low: number[] = [];
+    const high: number[] = [];
     const now = new Date();
-    for (let i = 8; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 6 * 3600 * 1000);
-      const level = currentLevel + (i * 6 * hourlyBurnRate * (0.98 + (i % 3) * 0.01));
-      historyPoints.push([d.toISOString().slice(5, 16).replace('T', ' '), Math.round(level)]);
+
+    for (let d = 0; d <= 30; d++) {
+      const dt = new Date(now.getTime() + d * 86400000);
+      dates.push(dt.toISOString().slice(5, 10));
+      const p = Math.max(0, Math.round(currentLevel - d * dailyBurn));
+      proj.push(p);
+      const m = Math.round(Math.sqrt(d) * dailyBurn * 0.2);
+      low.push(Math.max(0, p - m));
+      high.push(Math.min(totalCapacity, p + m));
     }
 
-    // Generate 30 days forward projection
-    const forecastDates: string[] = [];
-    const projectedVals: number[] = [];
-    const confLow: number[] = [];
-    const confHigh: number[] = [];
-
-    for (let day = 0; day <= daysForward; day++) {
-      const d = new Date(now.getTime() + day * 24 * 3600 * 1000);
-      const dateStr = d.toISOString().slice(5, 10);
-      forecastDates.push(dateStr);
-
-      const projected = Math.max(0, Math.round(currentLevel - day * dailyBurn));
-      projectedVals.push(projected);
-
-      const margin = Math.round(Math.sqrt(day) * dailyBurn * 0.25);
-      confLow.push(Math.max(0, projected - margin));
-      confHigh.push(Math.min(totalCapacity, projected + margin));
-    }
-
-    const watchThreshold = totalCapacity * 0.50;
-    const highThreshold = totalCapacity * 0.30;
-    const criticalThreshold = totalCapacity * 0.15;
+    const watch = totalCapacity * 0.5;
+    const critical = totalCapacity * 0.15;
 
     chart.setOption({
       backgroundColor: 'transparent',
       animation: true,
-      animationDuration: 700,
-      grid: { top: 28, bottom: 36, left: 62, right: 30 },
+      animationDuration: 800,
+      grid: { top: 28, bottom: 36, left: 72, right: 20 },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: 'rgba(15,23,42,0.95)',
+        backgroundColor: 'rgba(10,15,30,0.95)',
         borderColor: 'rgba(255,255,255,0.1)',
         textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11 },
         formatter: (params: any) => {
-          let str = `<b style="color:#f59e0b">${params[0]?.axisValue}</b><br/>`;
-          params.forEach((p: any) => {
-            if (p.seriesName === 'Projected Reserve') {
-              const pct = ((p.value / totalCapacity) * 100).toFixed(1);
-              str += `Reserve: <b>${p.value?.toLocaleString()} L</b> (${pct}%)<br/>`;
-            } else if (p.seriesName === 'Confidence Low') {
-              str += `<span style="color:#94a3b8">Margin: ${p.value?.toLocaleString()} L – ${confHigh[p.dataIndex]?.toLocaleString()} L</span><br/>`;
-            }
-          });
-          return str;
-        }
-      },
-      legend: {
-        data: ['Projected Reserve', 'Confidence Band'],
-        textStyle: { color: '#94a3b8', fontSize: 10, fontFamily: 'monospace' },
-        top: 0,
-        right: 10
+          const main = params.find((p: any) => p.seriesName === 'Reserve');
+          if (!main) return '';
+          const pct = ((main.value / totalCapacity) * 100).toFixed(1);
+          return `<b style="color:#f59e0b">${main.axisValue}</b><br/>Reserve: <b>${main.value?.toLocaleString()} L</b> (${pct}%)`;
+        },
       },
       xAxis: {
-        type: 'category',
-        data: forecastDates,
+        type: 'category', data: dates,
         axisLabel: { color: '#64748b', fontSize: 10, fontFamily: 'monospace' },
-        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
       },
       yAxis: {
-        type: 'value',
-        name: 'Fuel (L)',
+        type: 'value', name: 'Liters',
         nameTextStyle: { color: '#64748b', fontSize: 10 },
-        axisLabel: {
-          color: '#64748b',
-          fontSize: 10,
-          fontFamily: 'monospace',
-          formatter: (v: number) => `${(v / 1000).toFixed(0)}k`
-        },
-        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }
+        axisLabel: { color: '#64748b', fontSize: 10, fontFamily: 'monospace', formatter: (v: number) => `${(v / 1000).toFixed(0)}k` },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } },
       },
       series: [
         {
-          name: 'Projected Reserve',
-          type: 'line',
-          data: projectedVals,
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 4,
-          lineStyle: { color: '#f59e0b', width: 3 },
-          itemStyle: { color: '#f59e0b' },
+          name: 'Confidence Low', type: 'line', data: low, lineStyle: { opacity: 0 },
+          areaStyle: { color: 'rgba(245,158,11,0.06)' }, stack: 'band', symbol: 'none',
+        },
+        {
+          name: 'Band', type: 'line', data: high.map((v, i) => v - low[i]),
+          lineStyle: { opacity: 0 }, areaStyle: { color: 'rgba(245,158,11,0.10)' },
+          stack: 'band', symbol: 'none',
+        },
+        {
+          name: 'Reserve', type: 'line', data: proj, smooth: true, symbol: 'none',
+          lineStyle: { color: '#f59e0b', width: 2.5 },
+          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#f59e0b44' }, { offset: 1, color: '#f59e0b08' }]) },
           markLine: {
             silent: true,
-            symbol: 'none',
-            label: {
-              position: 'insideEndTop',
-              formatter: '{b}',
-              fontSize: 9,
-              fontFamily: 'monospace'
-            },
+            lineStyle: { type: 'dashed', width: 1 },
             data: [
-              {
-                yAxis: watchThreshold,
-                name: 'WATCH (50%)',
-                lineStyle: { color: '#38bdf8', type: 'dashed', width: 1 }
-              },
-              {
-                yAxis: highThreshold,
-                name: 'SAFE BUFFER (30%)',
-                lineStyle: { color: '#f59e0b', type: 'dashed', width: 1.5 }
-              },
-              {
-                yAxis: criticalThreshold,
-                name: 'CRITICAL (15%)',
-                lineStyle: { color: '#f43f5e', type: 'dashed', width: 1.5 }
-              }
-            ]
-          }
+              { yAxis: watch, lineStyle: { color: '#06b6d4' }, label: { formatter: '50% Watch', color: '#06b6d4', fontSize: 9, fontFamily: 'monospace' } },
+              { yAxis: critical, lineStyle: { color: '#ef4444' }, label: { formatter: '15% Critical', color: '#ef4444', fontSize: 9, fontFamily: 'monospace' } },
+            ],
+          },
         },
-        {
-          name: 'Confidence High',
-          type: 'line',
-          data: confHigh,
-          lineStyle: { opacity: 0 },
-          stack: 'confidence-band',
-          symbol: 'none'
-        },
-        {
-          name: 'Confidence Band',
-          type: 'line',
-          data: confHigh.map((val, idx) => Math.max(0, val - confLow[idx])),
-          lineStyle: { opacity: 0 },
-          areaStyle: { color: 'rgba(245, 158, 11, 0.12)' },
-          stack: 'confidence-band',
-          symbol: 'none'
-        }
-      ]
+      ],
     });
 
-    const handleResize = () => chart.resize();
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.dispose();
-    };
-  }, [currentLevel, totalCapacity, hourlyBurnRate, stationId]);
+    const onResize = () => chart.resize();
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); chart.dispose(); };
+  }, [currentLevel, totalCapacity, burnRate, stationId]);
 
-  return <div ref={chartRef} className="w-full h-64" />;
+  return <div ref={ref} className="w-full h-56" />;
 };
 
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export const FuelPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -188,1208 +401,438 @@ export const FuelPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime } = useTelemetryStore();
-  const { alerts } = useAlertStore();
+  const { liveSnapshot, liveRisk } = useTelemetryStore();
 
   const [fuelDetails, setFuelDetails] = useState<any>(null);
   const [selectedTankId, setSelectedTankId] = useState<string | null>(null);
-  const [activeModal, setActiveModal] = useState<'reserve' | 'burn' | 'runway' | 'resupply' | null>(null);
-
-  // What-If Simulation Sandbox State
+  const [activeTab, setActiveTab] = useState<'tanks' | 'flow' | 'forecast' | 'whatif'>('tanks');
   const [whatIfLoading, setWhatIfLoading] = useState(false);
   const [whatIfResult, setWhatIfResult] = useState<any>(null);
-  const [activeScenarioTitle, setActiveScenarioTitle] = useState<string>('');
+  const [scenarioType, setScenarioType] = useState<string>('resupply_delay');
 
   const station = stations.find((s) => s.station_id === stationId) || {
     station_id: stationId,
     name: isMaitri ? 'Maitri Antarctic Station' : 'Bharati Antarctic Station',
-    location_type: isMaitri ? 'inland' : 'coastal',
   };
 
-  // Fetch full fuel domain state via REST
   useEffect(() => {
-    let isMounted = true;
-    const loadFuel = async () => {
+    let mounted = true;
+    const load = async () => {
       try {
         const res = await resourcesApi.getFuel(stationId);
-        if (isMounted && res?.fuel) {
-          setFuelDetails(res.fuel);
-        }
-      } catch (err) {
-        console.error('Failed to fetch fuel domain details:', err);
-      }
+        if (mounted && res?.fuel) setFuelDetails(res.fuel);
+      } catch {}
     };
-    loadFuel();
-    const interval = setInterval(loadFuel, 5000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    load();
+    const iv = setInterval(load, 5000);
+    return () => { mounted = false; clearInterval(iv); };
   }, [stationId]);
 
-  // Live WebSocket state from telemetryStore
   const snapshot = liveSnapshot[stationId];
   const liveFuel = snapshot?.fuel;
   const env = snapshot?.environment;
   const eng = snapshot?.energy;
-  const stationRisk = liveRisk[stationId];
 
-  // Combined real-time metrics
   const totalCapacity = liveFuel?.total_capacity ?? fuelDetails?.total_capacity ?? (isMaitri ? 180000 : 300000);
   const currentLevel = liveFuel?.current_level ?? fuelDetails?.current_level ?? (isMaitri ? 138000 : 245000);
-  const percentage = liveFuel?.fuel_percentage ?? fuelDetails?.fuel_percentage ?? ((currentLevel / totalCapacity) * 100);
+  const percentage = liveFuel?.fuel_percentage ?? ((currentLevel / totalCapacity) * 100);
   const burnRate = liveFuel?.consumption_rate_l_per_hr ?? fuelDetails?.consumption_rate_l_per_hr ?? (isMaitri ? 17.5 : 21.8);
-  const daysRemaining = liveFuel?.days_remaining ?? fuelDetails?.days_remaining ?? (isMaitri ? 18.5 : 24.0);
-  const resupplyEta = liveFuel?.resupply_eta_days ?? fuelDetails?.resupply_eta_days ?? (isMaitri ? 88 : 102);
-  const reserveZone = liveFuel?.reserve_zone ?? fuelDetails?.reserve_zone ?? 'Normal';
-  const fuelTemp = liveFuel?.fuel_temperature ?? fuelDetails?.fuel_temperature ?? (isMaitri ? -4.2 : 2.1);
-  const storageArch = fuelDetails?.storage_architecture ?? (isMaitri ? 'Manual Bunded Tanks (6 Units)' : 'SCADA Containerized Matrix (8 Units)');
-  const fuelGrade = fuelDetails?.fuel_grade ?? (isMaitri ? 'Antarctic Gas Oil (AGO -50°C Pour Point)' : 'Low-Sulfur Polar Gas Oil (CHP Aviation/AGO Blend)');
+  const daysRemaining = liveFuel?.days_remaining ?? fuelDetails?.days_remaining ?? Math.floor(currentLevel / (burnRate * 24));
+  const resupplyEta = liveFuel?.resupply_eta_days ?? (isMaitri ? 88 : 102);
+  const reserveZone = liveFuel?.reserve_zone ?? (percentage > 50 ? 'Normal' : percentage > 30 ? 'Watch' : percentage > 15 ? 'High' : 'Critical');
+  const fuelTemp = liveFuel?.fuel_temperature ?? (isMaitri ? -4.2 : 2.1);
+  const bridgingGap = Math.round(daysRemaining - resupplyEta);
 
-  // Individual tanks array
-  const tanks = useMemo(() => {
-    return fuelDetails?.tanks || (isMaitri
-      ? [
-          { id: 'tank_m01', name: 'Bulk Tank #1 (AGO North)', capacity_l: 32000, current_level_l: 25600, level_pct: 80.0, temperature_c: -3.8, status: 'ONLINE', leak_detected: false, trace_heating_active: true, trace_heating_w: 850, health_pct: 97.5, location: 'North Bund Field #1' },
-          { id: 'tank_m02', name: 'Bulk Tank #2 (AGO North-East)', capacity_l: 32000, current_level_l: 24320, level_pct: 76.0, temperature_c: -4.1, status: 'TRANSFERRING', leak_detected: false, trace_heating_active: true, trace_heating_w: 850, health_pct: 96.0, location: 'North Bund Field #2' },
-          { id: 'tank_m03', name: 'Bulk Tank #3 (AGO East)', capacity_l: 30000, current_level_l: 23100, level_pct: 77.0, temperature_c: -4.5, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 800, health_pct: 95.2, location: 'East Bund Field #1' },
-          { id: 'tank_m04', name: 'Bulk Tank #4 (AGO South-East)', capacity_l: 30000, current_level_l: 22800, level_pct: 76.0, temperature_c: -4.2, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 800, health_pct: 94.8, location: 'East Bund Field #2' },
-          { id: 'tank_m05', name: 'Bulk Tank #5 (AGO South)', capacity_l: 28000, current_level_l: 21280, level_pct: 76.0, temperature_c: -4.8, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 750, health_pct: 98.1, location: 'South Reserve Bund' },
-          { id: 'tank_m06', name: 'Bulk Tank #6 (AGO Reserve)', capacity_l: 28000, current_level_l: 20900, level_pct: 74.6, temperature_c: -4.0, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 750, health_pct: 95.5, location: 'South Reserve Bund' }
-        ]
-      : [
-          { id: 'tank_b01', name: 'Coastal Tank #1 (Larsemann North)', capacity_l: 37500, current_level_l: 31875, level_pct: 85.0, temperature_c: 2.4, status: 'ONLINE', leak_detected: false, trace_heating_active: true, trace_heating_w: 920, health_pct: 99.1, location: 'Larsemann Coastal Pod A' },
-          { id: 'tank_b02', name: 'Coastal Tank #2 (Larsemann North)', capacity_l: 37500, current_level_l: 31125, level_pct: 83.0, temperature_c: 2.2, status: 'TRANSFERRING', leak_detected: false, trace_heating_active: true, trace_heating_w: 920, health_pct: 98.4, location: 'Larsemann Coastal Pod A' },
-          { id: 'tank_b03', name: 'Coastal Tank #3 (Central Matrix)', capacity_l: 37500, current_level_l: 30750, level_pct: 82.0, temperature_c: 2.0, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 900, health_pct: 97.2, location: 'Central Matrix Vault' },
-          { id: 'tank_b04', name: 'Coastal Tank #4 (Central Matrix)', capacity_l: 37500, current_level_l: 30375, level_pct: 81.0, temperature_c: 2.1, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 900, health_pct: 98.0, location: 'Central Matrix Vault' },
-          { id: 'tank_b05', name: 'Coastal Tank #5 (South Bay)', capacity_l: 37500, current_level_l: 30000, level_pct: 80.0, temperature_c: 1.9, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 900, health_pct: 96.5, location: 'South Bay Complex' },
-          { id: 'tank_b06', name: 'Coastal Tank #6 (South Bay)', capacity_l: 37500, current_level_l: 30375, level_pct: 81.0, temperature_c: 2.2, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 900, health_pct: 99.0, location: 'South Bay Complex' },
-          { id: 'tank_b07', name: 'Coastal Tank #7 (Deep Winter Reserve)', capacity_l: 37500, current_level_l: 30750, level_pct: 82.0, temperature_c: 2.3, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 920, health_pct: 98.3, location: 'Deep Winter Vault' },
-          { id: 'tank_b08', name: 'Coastal Tank #8 (CHP Return Sump)', capacity_l: 37500, current_level_l: 29750, level_pct: 79.3, temperature_c: 2.5, status: 'STANDBY', leak_detected: false, trace_heating_active: true, trace_heating_w: 920, health_pct: 97.8, location: 'CHP Return Loop Sump' }
-        ]);
-  }, [fuelDetails, isMaitri]);
+  const tanks = useMemo(() => fuelDetails?.tanks || (isMaitri ? [
+    { id: 'tm01', name: 'AGO North #1', capacity_l: 32000, current_level_l: 25600, level_pct: 80, temperature_c: -3.8, status: 'ONLINE', trace_heating_w: 850, health_pct: 97.5 },
+    { id: 'tm02', name: 'AGO North #2', capacity_l: 32000, current_level_l: 24320, level_pct: 76, temperature_c: -4.1, status: 'TRANSFERRING', trace_heating_w: 850, health_pct: 96.0 },
+    { id: 'tm03', name: 'AGO East #1', capacity_l: 30000, current_level_l: 23100, level_pct: 77, temperature_c: -4.5, status: 'STANDBY', trace_heating_w: 800, health_pct: 95.2 },
+    { id: 'tm04', name: 'AGO East #2', capacity_l: 30000, current_level_l: 22800, level_pct: 76, temperature_c: -4.2, status: 'STANDBY', trace_heating_w: 800, health_pct: 94.8 },
+    { id: 'tm05', name: 'AGO South #1', capacity_l: 28000, current_level_l: 21280, level_pct: 76, temperature_c: -4.8, status: 'STANDBY', trace_heating_w: 750, health_pct: 98.1 },
+    { id: 'tm06', name: 'AGO Reserve', capacity_l: 28000, current_level_l: 20900, level_pct: 74.6, temperature_c: -4.0, status: 'STANDBY', trace_heating_w: 750, health_pct: 95.5 },
+  ] : [
+    { id: 'tb01', name: 'Coastal N #1', capacity_l: 37500, current_level_l: 31875, level_pct: 85, temperature_c: 2.4, status: 'ONLINE', trace_heating_w: 920, health_pct: 99.1 },
+    { id: 'tb02', name: 'Coastal N #2', capacity_l: 37500, current_level_l: 31125, level_pct: 83, temperature_c: 2.2, status: 'TRANSFERRING', trace_heating_w: 920, health_pct: 98.4 },
+    { id: 'tb03', name: 'Central #1', capacity_l: 37500, current_level_l: 30750, level_pct: 82, temperature_c: 2.0, status: 'STANDBY', trace_heating_w: 900, health_pct: 97.2 },
+    { id: 'tb04', name: 'Central #2', capacity_l: 37500, current_level_l: 30375, level_pct: 81, temperature_c: 2.1, status: 'STANDBY', trace_heating_w: 900, health_pct: 98.0 },
+    { id: 'tb05', name: 'South Bay #1', capacity_l: 37500, current_level_l: 30000, level_pct: 80, temperature_c: 1.9, status: 'STANDBY', trace_heating_w: 900, health_pct: 96.5 },
+    { id: 'tb06', name: 'South Bay #2', capacity_l: 37500, current_level_l: 30375, level_pct: 81, temperature_c: 2.2, status: 'STANDBY', trace_heating_w: 900, health_pct: 99.0 },
+    { id: 'tb07', name: 'Deep Winter', capacity_l: 37500, current_level_l: 30750, level_pct: 82, temperature_c: 2.3, status: 'STANDBY', trace_heating_w: 920, health_pct: 98.3 },
+    { id: 'tb08', name: 'CHP Sump', capacity_l: 37500, current_level_l: 29750, level_pct: 79.3, temperature_c: 2.5, status: 'STANDBY', trace_heating_w: 920, health_pct: 97.8 },
+  ]), [fuelDetails, isMaitri]);
 
-  // Active selected tank for intelligence drawer
-  const selectedTank = useMemo(() => {
-    return tanks.find((t: any) => t.id === selectedTankId) || tanks[0] || null;
-  }, [tanks, selectedTankId]);
+  const selectedTank = tanks.find((t: any) => t.id === (selectedTankId || tanks[0]?.id)) || tanks[0];
 
-  // Active transfer loop
+  const drivers = fuelDetails?.drivers || {
+    generator_burn_l_hr: (eng?.generator_load ?? (isMaitri ? 67 : 84)) * 0.26,
+    heating_burn_equiv_l_hr: (eng?.heating_load ?? (isMaitri ? 32 : 38)) * 0.26,
+    science_burn_equiv_l_hr: (eng?.research_load ?? (isMaitri ? 12 : 18)) * 0.26,
+    base_station_load_kw: eng?.base_load ?? (isMaitri ? 35 : 45),
+    solar_fuel_saved_l_hr: (eng?.solar_output ?? (isMaitri ? 18 : 26)) * 0.26,
+    auxiliary_boiler_l_hr: isMaitri ? 2.7 : 3.2,
+  };
+
   const transferLoop = fuelDetails?.transfer_loop || {
     pump_status: 'RUNNING',
     flow_rate_l_min: isMaitri ? 4.8 : 6.2,
-    active_source_tank: isMaitri ? 'tank_m02' : 'tank_b02',
-    source_tank_name: isMaitri ? 'Bulk Tank #2 (AGO North-East)' : 'Coastal Tank #2 (Larsemann North)',
-    destination: isMaitri ? 'Generator Day Tank #1 (4,000 L)' : 'Combined Heat & Power Header Day Tank (6,000 L)',
+    active_source_tank: tanks.find((t: any) => t.status === 'TRANSFERRING')?.name || tanks[1]?.name || '',
     day_tank_level_pct: isMaitri ? 86.4 : 91.2,
-    line_pressure_bar: isMaitri ? 2.8 : 3.2,
-    suction_temp_c: fuelTemp,
-    preheater_active: true,
-    preheater_status: 'OK'
   };
 
-  // Drivers breakdown
-  const drivers = fuelDetails?.drivers || {
-    generator_load_kw: eng?.generator_load ?? (isMaitri ? 67 : 84),
-    generator_burn_l_hr: ((eng?.generator_load ?? (isMaitri ? 67 : 84)) * 0.26),
-    heating_demand_kw: eng?.heating_load ?? (isMaitri ? 32 : 38),
-    heating_burn_equiv_l_hr: ((eng?.heating_load ?? (isMaitri ? 32 : 38)) * 0.26),
-    science_load_kw: eng?.research_load ?? (isMaitri ? 12 : 18),
-    science_burn_equiv_l_hr: ((eng?.research_load ?? (isMaitri ? 12 : 18)) * 0.26),
-    base_station_load_kw: eng?.base_load ?? (isMaitri ? 35 : 45),
-    solar_offset_kw: eng?.solar_output ?? (isMaitri ? 18 : 26),
-    solar_fuel_saved_l_hr: ((eng?.solar_output ?? (isMaitri ? 18 : 26)) * 0.26),
-    auxiliary_boiler_l_hr: isMaitri ? 2.7 : 3.2,
-    total_consumption_l_hr: burnRate,
-    electrical_yield_kwh_per_l: isMaitri ? 3.88 : 4.12
-  };
+  const zoneColor = { Normal: '#10b981', Watch: '#06b6d4', High: '#f59e0b', Critical: '#ef4444' }[reserveZone] || '#10b981';
+  const zoneBg = { Normal: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', Watch: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', High: 'bg-amber-500/20 text-amber-300 border-amber-500/40', Critical: 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' }[reserveZone] || '';
 
-  // Runway metrics
-  const deadBottomBuffer = totalCapacity * 0.05;
-  const safeBufferThreshold = totalCapacity * 0.30;
-  const criticalThreshold = totalCapacity * 0.15;
-  const usableReserve = Math.max(0, currentLevel - deadBottomBuffer);
-  const dailyBurn = burnRate * 24;
-  const daysToBuffer = Math.max(0, Math.round((currentLevel - safeBufferThreshold) / Math.max(1, dailyBurn)));
-  const daysToCritical = Math.max(0, Math.round((currentLevel - criticalThreshold) / Math.max(1, dailyBurn)));
-  const bridgingGap = Math.round(daysRemaining - resupplyEta);
-
-  // Recommendations
-  const recommendations = fuelDetails?.resupply?.recommendations || [
-    {
-      action: isMaitri ? 'Engage Solar PV Prioritization' : 'Boost Waste Heat Extraction in CHP Loop',
-      explanation: isMaitri
-        ? 'Shift peak water heating and battery charging to daylight hours to save ~4.7 L/hr.'
-        : 'Max out glycol heat recovery to cut secondary auxiliary boiler diesel consumption by 3.2 L/hr.',
-      priority: 'HIGH',
-      days_gained: isMaitri ? 12 : 16
-    },
-    {
-      action: isMaitri ? 'Throttle Auxiliary Research Heating by 1.5°C' : 'Coordinate Coastal Satellite Uplink Power Profiling',
-      explanation: isMaitri
-        ? 'Reduces non-essential laboratory thermal load while keeping instruments within calibration.'
-        : 'Stagger high-power radar telemetry bursts outside peak station demand hours.',
-      priority: 'MEDIUM',
-      days_gained: isMaitri ? 8 : 6
-    },
-    {
-      action: isMaitri ? 'Pre-heat Secondary Generator Manifold' : 'Verify Double-Wall Vacuum Barrier on Tanks #3-#6',
-      explanation: isMaitri
-        ? 'Ensures cold-start fuel viscosity meets pour point specifications before load shift.'
-        : 'Automated pressure transducer check confirms zero interstitial leakage.',
-      priority: 'LOW',
-      days_gained: 0
-    }
-  ];
-
-  // What-If Simulation Runner
-  const handleRunWhatIf = async (scenarioType: string, paramVal: any, title: string) => {
+  const handleWhatIf = async () => {
     setWhatIfLoading(true);
-    setActiveScenarioTitle(title);
     try {
-      const perturbation: any = { type: scenarioType };
-      if (scenarioType === 'resupply_delay') perturbation.days = paramVal || 20;
-      if (scenarioType === 'solar_drop') perturbation.drop_fraction = paramVal || 0.40;
-      if (scenarioType === 'extreme_cold') perturbation.drop_c = paramVal || 16.0;
-
-      const response = await scenariosApi.execute(stationId, {
-        name: title,
-        perturbation,
-        duration_ticks: 36,
+      const res = await scenariosApi.execute(stationId, {
+        type: scenarioType,
+        value: scenarioType === 'resupply_delay' ? 30 : scenarioType === 'generator_failure' ? 1 : 3,
       });
-      setWhatIfResult(response.result);
-    } catch (err) {
-      console.error('Fuel What-If scenario execution failed:', err);
-      // Realistic simulation fallback based on physics
-      const baseFuelL = currentLevel;
-      const projFuelL = scenarioType === 'fuel_leak'
-        ? baseFuelL - 32000
-        : (scenarioType === 'resupply_delay' ? baseFuelL - 14500 : baseFuelL - 8200);
-      
-      const baseRunway = daysRemaining;
-      const projRunway = scenarioType === 'resupply_delay'
-        ? baseRunway - 16
-        : (scenarioType === 'generator_failure' ? baseRunway - 6 : baseRunway - 4);
-
-      setWhatIfResult({
-        title: `${title} — Digital Twin Evaluation`,
-        ticks_simulated: 36,
-        comparison: {
-          fuel_reserve_liters: {
-            baseline: Math.round(baseFuelL),
-            projected: Math.round(projFuelL),
-            delta: Math.round(projFuelL - baseFuelL),
-            unit: 'L'
-          },
-          days_fuel_remaining: {
-            baseline: baseRunway,
-            projected: Math.max(2, projRunway),
-            delta: Math.round(Math.max(2, projRunway) - baseRunway),
-            unit: 'days'
-          },
-          generator_load_kw: {
-            baseline: drivers.generator_load_kw,
-            projected: scenarioType === 'generator_failure' ? 112.5 : drivers.generator_load_kw * 1.18,
-            delta: scenarioType === 'generator_failure' ? 45.5 : 15.2,
-            unit: 'kW'
-          },
-          station_risk_score: {
-            baseline: stationRisk?.score ?? 24.2,
-            projected: scenarioType === 'resupply_delay' ? 58.4 : 44.2,
-            delta: scenarioType === 'resupply_delay' ? 34.2 : 20.0,
-            unit: 'pts'
-          },
-          station_readiness_score: {
-            baseline: 92.5,
-            projected: scenarioType === 'resupply_delay' ? 79.4 : 84.1,
-            delta: scenarioType === 'resupply_delay' ? -13.1 : -8.4,
-            unit: '%'
-          }
-        },
-        recommended_action:
-          scenarioType === 'resupply_delay'
-            ? 'Resupply window extended past safe buffer threshold. Initiate Tier-2 fuel rationing: reduce non-residential heating by 2°C and prioritize renewable solar battery charging.'
-            : (scenarioType === 'generator_failure'
-              ? 'Generator trip successfully isolated. Secondary generator load elevated; spin up cold standby generator to restore N+1 bus redundancy.'
-              : 'Katabatic blizzard conditions simulated: activate emergency trace heating and enforce station habitat lockdown protocol.')
+      setWhatIfResult(res || {
+        scenario_name: scenarioType === 'resupply_delay' ? 'Resupply Delay +30d' : 'Generator Failure',
+        impact: { fuel_days_lost: scenarioType === 'resupply_delay' ? 30 : 5, risk_score_delta: 18.4 },
+        recommended_action: scenarioType === 'resupply_delay'
+          ? 'Initiate Tier-2 fuel rationing: reduce non-residential heating by 2°C and prioritize renewable solar battery charging.'
+          : 'Secondary generator elevated; spin up cold standby to restore N+1 bus redundancy.',
       });
-    } finally {
-      setWhatIfLoading(false);
-    }
+    } catch { setWhatIfResult({ scenario_name: 'Simulation Error', recommended_action: 'Unable to connect to scenario API.' }); }
+    finally { setWhatIfLoading(false); }
   };
 
-  // Helper for reserve zone styling
-  const getZoneBadge = (zone: string) => {
-    switch (zone.toLowerCase()) {
-      case 'normal':
-        return <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">ZONE: NORMAL (&gt;50%)</span>;
-      case 'watch':
-        return <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">ZONE: WATCH (30–50%)</span>;
-      case 'high':
-        return <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">ZONE: HIGH (15–30%)</span>;
-      default:
-        return <span className="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">ZONE: CRITICAL (&lt;15%)</span>;
-    }
-  };
+  const accentColor = '#f59e0b';
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* 1. Header Banner & Context */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden shadow-2xl">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div className="space-y-5 max-w-7xl mx-auto pb-12">
+
+      {/* ── Header ── */}
+      <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden shadow-2xl">
+        <div
+          className="absolute inset-0 opacity-5 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 80% 50%, #f59e0b 0%, transparent 60%)' }}
+        />
+        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5">
-                <Fuel className="w-3 h-3" />
-                Operational Domain • Fuel Storage &amp; Burn Management
+                <Fuel className="w-3 h-3" /> Fuel Storage & Burn Management
               </span>
               <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
-                {station.name} • {isMaitri ? 'Inland Schirmacher Oasis' : 'Coastal Larsemann Hills'}
+                {station.name} • {isMaitri ? 'Schirmacher Oasis' : 'Larsemann Hills'}
               </span>
-              <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                Madrid Protocol Zero-Spill Certified
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${zoneBg}`}>
+                ZONE: {reserveZone.toUpperCase()}
               </span>
             </div>
-
             <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
               <Fuel className="w-8 h-8 text-amber-400" />
-              Fuel Storage &amp; Burn Management Digital Twin
+              Fuel Command Digital Twin
             </h1>
-
-            <p className="text-xs font-mono text-slate-400 mt-2 max-w-3xl leading-relaxed">
-              Real-time monitoring of bulk tank farms, active suction preheaters, hourly generator burn rates, and predictive resupply bridging calculations.
+            <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
+              {isMaitri ? `${tanks.length} bunded AGO tanks` : `${tanks.length} SCADA containerized polar tanks`} · Real-time transfer loop · Burn-rate causal breakdown · 30-day forecast
             </p>
-
-            {/* Data Provenance Strip */}
-            <div className="flex items-center gap-3 mt-3 text-[10px] font-mono text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                <span className="text-cyan-300 font-bold">Simulated Telemetry:</span>
-                <span>Physics Causal Twin Model</span>
-              </div>
-              <span>•</span>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-emerald-300 font-bold">Environmental Reference:</span>
-                <span>Real Ambient Temp &amp; Wind Forcing</span>
-              </div>
-            </div>
           </div>
-
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
-            <button
-              onClick={() => navigate(`/station/${stationId}/domains`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all cursor-pointer shadow-md"
-            >
-              <Layers className="w-4 h-4 text-cyan-400" />
-              <span>All 9 Domains</span>
+            <button onClick={() => navigate(`/station/${stationId}/domains`)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all cursor-pointer">
+              <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
-            <button
-              onClick={() => navigate(isMaitri ? '/station/bharati/fuel' : '/station/maitri/fuel')}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 flex items-center gap-2 transition-all cursor-pointer shadow-md"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Switch to {isMaitri ? 'Bharati' : 'Maitri'}</span>
+            <button onClick={() => navigate(`/station/${stationId}/decision?domain=fuel`)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
+            </button>
+            <button onClick={() => navigate(isMaitri ? '/station/bharati/fuel' : '/station/maitri/fuel')}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-amber-400/50 text-white flex items-center gap-2 transition-all cursor-pointer">
+              <RefreshCw className="w-4 h-4" /> Switch Station
             </button>
           </div>
         </div>
 
-        {/* 2. Four Interactive KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-4 border-t border-polar-border/50 text-xs font-mono">
-          {/* KPI 1: Reserve Level */}
-          <div
-            onClick={() => setActiveModal('reserve')}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-amber-400/60 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
-              <span>Reserve Level</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 transition-colors" />
-            </div>
-            <div className="text-2xl font-bold font-mono text-white mt-1 flex items-baseline gap-2">
-              <span>{percentage.toFixed(1)}%</span>
-              {getZoneBadge(reserveZone)}
-            </div>
-            <div className="text-[11px] text-cyan-300 font-bold mt-1">
-              {currentLevel.toLocaleString()} / {totalCapacity.toLocaleString()} L
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-              <span>↓ {dailyBurn.toFixed(0)} L/day continuous</span>
-              <span className="text-amber-400 group-hover:underline">Click for zones →</span>
-            </div>
-          </div>
-
-          {/* KPI 2: Hourly Burn Rate */}
-          <div
-            onClick={() => setActiveModal('burn')}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-amber-400/60 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
-              <span>Hourly Burn Rate</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 transition-colors" />
-            </div>
-            <div className="text-2xl font-bold font-mono text-amber-400 mt-1 flex items-baseline gap-2">
-              <span>{burnRate.toFixed(1)} L/hr</span>
-              <span className="text-[10px] text-slate-400 font-normal">({drivers.generator_load_kw} kW Load)</span>
-            </div>
-            <div className="text-[11px] text-slate-300 font-bold mt-1">
-              Primary Driver: Electrical Generator
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-              <span>Yield: {drivers.electrical_yield_kwh_per_l} kWh/L</span>
-              <span className="text-amber-400 group-hover:underline">Click drivers →</span>
-            </div>
-          </div>
-
-          {/* KPI 3: Safe Runway */}
-          <div
-            onClick={() => setActiveModal('runway')}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-emerald-400/60 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
-              <span>Safe Runway</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
-            </div>
-            <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
-              {daysRemaining} Days
-            </div>
-            <div className="text-[11px] text-slate-300 font-bold mt-1">
-              Usable Reserve: {usableReserve.toLocaleString()} L
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-              <span>Critical Date: Nov 2026</span>
-              <span className="text-emerald-400 group-hover:underline">Click timeline →</span>
-            </div>
-          </div>
-
-          {/* KPI 4: Resupply Window & Gap */}
-          <div
-            onClick={() => setActiveModal('resupply')}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/60 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
-              <span>Resupply Window</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
-            </div>
-            <div className="text-2xl font-bold font-mono text-cyan-300 mt-1 flex items-baseline gap-2">
-              <span>{resupplyEta} Days</span>
-              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${bridgingGap >= 0 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'}`}>
-                Gap: {bridgingGap}d
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-300 font-bold mt-1">
-              {isMaitri ? 'Overland Polar Convoy' : 'Maritime Relief Icebreaker'}
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
-              <span>Risk: {bridgingGap < 0 ? 'HIGH DEFICIT' : 'NOMINAL'}</span>
-              <span className="text-cyan-300 group-hover:underline">Click protocol →</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Interactive Fuel Reserve & Depletion Forecast Chart */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-polar-border pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                Fuel Depletion Forecast &amp; Reserve Threshold Trajectory
-              </h3>
-            </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Historical actual draw + 30-day forward projection with confidence bounds and Watch (50%), Safe Buffer (30%), and Critical (15%) limit lines.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono">
-            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              Physics + Environmental Model
-            </span>
-          </div>
-        </div>
-
-        <FuelDepletionChart
-          currentLevel={currentLevel}
-          totalCapacity={totalCapacity}
-          hourlyBurnRate={burnRate}
-          stationId={stationId}
-        />
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 text-xs font-mono border-t border-polar-border/40">
-          <div className="p-2.5 rounded-lg bg-polar-dark/60 border border-polar-border">
-            <span className="text-slate-400 text-[10px] uppercase">Normal Zone (&gt;50%)</span>
-            <div className="font-bold text-emerald-400 mt-0.5">&gt; {(totalCapacity * 0.50).toLocaleString()} L</div>
-            <div className="text-[10px] text-slate-400">Unrestricted operations</div>
-          </div>
-          <div className="p-2.5 rounded-lg bg-polar-dark/60 border border-polar-border">
-            <span className="text-slate-400 text-[10px] uppercase">Watch Zone (30–50%)</span>
-            <div className="font-bold text-cyan-300 mt-0.5">{(totalCapacity * 0.30).toLocaleString()} – {(totalCapacity * 0.50).toLocaleString()} L</div>
-            <div className="text-[10px] text-slate-400">Solar optimization advised</div>
-          </div>
-          <div className="p-2.5 rounded-lg bg-polar-dark/60 border border-polar-border">
-            <span className="text-slate-400 text-[10px] uppercase">High Risk Zone (15–30%)</span>
-            <div className="font-bold text-amber-400 mt-0.5">{(totalCapacity * 0.15).toLocaleString()} – {(totalCapacity * 0.30).toLocaleString()} L</div>
-            <div className="text-[10px] text-slate-400">Ration non-critical heat</div>
-          </div>
-          <div className="p-2.5 rounded-lg bg-polar-dark/60 border border-polar-border">
-            <span className="text-slate-400 text-[10px] uppercase">Critical Zone (&lt;15%)</span>
-            <div className="font-bold text-rose-400 mt-0.5">&lt; {(totalCapacity * 0.15).toLocaleString()} L</div>
-            <div className="text-[10px] text-rose-300">Station emergency lockdown</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Physical Fuel Farm Asset Telemetry & Interactive Transfer Loop */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Fuel Tank Grid */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-polar-border pb-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Droplet className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                  Bulk Fuel Farm Telemetry — {storageArch}
-                </h3>
+        {/* KPI Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-polar-border/50">
+          {[
+            { label: 'Reserve Level', val: `${percentage.toFixed(1)}%`, sub: `${(currentLevel / 1000).toFixed(1)}k / ${(totalCapacity / 1000).toFixed(0)}k L`, color: zoneColor, icon: <Gauge className="w-4 h-4" /> },
+            { label: 'Burn Rate', val: `${burnRate.toFixed(1)} L/hr`, sub: `${(burnRate * 24).toFixed(0)} L/day continuous`, color: '#f59e0b', icon: <Flame className="w-4 h-4" /> },
+            { label: 'Safe Runway', val: `${daysRemaining} Days`, sub: `Critical: ${Math.round(daysRemaining * 0.3)}d buffer`, color: bridgingGap >= 0 ? '#10b981' : '#ef4444', icon: <Clock className="w-4 h-4" /> },
+            { label: 'Resupply ETA', val: `${resupplyEta}d`, sub: `Gap: ${bridgingGap >= 0 ? '+' : ''}${bridgingGap}d ${bridgingGap >= 0 ? 'surplus' : 'DEFICIT'}`, color: bridgingGap >= 0 ? '#06b6d4' : '#ef4444', icon: <Truck className="w-4 h-4" /> },
+          ].map((kpi) => (
+            <div key={kpi.label} className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
+                <span className="uppercase">{kpi.label}</span>
+                <span style={{ color: kpi.color }}>{kpi.icon}</span>
               </div>
-              <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-                Physical tank array state with individual volume, suction line heating, and pressure sensors. Click any tank to inspect details.
-              </p>
+              <div className="text-lg font-black font-mono" style={{ color: kpi.color }}>{kpi.val}</div>
+              <div className="text-[10px] font-mono text-slate-500 mt-0.5">{kpi.sub}</div>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              Grade: <b className="text-amber-300">{fuelGrade}</b>
-            </span>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Tanks Matrix */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {tanks.map((tank: any) => {
-              const isSelected = selectedTank?.id === tank.id;
-              const isTransferring = tank.status === 'TRANSFERRING';
-              return (
-                <div
+      {/* ── Tab Bar ── */}
+      <div className="flex gap-2 flex-wrap">
+        {(['tanks', 'flow', 'forecast', 'whatif'] as const).map((tab) => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer ${activeTab === tab
+              ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+              : 'bg-polar-dark/60 border-polar-border text-slate-400 hover:text-white hover:border-white/20'}`}>
+            {tab === 'tanks' ? '🛢 Tank Farm' : tab === 'flow' ? '⚡ Transfer Loop' : tab === 'forecast' ? '📈 30-Day Forecast' : '🧪 What-If Sim'}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Tank Farm Tab ── */}
+      {activeTab === 'tanks' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Tank cylinders */}
+          <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold mb-5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              {isMaitri ? 'Maitri Bunded Tank Farm — 6 AGO Tanks' : 'Bharati SCADA Containerized Matrix — 8 Tanks'}
+            </div>
+            <div className="flex flex-wrap justify-around items-end gap-6">
+              {tanks.map((tank: any) => (
+                <CylinderTank
                   key={tank.id}
+                  pct={tank.level_pct}
+                  label={tank.name}
+                  liters={tank.current_level_l}
+                  capacity={tank.capacity_l}
+                  status={tank.status}
+                  tempC={tank.temperature_c}
+                  color="#f59e0b"
+                  selected={selectedTankId === tank.id || (!selectedTankId && tank.id === tanks[0]?.id)}
                   onClick={() => setSelectedTankId(tank.id)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer text-xs font-mono space-y-2 ${
-                    isSelected
-                      ? 'bg-polar-navy border-amber-400 shadow-lg'
-                      : 'bg-polar-dark/80 hover:bg-polar-dark border-polar-border hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-[11px] truncate" title={tank.name}>
-                      {tank.name}
-                    </span>
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                        isTransferring
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 animate-pulse'
-                          : tank.status === 'ONLINE'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700'
-                      }`}
-                    >
-                      {tank.status}
-                    </span>
-                  </div>
-
-                  {/* Visual Fill Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-slate-400">
-                      <span>Fill: <b className="text-white">{tank.level_pct.toFixed(1)}%</b></span>
-                      <span>{tank.current_level_l.toLocaleString()} L</span>
-                    </div>
-                    <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-800 relative">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          tank.level_pct > 50
-                            ? 'bg-gradient-to-r from-amber-500 to-emerald-400'
-                            : tank.level_pct > 30
-                            ? 'bg-gradient-to-r from-amber-500 to-cyan-400'
-                            : 'bg-gradient-to-r from-rose-500 to-amber-500'
-                        }`}
-                        style={{ width: `${Math.min(100, tank.level_pct)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Telemetry Row */}
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-polar-border/40">
-                    <span className="flex items-center gap-1">
-                      <Thermometer className="w-3 h-3 text-cyan-400" />
-                      <span>{tank.temperature_c > 0 ? `+${tank.temperature_c}` : tank.temperature_c}°C</span>
-                    </span>
-                    <span className="text-emerald-400">
-                      Trace: {tank.trace_heating_w}W
-                    </span>
-                    <span className="text-slate-300 font-bold">
-                      H: {tank.health_pct.toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Interactive Fuel Transfer Loop */}
-          <div className="p-4 rounded-xl bg-polar-navy/60 border border-polar-border space-y-3 text-xs font-mono">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-polar-border/60 pb-2">
-              <span className="font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                Active Fuel Transfer &amp; Manifold Circuit
-              </span>
-              <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-                Pump: {transferLoop.pump_status} ({transferLoop.flow_rate_l_min} L/min)
-              </span>
+                />
+              ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-[11px]">
-              <div className="p-2.5 rounded-lg bg-polar-dark/80 border border-slate-800">
-                <div className="text-[9px] text-slate-400 uppercase">1. Active Source Tank</div>
-                <div className="font-bold text-cyan-300 truncate mt-0.5">{transferLoop.source_tank_name}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Suction Temp: {transferLoop.suction_temp_c}°C</div>
+            {/* Total fill bar */}
+            <div className="mt-6 pt-4 border-t border-polar-border/50">
+              <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-2">
+                <span>Combined Reserve: <strong className="text-amber-300">{(currentLevel / 1000).toFixed(1)}k L</strong></span>
+                <span>Capacity: {(totalCapacity / 1000).toFixed(0)}k L</span>
               </div>
-              <div className="p-2.5 rounded-lg bg-polar-dark/80 border border-slate-800">
-                <div className="text-[9px] text-slate-400 uppercase">2. Line Preheater</div>
-                <div className="font-bold text-emerald-400 mt-0.5">Status: {transferLoop.preheater_status}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Viscosity Control Active</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-polar-dark/80 border border-slate-800">
-                <div className="text-[9px] text-slate-400 uppercase">3. Header Day Tank</div>
-                <div className="font-bold text-amber-300 mt-0.5">{transferLoop.day_tank_level_pct}% Level</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Capacity: {transferLoop.destination}</div>
-              </div>
-              <div className="p-2.5 rounded-lg bg-polar-dark/80 border border-slate-800">
-                <div className="text-[9px] text-slate-400 uppercase">4. Manifold Pressure</div>
-                <div className="font-bold text-white mt-0.5">{transferLoop.line_pressure_bar} bar</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">Feeding Baseload Generators</div>
+              <div className="h-4 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40 relative">
+                <div className="h-full rounded-full transition-all duration-1000"
+                  style={{
+                    width: `${percentage}%`,
+                    background: `linear-gradient(to right, ${zoneColor}88, ${zoneColor})`,
+                    boxShadow: `0 0 12px ${zoneColor}44`,
+                  }} />
+                {/* Zone markers */}
+                {[15, 30, 50].map(m => (
+                  <div key={m} className="absolute top-0 bottom-0 w-px bg-white/20" style={{ left: `${m}%` }}>
+                    <span className="absolute -top-5 text-[8px] font-mono text-white/30" style={{ transform: 'translateX(-50%)' }}>{m}%</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Col: Selected Tank Intelligence Drawer */}
-        <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-polar-border pb-3">
-            <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <Box className="w-4 h-4 text-cyan-400" />
-              Tank Intelligence Panel
-            </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-              {selectedTank?.id}
-            </span>
-          </div>
-
-          {selectedTank ? (
-            <div className="space-y-3.5 text-xs font-mono">
-              <div>
+          {/* Tank detail panel */}
+          <div className="glass-panel p-5 rounded-2xl border border-polar-border shadow-xl flex flex-col gap-4">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Selected Tank Intelligence</div>
+            {selectedTank && (
+              <>
                 <div className="text-sm font-bold text-white">{selectedTank.name}</div>
-                <div className="text-[11px] text-slate-400">{selectedTank.location}</div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Current Volume:</span>
-                  <span className="font-bold text-white">{selectedTank.current_level_l.toLocaleString()} L</span>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Fill Level', val: `${selectedTank.level_pct?.toFixed(1)}%`, color: '#f59e0b' },
+                    { label: 'Volume', val: `${(selectedTank.current_level_l / 1000).toFixed(2)} kL`, color: '#06b6d4' },
+                    { label: 'Capacity', val: `${(selectedTank.capacity_l / 1000).toFixed(0)} kL`, color: '#94a3b8' },
+                    { label: 'Temperature', val: `${selectedTank.temperature_c}°C`, color: selectedTank.temperature_c < -5 ? '#818cf8' : '#06b6d4' },
+                    { label: 'Health', val: `${selectedTank.health_pct?.toFixed(1)}%`, color: '#10b981' },
+                    { label: 'Trace Heating', val: `${selectedTank.trace_heating_w} W`, color: '#f97316' },
+                    { label: 'Status', val: selectedTank.status, color: selectedTank.status === 'ONLINE' ? '#10b981' : selectedTank.status === 'TRANSFERRING' ? '#06b6d4' : '#64748b' },
+                  ].map(row => (
+                    <div key={row.label} className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-slate-400">{row.label}</span>
+                      <span className="font-bold" style={{ color: row.color }}>{row.val}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Rated Capacity:</span>
-                  <span className="text-slate-300">{selectedTank.capacity_l.toLocaleString()} L</span>
+
+                {/* Mini fill bar */}
+                <div className="h-2 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
+                  <div className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${selectedTank.level_pct}%`, background: 'linear-gradient(to right, #f59e0b88, #f59e0b)', boxShadow: '0 0 8px #f59e0b44' }} />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Fill Percentage:</span>
-                  <span className="font-bold text-amber-400">{selectedTank.level_pct.toFixed(1)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Sensor Health:</span>
-                  <span className="font-bold text-emerald-400">{selectedTank.health_pct.toFixed(1)}%</span>
-                </div>
-              </div>
 
-              <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Fuel Temperature:</span>
-                  <span className="font-bold text-cyan-300">{selectedTank.temperature_c}°C</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Trace Heating Status:</span>
-                  <span className="text-emerald-400 font-bold">Active ({selectedTank.trace_heating_w} W)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Interstitial Leak Sensor:</span>
-                  <span className="text-emerald-400 font-bold">CLEAR (Zero Leakage)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Suction Valve State:</span>
-                  <span className="text-white font-bold">{selectedTank.status}</span>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-polar-navy/60 border border-polar-border space-y-1.5">
-                <div className="text-[10px] text-slate-400 uppercase font-bold">Inspection &amp; Quality Notes</div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Water-bottom paste check negative. Pour point verified at -50°C. Interstitial vacuum monitored continuously by SCADA telemetry.
-                </p>
-              </div>
-
-              <div className="pt-2 flex flex-col gap-2">
-                <button
-                  onClick={() => navigate(`/station/${stationId}/equipment`)}
-                  className="w-full py-2.5 rounded-xl text-xs font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 flex items-center justify-center gap-2 transition-all cursor-pointer"
-                >
-                  <span>Inspect Fuel Pumping Equipment</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12 text-slate-500 font-mono text-xs">
-              Select a fuel tank to inspect its physical parameters
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 5. Consumption Drivers & Cross-Domain Linkages */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-polar-border pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                Consumption Drivers &amp; Cross-Domain Energy Linkages
-              </h3>
-            </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Fuel burn is directly driven by energy demands, environmental cold forcing, and research operations. Click any driver to view the corresponding domain.
-            </p>
-          </div>
-          <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/40">
-            Causal Coupling Active
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs font-mono">
-          {/* Driver 1: Generator Demand */}
-          <div
-            onClick={() => navigate(`/station/${stationId}/energy`)}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-amber-500/40 hover:border-amber-400 transition-all cursor-pointer group space-y-1.5"
-          >
-            <div className="text-[10px] text-amber-400 font-bold uppercase flex items-center justify-between">
-              <span>1. Generator Load</span>
-              <Zap className="w-3 h-3 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="font-bold text-white text-sm">{drivers.generator_load_kw} kW Demand</div>
-            <div className="text-[11px] text-amber-300 font-bold">{drivers.generator_burn_l_hr.toFixed(1)} L/hr Burn</div>
-            <div className="text-[9px] text-slate-400 pt-1 border-t border-polar-border/40">
-              84.5% of total station consumption
-            </div>
-          </div>
-
-          {/* Driver 2: Heating Demand */}
-          <div
-            onClick={() => navigate(`/station/${stationId}/infrastructure`)}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-blue-500/40 hover:border-blue-400 transition-all cursor-pointer group space-y-1.5"
-          >
-            <div className="text-[10px] text-blue-400 font-bold uppercase flex items-center justify-between">
-              <span>2. Thermal Heating</span>
-              <ThermometerSnowflake className="w-3 h-3 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="font-bold text-white text-sm">{drivers.heating_demand_kw} kW Thermal</div>
-            <div className="text-[11px] text-blue-300 font-bold">~{drivers.heating_burn_equiv_l_hr.toFixed(1)} L/hr Equiv</div>
-            <div className="text-[9px] text-slate-400 pt-1 border-t border-polar-border/40">
-              Indoor 18°C setpoint vs {env?.temperature ?? -22}°C ambient
-            </div>
-          </div>
-
-          {/* Driver 3: Science Labs */}
-          <div
-            onClick={() => navigate(`/station/${stationId}/research`)}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-purple-500/40 hover:border-purple-400 transition-all cursor-pointer group space-y-1.5"
-          >
-            <div className="text-[10px] text-purple-400 font-bold uppercase flex items-center justify-between">
-              <span>3. Science Labs</span>
-              <Microscope className="w-3 h-3 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="font-bold text-white text-sm">{drivers.science_load_kw} kW Draw</div>
-            <div className="text-[11px] text-purple-300 font-bold">~{drivers.science_burn_equiv_l_hr.toFixed(1)} L/hr Equiv</div>
-            <div className="text-[9px] text-slate-400 pt-1 border-t border-polar-border/40">
-              FTIR, magnetometers &amp; radome
-            </div>
-          </div>
-
-          {/* Driver 4: Solar Offset */}
-          <div
-            onClick={() => navigate(`/station/${stationId}/energy`)}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-emerald-500/40 hover:border-emerald-400 transition-all cursor-pointer group space-y-1.5"
-          >
-            <div className="text-[10px] text-emerald-400 font-bold uppercase flex items-center justify-between">
-              <span>4. Solar PV Offset</span>
-              <Sun className="w-3 h-3 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="font-bold text-emerald-400 text-sm">+{drivers.solar_offset_kw} kW Generation</div>
-            <div className="text-[11px] text-emerald-300 font-bold">Saves -{drivers.solar_fuel_saved_l_hr.toFixed(1)} L/hr</div>
-            <div className="text-[9px] text-slate-400 pt-1 border-t border-polar-border/40">
-              Reduces generator throttling load
-            </div>
-          </div>
-
-          {/* Driver 5: Auxiliary Boiler */}
-          <div
-            onClick={() => navigate(`/station/${stationId}/water`)}
-            className="p-3.5 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-cyan-500/40 hover:border-cyan-400 transition-all cursor-pointer group space-y-1.5"
-          >
-            <div className="text-[10px] text-cyan-400 font-bold uppercase flex items-center justify-between">
-              <span>5. Snow Melt &amp; Water</span>
-              <Flame className="w-3 h-3 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="font-bold text-white text-sm">{drivers.auxiliary_boiler_l_hr} L/hr Direct</div>
-            <div className="text-[11px] text-cyan-300 font-bold">Potable Water Production</div>
-            <div className="text-[9px] text-slate-400 pt-1 border-t border-polar-border/40">
-              Trace-heated lake pipe / RO loop
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 6. Live Causal Matrix & Resupply Bridging Protocol */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Causal Matrix */}
-        <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-          <div className="flex items-center gap-2 border-b border-polar-border pb-3">
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-              Causal Matrix — Fuel Dynamics Propagation
-            </h3>
-          </div>
-
-          <div className="space-y-2.5 text-xs font-mono">
-            <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/40 text-slate-300 space-y-1">
-              <div className="flex items-center justify-between text-cyan-400 font-bold uppercase text-[10px]">
-                <span>← Upstream Causal Forcing</span>
-                <span>Environmental &amp; Load Inputs</span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                Ambient temperatures ({env?.temperature ?? -22}°C) and wind chill surge heating load to {drivers.heating_demand_kw} kW. Energy demand reaches {drivers.generator_load_kw} kW, driving fuel consumption.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-slate-300 space-y-1">
-              <div className="flex items-center justify-between text-amber-400 font-bold uppercase text-[10px]">
-                <span>● Current Fuel State</span>
-                <span>{percentage.toFixed(1)}% Fill ({reserveZone})</span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                Bulk storage holds {currentLevel.toLocaleString()} L. Continuous burn is {burnRate.toFixed(1)} L/hr (~{dailyBurn.toFixed(0)} L/day). Safe buffer remaining: {daysRemaining} days.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-500/40 text-slate-300 space-y-1">
-              <div className="flex items-center justify-between text-rose-400 font-bold uppercase text-[10px]">
-                <span>→ Downstream Impact</span>
-                <span>Logistics &amp; Station Risk</span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                Next resupply scheduled in {resupplyEta} days. Depletion prior to resupply creates a {bridgingGap} day bridging deficit, contributing directly to station operational risk.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Resupply Bridging Protocol (Decision Support) */}
-        <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-          <div className="flex items-center justify-between border-b border-polar-border pb-3">
-            <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <Truck className="w-4 h-4 text-emerald-400" />
-              Resupply Bridging Protocol (Decision Support)
-            </h3>
-            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold border ${bridgingGap >= 0 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'}`}>
-              Gap: {bridgingGap} Days
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2 text-xs font-mono">
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-400">Safe Runway to 30% Buffer:</span>
-              <span className="font-bold text-white">{daysRemaining} Days</span>
-            </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-400">Scheduled Resupply ETA:</span>
-              <span className="font-bold text-cyan-300">{resupplyEta} Days</span>
-            </div>
-            <div className="flex justify-between items-baseline">
-              <span className="text-slate-400">Logistics Vulnerability:</span>
-              <span className="font-bold text-amber-400">{bridgingGap < 0 ? 'HIGH (Bridge Action Required)' : 'LOW (On Schedule)'}</span>
-            </div>
-          </div>
-
-          {/* Dynamic Recommendations */}
-          <div className="space-y-2 text-xs font-mono">
-            <div className="text-[10px] text-slate-400 uppercase font-bold">Prescriptive Recommendations</div>
-            {recommendations.map((rec: any, idx: number) => (
-              <div key={idx} className="p-2.5 rounded-lg bg-polar-dark/80 border border-polar-border space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-[11px]">{rec.action}</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    +{rec.days_gained}d Autonomy
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 leading-snug">{rec.explanation}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 7. What-If Scenario Simulation Sandbox */}
-      <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-polar-border pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Play className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                Fuel What-If Simulation Sandbox (Cloned Digital Twin State)
-              </h3>
-            </div>
-            <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Execute mission-critical polar fuel stress scenarios on an isolated clone of the twin. Live station state is never mutated.
-            </p>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 self-start sm:self-auto">
-            Zero Live Mutation
-          </span>
-        </div>
-
-        {/* 5 Scenario Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 text-xs font-mono">
-          <button
-            onClick={() => handleRunWhatIf('resupply_delay', 20, 'Resupply Delayed +20 Days')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-rose-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-white group-hover:text-rose-300">
-                Resupply +20d
-              </span>
-              <Play className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1">
-              Icebreaker / convoy delayed 20 days by pack ice.
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleRunWhatIf('generator_failure', null, 'Main Generator Failure')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-amber-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-white group-hover:text-amber-300">
-                Generator Failure
-              </span>
-              <Play className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1">
-              Trips generator; secondary operates at higher SFC.
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleRunWhatIf('solar_drop', 0.40, 'Solar Output Drops 40%')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-purple-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-white group-hover:text-purple-300">
-                Solar -40%
-              </span>
-              <Play className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1">
-              Rime ice accumulation shifts load to generators.
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleRunWhatIf('storm', null, '3-Day Katabatic Blizzard')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-blue-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-white group-hover:text-blue-300">
-                Severe Blizzard
-              </span>
-              <Play className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1">
-              Zero visibility &amp; gale winds surge heating burn +35%.
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleRunWhatIf('extreme_cold', 16.0, 'Polar Vortex Freeze (-48°C)')}
-            disabled={whatIfLoading}
-            className="p-3 rounded-xl bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/60 text-left transition-all cursor-pointer group disabled:opacity-50"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs text-white group-hover:text-cyan-300">
-                Deep Freeze (-48°C)
-              </span>
-              <Play className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
-            </div>
-            <div className="text-[10px] text-slate-400 mt-1">
-              Extreme cold maxes out fuel line trace preheaters.
-            </div>
-          </button>
-        </div>
-
-        {/* Loading Indicator */}
-        {whatIfLoading && (
-          <div className="p-4 rounded-xl bg-polar-dark/60 border border-slate-800 flex items-center justify-center gap-2 text-xs font-mono text-cyan-400 animate-pulse">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span>Cloning Station Twin State &amp; Projecting Fuel Trajectory...</span>
-          </div>
-        )}
-
-        {/* What-If Results Grid */}
-        {whatIfResult && (
-          <div className="p-4 rounded-xl bg-polar-navy/70 border border-cyan-500/50 space-y-3 animate-fadeIn text-xs font-mono">
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-white uppercase tracking-wider">
-                Scenario Outcome: {whatIfResult.title}
-              </span>
-              <button
-                onClick={() => setWhatIfResult(null)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Fuel Reserve</div>
-                <div className="text-slate-300 mt-0.5">
-                  Base: <b className="text-white">{whatIfResult.comparison.fuel_reserve_liters?.baseline?.toLocaleString() ?? currentLevel.toLocaleString()} L</b>
-                </div>
-                <div className="text-amber-400 font-bold">
-                  Proj: {whatIfResult.comparison.fuel_reserve_liters?.projected?.toLocaleString() ?? '112,400'} L
-                </div>
-                <div className="text-[9px] text-amber-300 font-bold">
-                  {whatIfResult.comparison.fuel_reserve_liters?.delta ?? -25600} L Draw
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Safe Runway</div>
-                <div className="text-slate-300 mt-0.5">
-                  Base: <b className="text-white">{whatIfResult.comparison.days_fuel_remaining?.baseline ?? daysRemaining}d</b>
-                </div>
-                <div className="text-rose-400 font-bold">
-                  Proj: {whatIfResult.comparison.days_fuel_remaining?.projected ?? 11}d
-                </div>
-                <div className="text-[9px] text-rose-300 font-bold">
-                  {whatIfResult.comparison.days_fuel_remaining?.delta ?? -7}d Autonomy
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Generator Load</div>
-                <div className="text-slate-300 mt-0.5">
-                  Base: <b className="text-white">{whatIfResult.comparison.generator_load_kw?.baseline ?? drivers.generator_load_kw} kW</b>
-                </div>
-                <div className="text-amber-400 font-bold">
-                  Proj: {whatIfResult.comparison.generator_load_kw?.projected ?? 98.4} kW
-                </div>
-                <div className="text-[9px] text-amber-300 font-bold">
-                  +{whatIfResult.comparison.generator_load_kw?.delta ?? 14.4} kW Load
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Station Risk</div>
-                <div className="text-slate-300 mt-0.5">
-                  Base: <b className="text-white">{whatIfResult.comparison.station_risk_score?.baseline ?? 24.2}</b>
-                </div>
-                <div className="text-rose-400 font-bold">
-                  Proj: {whatIfResult.comparison.station_risk_score?.projected ?? 48.5}
-                </div>
-                <div className="text-[9px] text-rose-300 font-bold">
-                  +{whatIfResult.comparison.station_risk_score?.delta ?? 24.3} pts Risk
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-polar-dark border border-slate-800">
-                <div className="text-slate-400 text-[10px] uppercase">Readiness Score</div>
-                <div className="text-slate-300 mt-0.5">
-                  Base: <b className="text-white">{whatIfResult.comparison.station_readiness_score?.baseline ?? 92.5}%</b>
-                </div>
-                <div className="text-amber-400 font-bold">
-                  Proj: {whatIfResult.comparison.station_readiness_score?.projected ?? 81.4}%
-                </div>
-                <div className="text-[9px] text-amber-300 font-bold">
-                  {whatIfResult.comparison.station_readiness_score?.delta ?? -11.1}%
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-amber-950/40 border border-amber-500/40 text-[11px] text-slate-300">
-              <b className="text-amber-300">Digital Twin Prescriptive Action: </b>
-              {whatIfResult.recommended_action}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 8. Modals for KPI Clicks */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-2xl border border-polar-border max-w-lg w-full space-y-4 text-xs font-mono shadow-2xl animate-scaleUp">
-            <div className="flex items-center justify-between border-b border-polar-border pb-3">
-              <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-amber-400" />
-                <h3 className="font-bold text-white uppercase tracking-wider text-sm">
-                  {activeModal === 'reserve' && 'Fuel Reserve Zones & Storage Buffer'}
-                  {activeModal === 'burn' && 'Hourly Consumption Drivers Breakdown'}
-                  {activeModal === 'runway' && 'Depletion Runway Milestones'}
-                  {activeModal === 'resupply' && 'Resupply Window & Bridging Protocol'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setActiveModal(null)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {activeModal === 'reserve' && (
-              <div className="space-y-3">
-                <p className="text-slate-300 leading-relaxed">
-                  Bulk fuel storage is monitored continuously to guarantee uninterrupted power and life support heating during polar winter isolation.
-                </p>
-                <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Total Fuel Farm Capacity:</span>
-                    <span className="font-bold text-white">{totalCapacity.toLocaleString()} L</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Current Measured Volume:</span>
-                    <span className="font-bold text-amber-300">{currentLevel.toLocaleString()} L ({percentage.toFixed(1)}%)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Dead Bottom Unpumpable (5%):</span>
-                    <span className="text-slate-400">{deadBottomBuffer.toLocaleString()} L</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Net Usable Reserve:</span>
-                    <span className="font-bold text-emerald-400">{usableReserve.toLocaleString()} L</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Emergency Safe Buffer (30%):</span>
-                    <span className="text-amber-400 font-bold">{safeBufferThreshold.toLocaleString()} L</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Critical Lockdown Line (15%):</span>
-                    <span className="text-rose-400 font-bold">{criticalThreshold.toLocaleString()} L</span>
+                {/* Burn rate gauges */}
+                <div className="pt-3 border-t border-polar-border/40">
+                  <div className="flex justify-around">
+                    <BurnRadialGauge value={burnRate} max={60} unit="L/hr" label="Burn Rate" color="#f59e0b" size={100} />
+                    <BurnRadialGauge value={eng?.generator_load ?? (isMaitri ? 67 : 84)} max={200} unit="kW" label="Gen Load" color="#818cf8" size={100} />
                   </div>
                 </div>
-              </div>
+              </>
             )}
+          </div>
+        </div>
+      )}
 
-            {activeModal === 'burn' && (
-              <div className="space-y-3">
-                <p className="text-slate-300 leading-relaxed">
-                  Fuel consumption is calculated causally from the generator electrical demand curve plus auxiliary heating preheaters.
-                </p>
-                <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Generator Electrical Load:</span>
-                    <span className="font-bold text-white">{drivers.generator_load_kw} kW ({drivers.generator_burn_l_hr.toFixed(1)} L/hr)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Space &amp; Trace Heating Load:</span>
-                    <span className="font-bold text-blue-300">{drivers.heating_demand_kw} kW (~{drivers.heating_burn_equiv_l_hr.toFixed(1)} L/hr)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Science Lab Instruments:</span>
-                    <span className="font-bold text-purple-300">{drivers.science_load_kw} kW (~{drivers.science_burn_equiv_l_hr.toFixed(1)} L/hr)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Solar PV Fuel Offset:</span>
-                    <span className="font-bold text-emerald-400">-{drivers.solar_fuel_saved_l_hr.toFixed(1)} L/hr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Auxiliary Snow-Melt Boiler:</span>
-                    <span className="font-bold text-cyan-300">+{drivers.auxiliary_boiler_l_hr.toFixed(1)} L/hr</span>
-                  </div>
-                  <div className="flex justify-between border-t border-polar-border pt-1 font-bold">
-                    <span className="text-white">Total Current Consumption:</span>
-                    <span className="text-amber-400">{burnRate.toFixed(1)} L/hr (~{dailyBurn.toFixed(0)} L/day)</span>
-                  </div>
+      {/* ── Transfer Loop Tab ── */}
+      {activeTab === 'flow' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-5">
+            <FuelFlowPipeline
+              flowRate={transferLoop.flow_rate_l_min}
+              pumpStatus={transferLoop.pump_status}
+              dayTankPct={transferLoop.day_tank_level_pct}
+              sourceTank={transferLoop.active_source_tank || tanks[1]?.name || ''}
+              destination={isMaitri ? 'Generator Day Tank #1' : 'CHP Header Day Tank'}
+              isMaitri={isMaitri}
+            />
+            <div className="space-y-2">
+              {[
+                { label: 'Pump Status', val: transferLoop.pump_status, color: '#10b981' },
+                { label: 'Flow Rate', val: `${transferLoop.flow_rate_l_min} L/min`, color: '#f59e0b' },
+                { label: 'Day Tank Level', val: `${transferLoop.day_tank_level_pct?.toFixed(1)}%`, color: '#06b6d4' },
+                { label: 'Suction Temp', val: `${fuelTemp}°C`, color: '#818cf8' },
+                { label: 'Preheater', val: 'ACTIVE — OK', color: '#10b981' },
+                { label: 'Fuel Grade', val: isMaitri ? 'AGO −50°C' : 'Polar Gas Oil', color: '#94a3b8' },
+              ].map(r => (
+                <div key={r.label} className="flex justify-between items-center text-xs font-mono border-b border-polar-border/30 pb-1.5">
+                  <span className="text-slate-400">{r.label}</span>
+                  <span className="font-bold" style={{ color: r.color }}>{r.val}</span>
                 </div>
-              </div>
-            )}
-
-            {activeModal === 'runway' && (
-              <div className="space-y-3">
-                <p className="text-slate-300 leading-relaxed">
-                  Autonomy runway estimates based on the current daily draw rate of {dailyBurn.toFixed(0)} L/day.
-                </p>
-                <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Days to 30% Emergency Buffer:</span>
-                    <span className="font-bold text-amber-300">{daysToBuffer} Days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Days to 15% Critical Threshold:</span>
-                    <span className="font-bold text-rose-400">{daysToCritical} Days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Days to Total Tank Depletion:</span>
-                    <span className="font-bold text-white">{daysRemaining} Days</span>
-                  </div>
+              ))}
+            </div>
+          </div>
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold mb-4">
+              Burn Rate by Consumer — Waterfall (L/hr)
+            </div>
+            <BurnWaterfallChart drivers={drivers} isMaitri={isMaitri} />
+            <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] font-mono">
+              {[
+                { label: 'Generator', val: `${(drivers.generator_burn_l_hr || 17.5).toFixed(1)} L/hr`, color: '#f59e0b' },
+                { label: 'Space Heating', val: `${(drivers.heating_burn_equiv_l_hr || 8.3).toFixed(1)} L/hr`, color: '#818cf8' },
+                { label: 'Research Labs', val: `${(drivers.science_burn_equiv_l_hr || 3.1).toFixed(1)} L/hr`, color: '#06b6d4' },
+                { label: 'Solar Offset', val: `−${(drivers.solar_fuel_saved_l_hr || 4.7).toFixed(1)} L/hr`, color: '#22c55e' },
+              ].map(r => (
+                <div key={r.label} className="flex justify-between items-center p-2 rounded-lg bg-polar-dark/50 border border-polar-border">
+                  <span className="text-slate-400">{r.label}</span>
+                  <span className="font-bold" style={{ color: r.color }}>{r.val}</span>
                 </div>
-              </div>
-            )}
-
-            {activeModal === 'resupply' && (
-              <div className="space-y-3">
-                <p className="text-slate-300 leading-relaxed">
-                  Compares the remaining safe operating autonomy against the projected arrival date of the next resupply voyage.
-                </p>
-                <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Resupply Voyage ETA:</span>
-                    <span className="font-bold text-cyan-300">{resupplyEta} Days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Safe Autonomy Window:</span>
-                    <span className="font-bold text-white">{daysRemaining} Days</span>
-                  </div>
-                  <div className="flex justify-between border-t border-polar-border pt-1">
-                    <span className="text-slate-400">Bridging Margin / Deficit:</span>
-                    <span className={`font-bold ${bridgingGap >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {bridgingGap >= 0 ? `+${bridgingGap} Days Surplus` : `${bridgingGap} Days Deficit`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setActiveModal(null)}
-                className="px-4 py-2 rounded-xl bg-polar-dark hover:bg-polar-dark/80 border border-polar-border text-white font-bold cursor-pointer"
-              >
-                Close
-              </button>
+              ))}
             </div>
           </div>
         </div>
       )}
+
+      {/* ── Forecast Tab ── */}
+      {activeTab === 'forecast' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4" /> 30-Day Fuel Reserve Trajectory & Threshold Zones
+            </div>
+            <FuelForecastChart currentLevel={currentLevel} totalCapacity={totalCapacity} burnRate={burnRate} stationId={stationId} />
+          </div>
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-4">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Reserve Threshold Zones</div>
+            {[
+              { zone: 'NORMAL', range: '>50%', color: '#10b981', desc: 'Full operational capacity. No action required.' },
+              { zone: 'WATCH', range: '30–50%', color: '#06b6d4', desc: 'Enhanced monitoring. Begin resupply coordination.' },
+              { zone: 'HIGH ALERT', range: '15–30%', color: '#f59e0b', desc: 'Non-essential consumption reduction protocol.' },
+              { zone: 'CRITICAL', range: '<15%', color: '#ef4444', desc: 'Emergency rationing. Station lockdown possible.' },
+            ].map(z => (
+              <div key={z.zone} className="p-3 rounded-xl border transition-all"
+                style={{ borderColor: `${z.color}44`, background: `${z.color}0A` }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-mono font-bold" style={{ color: z.color }}>{z.zone}</span>
+                  <span className="text-[10px] font-mono text-slate-400">{z.range}</span>
+                </div>
+                <p className="text-[10px] font-mono text-slate-400 leading-relaxed">{z.desc}</p>
+              </div>
+            ))}
+            <div className="pt-3 border-t border-polar-border/40 space-y-2 text-xs font-mono">
+              <div className="flex justify-between"><span className="text-slate-400">Current Zone</span><span className="font-bold" style={{ color: zoneColor }}>{reserveZone}</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Days to Resupply</span><span className="font-bold text-cyan-300">{resupplyEta}d</span></div>
+              <div className="flex justify-between"><span className="text-slate-400">Reserve Buffer</span><span className={`font-bold ${bridgingGap >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{bridgingGap >= 0 ? '+' : ''}{bridgingGap}d</span></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── What-If Tab ── */}
+      {activeTab === 'whatif' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-5">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Causal Scenario Simulation Sandbox
+            </div>
+            <p className="text-xs font-mono text-slate-400 leading-relaxed">
+              Simulate adverse operational scenarios and evaluate their impact on fuel runway, risk scores, and recommended mitigation actions.
+            </p>
+            <div className="space-y-3">
+              {[
+                { key: 'resupply_delay', label: '🚛 Resupply Delay +30 Days', desc: 'Convoy delayed by sea ice / katabatic event' },
+                { key: 'generator_failure', label: '⚡ Generator Trip Fault', desc: 'Primary generator unplanned shutdown' },
+                { key: 'blizzard_lockdown', label: '🌨 Blizzard Lockdown ×3d', desc: 'Full station isolation, max heating demand' },
+              ].map(s => (
+                <div key={s.key} onClick={() => setScenarioType(s.key)}
+                  className={`p-3 rounded-xl border cursor-pointer transition-all ${scenarioType === s.key ? 'bg-amber-500/10 border-amber-500/50 text-amber-300' : 'bg-polar-dark/50 border-polar-border text-slate-400 hover:border-white/20'}`}>
+                  <div className="text-xs font-mono font-bold">{s.label}</div>
+                  <div className="text-[10px] font-mono mt-0.5 opacity-70">{s.desc}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={handleWhatIf} disabled={whatIfLoading}
+              className="w-full py-3 rounded-xl text-sm font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50">
+              {whatIfLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {whatIfLoading ? 'Simulating...' : 'Run Simulation'}
+            </button>
+          </div>
+
+          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4">Simulation Output</div>
+            {!whatIfResult ? (
+              <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-sm font-mono text-center gap-3">
+                <Sparkles className="w-10 h-10 opacity-20" />
+                <p>Select a scenario and run the simulation to see impact analysis.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40">
+                  <div className="text-xs font-mono font-bold text-amber-300 mb-1">{whatIfResult.scenario_name}</div>
+                </div>
+                {whatIfResult.impact && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Fuel Days Lost', val: `−${whatIfResult.impact.fuel_days_lost || 30}d`, color: '#ef4444' },
+                      { label: 'Risk Delta', val: `+${whatIfResult.impact.risk_score_delta?.toFixed(1) || '18.4'}pts`, color: '#f59e0b' },
+                    ].map(m => (
+                      <div key={m.label} className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border text-center">
+                        <div className="text-xs font-mono text-slate-400">{m.label}</div>
+                        <div className="text-lg font-black font-mono mt-1" style={{ color: m.color }}>{m.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="p-4 rounded-xl bg-polar-dark/60 border border-polar-border">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 mb-2 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Recommended Action
+                  </div>
+                  <p className="text-xs font-mono text-slate-300 leading-relaxed">{whatIfResult.recommended_action}</p>
+                </div>
+                <button onClick={() => setWhatIfResult(null)}
+                  className="w-full py-2 rounded-xl text-xs font-mono text-slate-400 border border-polar-border hover:border-white/20 hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                  <X className="w-3.5 h-3.5" /> Clear Results
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes flow {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(300%); }
+        }
+      `}</style>
     </div>
   );
 };
-
-export default FuelPage;

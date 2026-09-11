@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { telemetryApi } from '../api/client';
 import { WindCompass } from '../components/charts/WindCompass';
@@ -7,7 +7,7 @@ import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Thermometer, Eye, Sun, AlertTriangle, ShieldCheck, ShieldAlert, CloudLightning,
-  Wind, Waves, Droplets, Gauge, Compass
+  Wind, Waves, Droplets, Gauge, Compass, Brain, Layers, RefreshCw
 } from 'lucide-react';
 
 // ─── Animated Mercury Thermometer ───────────────────────────────────────────
@@ -246,6 +246,7 @@ const ForecastArchiveCard: React.FC<{
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export const EnvironmentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const stationId = id || 'maitri';
   const { liveSnapshot } = useTelemetryStore();
   const snapshot = liveSnapshot[stationId];
@@ -346,7 +347,7 @@ export const EnvironmentPage: React.FC = () => {
             </h1>
           </div>
 
-          {/* Top Status Telemetry Capsules */}
+          {/* Top Status Telemetry Capsules & Navigation */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="flex items-center gap-2.5 bg-gradient-to-r from-cyan-950/40 via-polar-darker/80 to-polar-dark/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-xl shadow-sm backdrop-blur-md">
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -363,6 +364,19 @@ export const EnvironmentPage: React.FC = () => {
                 <span className="text-xs font-black font-mono text-blue-300 leading-tight mt-0.5">{windChill}°C</span>
               </div>
             </div>
+
+            <button onClick={() => navigate(`/station/${stationId}/domains`)}
+              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-1.5 transition-all cursor-pointer">
+              <Layers className="w-3.5 h-3.5 text-cyan-400" /> Domains
+            </button>
+            <button onClick={() => navigate(`/station/${stationId}/decision?domain=environment`)}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              <Brain className="w-3.5 h-3.5 text-purple-400" /> Decision Intel
+            </button>
+            <button onClick={() => navigate(isMaitri ? '/station/bharati/environment' : '/station/maitri/environment')}
+              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-blue-400/50 text-white flex items-center gap-1.5 transition-all cursor-pointer">
+              <RefreshCw className="w-3.5 h-3.5" /> Switch Station
+            </button>
           </div>
         </div>
       </div>

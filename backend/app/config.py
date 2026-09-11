@@ -1,10 +1,21 @@
 import os
 import logging
+from pathlib import Path
 from typing import List
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = BASE_DIR.parent
+ROOT_DIR = BACKEND_DIR.parent
+
+# Load unified root .env first, fallback to backend .env
+if (ROOT_DIR / ".env").exists():
+    load_dotenv(ROOT_DIR / ".env")
+elif (BACKEND_DIR / ".env").exists():
+    load_dotenv(BACKEND_DIR / ".env")
+else:
+    load_dotenv()
 
 logger = logging.getLogger("polartwin.config")
 
@@ -15,7 +26,7 @@ def _require_env(name: str, fallback: str | None = None) -> str:
     if not val:
         raise RuntimeError(
             f"Required environment variable '{name}' is not set. "
-            "Copy backend/.env.example to backend/.env and fill in all required values."
+            "Copy .env.example to .env and fill in all required values."
         )
     return val
 
@@ -58,7 +69,12 @@ class Settings(BaseSettings):
     SENTRY_DSN: str = os.getenv("SENTRY_DSN", "")
     FRONTEND_ORIGIN: str = os.getenv("FRONTEND_ORIGIN", "https://polartwin.pages.dev")
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="allow")
+    model_config = SettingsConfigDict(
+        env_file=[str(ROOT_DIR / ".env"), str(BACKEND_DIR / ".env"), ".env"],
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="allow",
+    )
 
     def validate_secrets(self) -> None:
         """Call at startup — raises immediately if JWT_SECRET is not set."""

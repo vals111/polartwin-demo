@@ -1,12 +1,19 @@
-# Node
+# ── Node & Frontend Build ───────────────────────────────────────────────────
 node_modules/
 dist/
+dist-ssr/
 .vite/
+*.local
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Python
+# ── Python & Backend Runtime ─────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 *.pyo
 *.pyd
 .Python
@@ -15,13 +22,24 @@ venv/
 .venv/
 polartwin.db
 *.sqlite3
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Environment
+# ── Environment & Secrets (Keep .env.example) ───────────────────────────────
 .env
 .env.local
+.env.*.local
+!.env.example
 
-# IDE & OS
+# ── IDEs, Editors & OS Files ────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

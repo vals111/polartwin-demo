@@ -4,14 +4,15 @@ import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  ExternalLink, Layers, GitCompare, GitCommit, Box, Eye
+  ExternalLink, GitCompare, GitCommit, Box, Brain, ChevronRight
 } from 'lucide-react';
 import { ThreeDomainGraph } from './ThreeDomainGraph';
+import { OperationalDomainCard } from './OperationalDomainCard';
 
 export interface TreeNode {
   id: string;
   name: string;
-  shortName: string;
+  shortDesc: string;
   tier: string;
   tierNumber: number;
   x: number;
@@ -29,23 +30,22 @@ export interface TreeEdgeDef {
   from: string;
   to: string;
   label: string;
-  customPath?: string; // Optional manual routing to avoid collisions
 }
 
 // 9 Interconnected Operational Domains organized in strict Causal Priority Tiers
-// Canvas Dimensions: 1180px x 720px
-const TREE_NODES: TreeNode[] = [
+// Canvas Dimensions: 1220px x 1040px
+export const TREE_NODES: TreeNode[] = [
   // ── Tier 1: Primary Environmental & Supply Forcing (y = 35) ──
   {
     id: 'environment',
     name: 'Environment & Weather',
-    shortName: 'Climate & Atmosphere',
+    shortDesc: 'Polar Atmosphere, Katabatic Wind Chill & Storm Severity',
     tier: 'TIER 1 • ROOT CLIMATE DRIVER',
     tierNumber: 1,
-    x: 200,
+    x: 220,
     y: 35,
-    w: 310,
-    h: 88,
+    w: 350,
+    h: 180,
     route: 'environment',
     icon: CloudSnow,
     color: '#00e5ff',
@@ -54,30 +54,30 @@ const TREE_NODES: TreeNode[] = [
   {
     id: 'logistics',
     name: 'Transportation & Logistics',
-    shortName: 'Overland & Sea Lifeline',
+    shortDesc: 'Overland Traverse Convoys, Cargo Resupply & Vessel ETA',
     tier: 'TIER 1 • EXPEDITION RESUPPLY',
     tierNumber: 1,
-    x: 670,
+    x: 650,
     y: 35,
-    w: 310,
-    h: 88,
+    w: 350,
+    h: 180,
     route: 'logistics',
     icon: Truck,
     color: '#f97316',
     accentRgb: '249, 115, 22'
   },
 
-  // ── Tier 2: Storage Reserves & Conversion Machinery (y = 195) ──
+  // ── Tier 2: Storage Reserves & Conversion Machinery (y = 295) ──
   {
     id: 'fuel',
-    name: 'Fuel Storage',
-    shortName: 'Hydrocarbon Tank Farm',
+    name: 'Fuel Depot',
+    shortDesc: 'Antarctic Low-Freeze Diesel (AGO) Storage & Autonomy',
     tier: 'TIER 2 • ENERGY RESERVE',
     tierNumber: 2,
-    x: 50,
-    y: 195,
-    w: 320,
-    h: 88,
+    x: 40,
+    y: 295,
+    w: 350,
+    h: 180,
     route: 'fuel',
     icon: Fuel,
     color: '#ef4444',
@@ -86,13 +86,13 @@ const TREE_NODES: TreeNode[] = [
   {
     id: 'inventory',
     name: 'Storage & Inventory',
-    shortName: 'Spares & Consumables',
+    shortDesc: 'Critical Spares Safety Buffer, Consumables & Parts Readiness',
     tier: 'TIER 2 • CRITICAL SPARES',
     tierNumber: 2,
-    x: 430,
-    y: 195,
-    w: 320,
-    h: 88,
+    x: 435,
+    y: 295,
+    w: 350,
+    h: 180,
     route: 'inventory',
     icon: Archive,
     color: '#14b8a6',
@@ -101,62 +101,62 @@ const TREE_NODES: TreeNode[] = [
   {
     id: 'equipment',
     name: 'Equipment & Machinery',
-    shortName: 'Mechanical Asset Health',
+    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
     tier: 'TIER 2 • POWER CONVERSION',
     tierNumber: 2,
-    x: 810,
-    y: 195,
-    w: 320,
-    h: 88,
+    x: 830,
+    y: 295,
+    w: 350,
+    h: 180,
     route: 'equipment',
     icon: Wrench,
     color: '#22c55e',
     accentRgb: '34, 197, 94'
   },
 
-  // ── Tier 3: Central Microgrid Power Core (y = 360) ──
+  // ── Tier 3: Central Microgrid Power Core (y = 555) ──
   {
     id: 'energy',
     name: 'Energy & Power',
-    shortName: 'Microgrid Bus & PV',
+    shortDesc: 'Diesel Generation, Solar PV & Microgrid Battery Reserve',
     tier: 'TIER 3 • CENTRAL MICROGRID',
     tierNumber: 3,
-    x: 390,
-    y: 360,
-    w: 400,
-    h: 92,
-    route: 'resources',
+    x: 420,
+    y: 555,
+    w: 380,
+    h: 180,
+    route: 'energy',
     icon: Zap,
     color: '#eab308',
     accentRgb: '234, 179, 8'
   },
 
-  // ── Tier 4: Life Support, Human Habitation & Telemetry (y = 535) ──
+  // ── Tier 4: Life Support, Human Habitation & Telemetry (y = 815) ──
   {
     id: 'water',
-    name: 'Water Supply',
-    shortName: 'Lake Zub / Desal Intake',
+    name: 'Water Supply & Thermal Line',
+    shortDesc: 'Glacial Melt / Seawater RO Desalination & Pipe Trace Heating',
     tier: 'TIER 4 • WATER LIFELINE',
     tierNumber: 4,
-    x: 50,
-    y: 535,
-    w: 320,
-    h: 88,
+    x: 40,
+    y: 815,
+    w: 350,
+    h: 180,
     route: 'water',
     icon: Droplet,
-    color: '#2563eb',
-    accentRgb: '37, 99, 235'
+    color: '#38bdf8',
+    accentRgb: '56, 189, 248'
   },
   {
     id: 'personnel',
     name: 'Personnel & Occupancy',
-    shortName: 'Crew Life Support',
+    shortDesc: 'Crew Circadian Distribution, Life Support & Atmospheric Safety',
     tier: 'TIER 4 • HABITAT OCCUPANCY',
     tierNumber: 4,
-    x: 430,
-    y: 535,
-    w: 320,
-    h: 88,
+    x: 435,
+    y: 815,
+    w: 350,
+    h: 180,
     route: 'personnel',
     icon: Users,
     color: '#ec4899',
@@ -165,13 +165,13 @@ const TREE_NODES: TreeNode[] = [
   {
     id: 'communication',
     name: 'Communication',
-    shortName: 'LEO Polar Constellation',
+    shortDesc: 'LEO Polar Constellation, Low Latency & QoS Telemetry Sync',
     tier: 'TIER 4 • REAL-TIME TELEMETRY',
     tierNumber: 4,
-    x: 810,
-    y: 535,
-    w: 320,
-    h: 88,
+    x: 830,
+    y: 815,
+    w: 350,
+    h: 180,
     route: 'communication',
     icon: Radio,
     color: '#8b5cf6',
@@ -227,11 +227,18 @@ const TREE_EDGES: TreeEdgeDef[] = [
 interface Props {
   stationId?: string;
   onOpenCompare?: () => void;
+  onSelectDomain?: (domainId: string) => void;
+  selectedDomainId?: string | null;
+  domainData?: Record<string, any>;
+  children?: React.ReactNode;
 }
 
 export const CrossDomainCausalTree: React.FC<Props> = ({
   stationId: propStationId,
-  onOpenCompare
+  onOpenCompare,
+  onSelectDomain,
+  selectedDomainId,
+  domainData,
 }) => {
   const navigate = useNavigate();
   const { selectedStationId } = useStationStore();
@@ -246,79 +253,96 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  // Center guidance toast: appears for 2 seconds upon switching between 2D and 3D (and vice-versa)
-  const [showPrompt, setShowPrompt] = useState<boolean>(true);
-
-  useEffect(() => {
-    setShowPrompt(true);
-    const timer = setTimeout(() => {
-      setShowPrompt(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [viewMode]);
-
-  // Dynamic Live KPIs per domain
-  const nodeLiveKpi = useMemo(() => {
+  // Fallback Live KPIs per domain
+  const fallbackData = useMemo(() => {
     const env = snapshot?.environment;
     const eng = snapshot?.energy;
     const fl = snapshot?.fuel;
     const wt = snapshot?.water;
     const eq = snapshot?.equipment;
-    const log = snapshot?.logistics;
     const pers = snapshot?.personnel;
     const comm = snapshot?.communication;
-    const inv = snapshot?.inventory;
 
     return {
       environment: {
-        kpi: `${env?.temperature?.toFixed(1) ?? (isMaitri ? -25.2 : -18.4)}°C`,
-        sub: `Wind: ${env?.wind_speed ?? (isMaitri ? 32 : 44)} km/h`,
-        status: isMaitri ? 'Katabatic Gale' : 'Coastal Squall'
+        score: 86,
+        primaryKpi: `${env?.temperature?.toFixed(1) ?? (isMaitri ? -25.2 : -18.4)}°C`,
+        primaryLabel: 'Ambient Temp',
+        chillC: isMaitri ? -38.4 : -31.2,
+        windSpeed: env?.wind_speed ?? (isMaitri ? 32 : 44),
+        windGust: env?.wind_gust ?? (isMaitri ? 54 : 68),
       },
       logistics: {
-        kpi: isMaitri ? '88 Days ETA' : '102 Days ETA',
-        sub: 'MV Vasiliy Golovnin',
-        status: isMaitri ? '+4.5d Delay' : '+2.0d Delay'
+        score: 88,
+        primaryKpi: isMaitri ? '88 Days' : '102 Days',
+        primaryLabel: 'Resupply ETA',
+        journeyProgressPct: isMaitri ? 65 : 40,
+        transportMode: isMaitri ? '100km PistenBully Polar Convoy' : 'MV Vasiliy Golovnin Polar Sea Shuttle',
       },
       fuel: {
-        kpi: `${fl?.fuel_percentage?.toFixed(0) ?? (isMaitri ? 78 : 86)}%`,
-        sub: `${fl?.current_level?.toLocaleString() ?? (isMaitri ? '142,000' : '180,000')} L`,
-        status: `${fl?.consumption_rate_l_per_hr ?? (isMaitri ? 17.5 : 21.2)} L/hr`
+        score: 95,
+        primaryKpi: `${fl?.fuel_percentage?.toFixed(1) ?? (isMaitri ? 78.0 : 85.7)}%`,
+        primaryLabel: 'Reserve Level',
+        currentLiters: fl?.current_level ?? (isMaitri ? 142000 : 180000),
+        burnRateLh: fl?.consumption_rate_l_per_hr ?? (isMaitri ? 17.5 : 21.2),
+        daysRemaining: fl?.days_remaining ?? (isMaitri ? 18 : 24),
       },
       inventory: {
-        kpi: '0 Stockouts',
-        sub: `${isMaitri ? '1,420' : '1,850'} SKUs`,
-        status: '100% Critical Spares'
-      },
-      water: {
-        kpi: `${wt?.storage_liters?.toLocaleString() ?? (isMaitri ? '18,500' : '24,000')} L`,
-        sub: `Pipe: +${wt?.pipe_temp_c ?? (isMaitri ? 3.8 : 8.5)}°C`,
-        status: isMaitri ? 'Trace Active (4.2kW)' : 'SWRO Active (24L/m)'
+        score: 97,
+        primaryKpi: '0 Stockouts',
+        primaryLabel: 'Spares Safety Buffer',
+        medicalStockDays: isMaitri ? 180 : 240,
+        oilStockLiters: isMaitri ? 1200 : 1800,
       },
       equipment: {
-        kpi: `${eq?.avg_health ?? (isMaitri ? 93.5 : 96.2)}%`,
-        sub: isMaitri ? '6 Units Active' : '8 Units Active',
-        status: '1 Unit on Watch'
+        score: 93,
+        primaryKpi: `${eq?.avg_health?.toFixed(1) ?? (isMaitri ? 93.5 : 96.2)}%`,
+        primaryLabel: 'Fleet Health',
+        activeMachinesCount: isMaitri ? 6 : 8,
+        vibrationMmS: isMaitri ? 2.1 : 1.4,
       },
       energy: {
-        kpi: `${eng?.generator_load ?? (isMaitri ? 68 : 82)} kW`,
-        sub: `PV: +${eng?.solar_output ?? (isMaitri ? 22 : 28)} kW`,
-        status: isMaitri ? 'Gen #1 Active' : 'CHP Array Sync'
+        score: 94,
+        primaryKpi: `${eng?.generator_load ?? (isMaitri ? 68 : 82)} kW`,
+        primaryLabel: 'Generator Load',
+        solarKw: eng?.solar_output ?? (isMaitri ? 22 : 28),
+        batterySoc: eng?.battery_level ?? (isMaitri ? 92 : 96),
+        freqHz: eng?.grid_frequency ?? (isMaitri ? 50.08 : 50.02),
+      },
+      water: {
+        score: 92,
+        primaryKpi: `${wt?.storage_liters?.toLocaleString() ?? (isMaitri ? '18,500' : '24,000')} L`,
+        primaryLabel: 'Potable Storage',
+        percentage: wt?.percentage ?? (isMaitri ? 82 : 88),
+        pipeTempC: wt?.pipe_temp_c ?? (isMaitri ? 3.8 : 4.6),
+        freezeRisk: wt?.freeze_risk ?? 'LOW',
       },
       personnel: {
-        kpi: `${pers?.headcount ?? (isMaitri ? 25 : 30)} Crew`,
-        sub: `Occupancy: ${isMaitri ? '83%' : '64%'}`,
-        status: 'All Accounted'
+        score: 96,
+        primaryKpi: `${pers?.headcount ?? (isMaitri ? 25 : 30)} Crew`,
+        primaryLabel: 'Total Occupancy',
+        occupancyPct: pers?.occupancy_pct ?? (isMaitri ? 62.5 : 75.0),
+        totalPersonnel: pers?.headcount ?? (isMaitri ? 25 : 30),
+        onDutyCount: isMaitri ? 18 : 22,
+        roleBreakdown: [
+          { label: 'Science', pct: 40, color: '#38bdf8' },
+          { label: 'Eng', pct: 32, color: '#10b981' },
+          { label: 'Medical', pct: 12, color: '#ec4899' },
+          { label: 'Galley', pct: 16, color: '#f59e0b' }
+        ],
       },
       communication: {
-        kpi: `${comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160)} Mbps`,
-        sub: `Lat: ${comm?.latency_ms ?? (isMaitri ? 78 : 65)}ms`,
-        status: 'QoS Tier 1 LIVE'
+        score: 98,
+        primaryKpi: `${comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160)} Mbps`,
+        primaryLabel: 'LEO Constellation',
+        bandwidthMbps: comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160),
+        latencyMs: comm?.latency_ms ?? (isMaitri ? 78 : 65),
+        syncState: comm?.sync_state ?? 'SYNCED',
       }
     };
   }, [snapshot, isMaitri]);
 
-  // Identify related edges when hovering a node
+  // Causal edge highlights based on hovered node
   const activeIncomingEdges = useMemo(() => {
     if (!hoveredNodeId) return [];
     return TREE_EDGES.filter((e) => e.to === hoveredNodeId);
@@ -329,16 +353,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
     return TREE_EDGES.filter((e) => e.from === hoveredNodeId);
   }, [hoveredNodeId]);
 
-  const isRelatedNode = (nodeId: string) => {
-    if (!hoveredNodeId) return true;
-    if (hoveredNodeId === nodeId) return true;
-    return (
-      activeIncomingEdges.some((e) => e.from === nodeId) ||
-      activeOutgoingEdges.some((e) => e.to === nodeId)
-    );
-  };
-
-  // Helper to compute clean non-overlapping Bézier paths with exact border anchors
+  // Precision pin calculations connecting card borders
   const getEdgeConnection = (edge: TreeEdgeDef) => {
     const fromNode = TREE_NODES.find((n) => n.id === edge.from);
     const toNode = TREE_NODES.find((n) => n.id === edge.to);
@@ -353,11 +368,11 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       case 'env-log':
         // Environment right border to Logistics left border
         sx = fromNode.x + fromNode.w;
-        sy = fromNode.y + 44;
+        sy = fromNode.y + fromNode.h / 2;
         tx = toNode.x;
-        ty = toNode.y + 44;
+        ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 45} ${sy - 20}, ${tx - 45} ${ty - 20}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 40} ${sy}, ${tx - 40} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -365,21 +380,21 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         // Environment bottom-center border directly into Energy top-left border
         sx = fromNode.x + fromNode.w / 2;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + 70;
+        tx = toNode.x + 60;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 90}, ${tx} ${ty - 90}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 120}, ${tx} ${ty - 120}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'env-wat':
         // Environment left border down along clear left perimeter into Water top-left border
         sx = fromNode.x;
-        sy = fromNode.y + 44;
-        tx = toNode.x + 35;
+        sy = fromNode.y + fromNode.h / 2;
+        tx = toNode.x + 40;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx - 150} ${sy}, ${tx - 20} ${ty - 90}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx - 190} ${sy}, ${tx - 60} ${ty - 120}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -390,7 +405,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w - 35;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx + 240} ${sy - 28}, ${tx + 60} ${ty - 120}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 100} ${sy - 28}, 1210 10, 1210 400 C 1210 650, ${tx + 40} ${ty - 100}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -401,7 +416,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 30}, ${tx} ${ty - 30}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -412,27 +427,27 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w - 60;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 35}, ${tx} ${ty - 35}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 30}, ${tx} ${ty - 30}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'inv-eq':
         // Inventory right border into Equipment left border
         sx = fromNode.x + fromNode.w;
-        sy = fromNode.y + 44;
+        sy = fromNode.y + fromNode.h / 2;
         tx = toNode.x;
-        ty = toNode.y + 44;
+        ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 30} ${sy - 15}, ${tx - 30} ${ty - 15}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 25} ${sy}, ${tx - 25} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'fl-eng':
         // Fuel right border into Energy left border
         sx = fromNode.x + fromNode.w;
-        sy = fromNode.y + 44;
+        sy = fromNode.y + fromNode.h / 2;
         tx = toNode.x;
-        ty = toNode.y + 35;
+        ty = toNode.y + 60;
         return {
           path: `M ${sx} ${sy} C ${sx + 30} ${sy}, ${tx - 30} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
@@ -441,9 +456,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       case 'eq-eng':
         // Equipment left border into Energy right border
         sx = fromNode.x;
-        sy = fromNode.y + 44;
+        sy = fromNode.y + fromNode.h / 2;
         tx = toNode.x + toNode.w;
-        ty = toNode.y + 35;
+        ty = toNode.y + 60;
         return {
           path: `M ${sx} ${sy} C ${sx - 30} ${sy}, ${tx + 30} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
@@ -456,7 +471,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 45}, ${tx} ${ty - 45}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 30}, ${tx} ${ty - 30}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -478,29 +493,29 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 45}, ${tx} ${ty - 45}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 30}, ${tx} ${ty - 30}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'wat-pers':
         // Water right border into Personnel left border
         sx = fromNode.x + fromNode.w;
-        sy = fromNode.y + 44;
+        sy = fromNode.y + fromNode.h / 2;
         tx = toNode.x;
-        ty = toNode.y + 44;
+        ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 30} ${sy - 15}, ${tx - 30} ${ty - 15}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 25} ${sy}, ${tx - 25} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'pers-comm':
         // Personnel right border into Communication left border
         sx = fromNode.x + fromNode.w;
-        sy = fromNode.y + 44;
+        sy = fromNode.y + fromNode.h / 2;
         tx = toNode.x;
-        ty = toNode.y + 44;
+        ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 30} ${sy - 15}, ${tx - 30} ${ty - 15}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 25} ${sy}, ${tx - 25} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -581,136 +596,54 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
       <div className="relative w-full">
         {viewMode === '3d' ? (
-          <ThreeDomainGraph stationId={currentStationId} />
+          <ThreeDomainGraph
+            stationId={currentStationId}
+            domainData={domainData || fallbackData}
+            onSelectDomain={onSelectDomain}
+          />
         ) : (
         <div className="relative overflow-x-auto mt-2 py-2 rounded-2xl bg-polar-dark/60 border border-polar-border/50">
-          <div className="min-w-[1180px] h-[720px] relative">
-            {/* ── HTML NODE CARDS (High-Legibility, Full Titles, Zero Truncation, Fixed Non-Distorting Geometry) ── */}
+          <div className="min-w-[1220px] h-[1040px] relative">
+            {/* ── HTML NODE CARDS: RICH OPERATIONAL DOMAIN INSTRUMENTS ── */}
             {TREE_NODES.map((node) => {
-              const Icon = node.icon;
-              const live = (nodeLiveKpi as any)[node.id] || { kpi: '--', sub: 'Nominal', status: 'Online' };
+              const t = (domainData && domainData[node.id]) || (fallbackData as any)[node.id];
               const isHovered = hoveredNodeId === node.id;
-              const isUpstream = hoveredNodeId && activeIncomingEdges.some((e) => e.from === node.id);
-              const isDownstream = hoveredNodeId && activeOutgoingEdges.some((e) => e.to === node.id);
-              const isDimmed = hoveredNodeId && !isHovered && !isUpstream && !isDownstream;
+              const isUpstream = Boolean(hoveredNodeId && activeIncomingEdges.some((e) => e.from === node.id));
+              const isDownstream = Boolean(hoveredNodeId && activeOutgoingEdges.some((e) => e.to === node.id));
+              const isDimmed = Boolean(hoveredNodeId && !isHovered && !isUpstream && !isDownstream);
+              const isSelected = selectedDomainId === node.id;
 
               return (
-                <div
+                <OperationalDomainCard
                   key={node.id}
+                  node={node}
+                  data={t}
+                  stationId={currentStationId}
+                  isSelected={isSelected}
+                  isHovered={isHovered}
+                  isUpstream={isUpstream}
+                  isDownstream={isDownstream}
+                  isDimmed={isDimmed}
+                  showFooterButtons={false}
                   onMouseEnter={() => setHoveredNodeId(node.id)}
                   onMouseLeave={() => setHoveredNodeId(null)}
                   onClick={() => navigate(`/station/${currentStationId}/${node.route}`)}
+                  onSelectDomain={onSelectDomain}
                   style={{
+                    position: 'absolute',
                     left: `${node.x}px`,
                     top: `${node.y}px`,
                     width: `${node.w}px`,
                     height: `${node.h}px`,
                   }}
-                  className={`absolute rounded-xl p-3.5 cursor-pointer select-none transition-all duration-200 flex flex-col justify-between group ${
-                    isHovered
-                      ? 'bg-polar-navy/95 border-2 shadow-2xl z-20'
-                      : isUpstream
-                      ? 'bg-cyan-950/40 border-2 border-cyan-400/80 shadow-lg shadow-cyan-500/20 z-10'
-                      : isDownstream
-                      ? 'bg-amber-950/40 border-2 border-amber-400/80 shadow-lg shadow-amber-500/20 z-10'
-                      : isDimmed
-                      ? 'opacity-25 bg-polar-dark/40 border border-polar-border/40 z-0'
-                      : 'bg-polar-dark/90 hover:bg-polar-navy/80 border border-polar-border/80 hover:border-cyan-500/50 shadow-md z-0'
-                  }`}
-                >
-                  {/* Glowing Outline & Corner Accents */}
-                  <div
-                    className="absolute inset-0 rounded-xl pointer-events-none transition-opacity"
-                    style={{
-                      boxShadow: isHovered ? `0 0 25px rgba(${node.accentRgb}, 0.35)` : undefined,
-                      borderColor: isHovered ? node.color : undefined
-                    }}
-                  />
-
-                  {/* Header Row: Icon, Domain Title, Tier Tag & Link */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center space-x-2.5 min-w-0">
-                      <div
-                        className="p-2 rounded-lg border flex-shrink-0 transition-transform group-hover:scale-110 shadow-sm"
-                        style={{
-                          background: `rgba(${node.accentRgb}, 0.15)`,
-                          borderColor: `rgba(${node.accentRgb}, 0.45)`,
-                          color: node.color
-                        }}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="text-[8.5px] font-mono font-bold px-1.5 py-0.2 rounded border flex-shrink-0"
-                            style={{
-                              background: `rgba(${node.accentRgb}, 0.15)`,
-                              borderColor: `rgba(${node.accentRgb}, 0.4)`,
-                              color: node.color
-                            }}
-                          >
-                            T{node.tierNumber}
-                          </span>
-                          <span className="text-xs font-bold text-white tracking-wide group-hover:text-cyan-300 transition-colors whitespace-nowrap">
-                            {node.name}
-                          </span>
-                        </div>
-                        <div className="text-[9px] font-mono text-slate-400 whitespace-nowrap mt-0.5">
-                          {node.shortName}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-1.5 flex-shrink-0">
-                      {isHovered ? (
-                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/30 text-cyan-300 border border-cyan-400/50 flex items-center gap-1">
-                          <span>OPEN</span>
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </span>
-                      ) : isUpstream ? (
-                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/50">
-                          DRIVER
-                        </span>
-                      ) : isDownstream ? (
-                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/50">
-                          IMPACT
-                        </span>
-                      ) : (
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 transition-colors" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Live Telemetry Row: Large Primary KPI + Sub-metrics */}
-                  <div className="flex items-baseline justify-between border-t border-polar-border/40 pt-1.5 mt-1 font-mono">
-                    <div>
-                      <span className="text-base font-black text-white tracking-tight">
-                        {live.kpi}
-                      </span>
-                      <span className="text-[10px] text-slate-400 ml-2">
-                        {live.sub}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center space-x-1 text-[10px] font-bold text-cyan-300/90">
-                      <span
-                        className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0"
-                        style={{ background: node.color }}
-                      />
-                      <span className="text-[9px] text-slate-300 truncate max-w-[100px]">
-                        {live.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                />
               );
             })}
 
             {/* SVG Canvas for High-Precision Causal Conduits & Border Terminal Pins */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" viewBox="0 0 1180 720">
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" viewBox="0 0 1220 1080">
               <defs>
-                <filter id="neonGlowCyan" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
+                <filter id="neonGlowCyan" x="0" y="0" width="1220" height="1080" filterUnits="userSpaceOnUse">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
                   <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
                   <feMerge>
@@ -719,7 +652,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
-                <filter id="neonGlowAmber" x="0" y="0" width="1180" height="720" filterUnits="userSpaceOnUse">
+                <filter id="neonGlowAmber" x="0" y="0" width="1220" height="1080" filterUnits="userSpaceOnUse">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
                   <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
                   <feMerge>
@@ -739,7 +672,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                 const conn = getEdgeConnection(edge);
                 if (!conn) return null;
 
-                // Perfectly calibrated ultra-bright neon colors with equal perceived luminance and high saturation
+                // Calibrated ultra-bright neon colors
                 const strokeColor = isIncoming ? '#00f2fe' : '#fbbf24';
                 const auraColor = isIncoming ? '#00c6ff' : '#f59e0b';
                 const haloColor = isIncoming ? '#0284c7' : '#d97706';
@@ -829,20 +762,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         </div>
       )}
 
-      {/* 2-Second Center Toast Notification upon switching between 2D and 3D (and vice versa) */}
-      <div
-        className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 transition-all duration-500 ${
-          showPrompt ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-        }`}
-      >
-        <div className="px-6 py-3.5 rounded-2xl bg-[#020b18]/95 border-2 border-cyan-400/80 shadow-[0_0_50px_rgba(0,242,254,0.5)] backdrop-blur-2xl flex items-center gap-3 text-sm font-mono font-black text-cyan-200">
-          <span className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#00f2fe] animate-ping flex-shrink-0" />
-          <span className="text-white tracking-wide text-base font-bold">Hover over any domain to reveal</span>
-        </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default CrossDomainCausalTree;

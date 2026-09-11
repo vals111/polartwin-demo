@@ -23,6 +23,7 @@ import { LogisticsPage } from './pages/LogisticsPage';
 import { PersonnelPage } from './pages/PersonnelPage';
 import { CommunicationPage } from './pages/CommunicationPage';
 import { InventoryPage } from './pages/InventoryPage';
+import { DecisionIntelligencePage } from './pages/DecisionIntelligencePage';
 
 export const App: React.FC = () => {
   return (
@@ -53,17 +54,17 @@ export const App: React.FC = () => {
           <Route path="/station/:id/communication" element={<CommunicationPage />} />
           <Route path="/station/:id/inventory" element={<InventoryPage />} />
 
-          <Route path="/station/:id/analytics" element={<AnalyticsPage />} />
-          <Route path="/station/:id/forecast" element={<ForecastPage />} />
-          <Route path="/station/:id/risk" element={<RiskAlertsPage />} />
+          <Route path="/station/:id/analytics" element={<DecisionIntelligencePage />} />
+          <Route path="/station/:id/forecast" element={<DecisionIntelligencePage />} />
+          <Route path="/station/:id/risk" element={<DecisionIntelligencePage />} />
+          <Route path="/station/:id/decision" element={<DecisionIntelligencePage />} />
           <Route path="/station/:id/twin3d" element={<Twin3DPage />} />
 
-          {/* Operator+ Restricted Routes */}
           <Route
             path="/station/:id/whatif"
             element={
               <ProtectedRoute minRole="operator">
-                <WhatIfPage />
+                <DecisionIntelligencePage />
               </ProtectedRoute>
             }
           />
@@ -71,7 +72,7 @@ export const App: React.FC = () => {
             path="/station/:id/optimization"
             element={
               <ProtectedRoute minRole="operator">
-                <OptimizationPage />
+                <DecisionIntelligencePage />
               </ProtectedRoute>
             }
           />
@@ -79,7 +80,7 @@ export const App: React.FC = () => {
             path="/station/:id/recommendations"
             element={
               <ProtectedRoute minRole="operator">
-                <RecommendationsPage />
+                <DecisionIntelligencePage />
               </ProtectedRoute>
             }
           />
