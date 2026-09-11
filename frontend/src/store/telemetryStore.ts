@@ -146,7 +146,8 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
         water: data.water || prevSnap.water,
         equipment: data.equipment || prevSnap.equipment,
         station_ops: data.station_ops || prevSnap.station_ops,
-        logistics: data.logistics || prevSnap.logistics
+        logistics: data.logistics || prevSnap.logistics,
+        inventory: data.inventory || prevSnap.inventory
       };
       return {
         liveSnapshot: { ...state.liveSnapshot, [stationId]: newSnap as TelemetrySnapshot },

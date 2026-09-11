@@ -200,6 +200,24 @@ def run_whatif_scenario(
             "projected": curr_proj.get("logistics", {}).get("logistics_risk_score", 64.0),
             "delta": round(curr_proj.get("logistics", {}).get("logistics_risk_score", 64.0) - curr_base.get("logistics", {}).get("logistics_risk_score", 24.0), 1),
             "unit": "pts"
+        },
+        "parts_readiness_pct": {
+            "baseline": curr_base.get("inventory", {}).get("parts_readiness_pct", 94.0),
+            "projected": curr_proj.get("inventory", {}).get("parts_readiness_pct", 82.5),
+            "delta": round(curr_proj.get("inventory", {}).get("parts_readiness_pct", 82.5) - curr_base.get("inventory", {}).get("parts_readiness_pct", 94.0), 1),
+            "unit": "%"
+        },
+        "critical_items_low": {
+            "baseline": curr_base.get("inventory", {}).get("critical_items_low", 0),
+            "projected": curr_proj.get("inventory", {}).get("critical_items_low", 3),
+            "delta": curr_proj.get("inventory", {}).get("critical_items_low", 3) - curr_base.get("inventory", {}).get("critical_items_low", 0),
+            "unit": "items"
+        },
+        "stockout_count": {
+            "baseline": curr_base.get("inventory", {}).get("stockout_count", 0),
+            "projected": curr_proj.get("inventory", {}).get("stockout_count", 1),
+            "delta": curr_proj.get("inventory", {}).get("stockout_count", 1) - curr_base.get("inventory", {}).get("stockout_count", 0),
+            "unit": "items"
         }
     }
 

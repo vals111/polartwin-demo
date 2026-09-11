@@ -80,7 +80,8 @@ async def simulation_tick_job():
                 "water": state["water"],
                 "equipment": state["equipment"],
                 "station_ops": state["station_ops"],
-                "logistics": state.get("logistics")
+                "logistics": state.get("logistics"),
+                "inventory": state.get("inventory")
             })
 
             # 4. Broadcast risk update

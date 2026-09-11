@@ -84,6 +84,7 @@ def get_live_telemetry_snapshot(
         "equipment": state.get("equipment"),
         "station_ops": state.get("station_ops"),
         "logistics": state.get("logistics"),
+        "inventory": state.get("inventory"),
         "telemetry": {
             "temperature": state["environment"]["temperature"],
             "wind_speed": state["environment"]["wind_speed"],
@@ -148,4 +149,16 @@ def get_station_logistics(
     """
     state = get_current_state(station_id)
     return state.get("logistics", {})
+
+@router.get("/inventory/{station_id}")
+def get_station_inventory(
+    station_id: str,
+    user = Depends(require_viewer)
+):
+    """
+    Returns the real-time physical inventory catalog, storage locations,
+    depletion curves, threshold alerts, and maintenance job staging.
+    """
+    state = get_current_state(station_id)
+    return state.get("inventory", {})
 
