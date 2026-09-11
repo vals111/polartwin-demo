@@ -45,3 +45,14 @@ def get_fuel_details(
         "station_id": station_id,
         "fuel": state.get("fuel", {})
     }
+
+@router.get("/{station_id}/water")
+def get_water_details(
+    station_id: str,
+    user = Depends(require_viewer)
+):
+    state = get_current_state(station_id)
+    return {
+        "station_id": station_id,
+        "water": state.get("water", {})
+    }
