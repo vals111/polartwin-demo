@@ -89,6 +89,10 @@ export const resourcesApi = {
   getInventory: async (stationId = 'maitri') => {
     const res = await apiClient.get(`/resources/${stationId}/inventory`);
     return res.data;
+  },
+  getFuel: async (stationId = 'maitri') => {
+    const res = await apiClient.get(`/resources/${stationId}/fuel`);
+    return res.data;
   }
 };
 

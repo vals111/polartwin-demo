@@ -92,6 +92,17 @@ export interface TelemetrySnapshot {
     reserve_zone: string;
     resupply_eta_days: number;
     fuel_temperature: number;
+    storage_architecture?: string;
+    fuel_grade?: string;
+    fuel_leak_detected?: boolean;
+    tanks?: any[];
+    total_tanks?: number;
+    active_tanks_count?: number;
+    transfer_loop?: any;
+    drivers?: any;
+    runway?: any;
+    resupply?: any;
+    anomaly?: any;
   };
   water: {
     source_type: string;
