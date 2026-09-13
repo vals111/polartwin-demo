@@ -169,7 +169,7 @@ flowchart TD
 │              FRONTEND PRESENTATION LAYER (React 18 + Vite)              │
 │                                                                         │
 │  [ Header Navigation Bar ]                                              │
-│  ├── Dashboard ── Domains (9 Live) ── 3D Spatial View ── Admin Console  │
+│  ├── Dashboard ── Domains ── 3D Station Twin ── Admin Console           │
 │                                                                         │
 │  [ Visualization Engines ]                                              │
 │  ├── 2D Causal Tree (Spacious, Unboxed Telemetry Dials & Meters)        │

@@ -123,16 +123,9 @@ export const Navbar: React.FC = () => {
         >
           <Layers className="w-4 h-4 text-cyan-400" />
           <span className="hidden md:inline">Domains</span>
-          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border leading-tight ${
-            isMaitri
-              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-              : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-          }`}>
-            9 LIVE
-          </span>
         </NavLink>
 
-        {/* 3. 3D Spatial View */}
+        {/* 3. 3D Station Twin */}
         <NavLink
           to={`/station/${selectedStationId}/twin3d`}
           className={({ isActive }) =>
@@ -142,10 +135,10 @@ export const Navbar: React.FC = () => {
                 : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`
           }
-          title="Interactive 3D Digital Twin Constellation"
+          title="Interactive 3D Physical Station Twin"
         >
           <Box className="w-4 h-4 text-cyan-400" />
-          <span className="hidden md:inline">3D Spatial View</span>
+          <span className="hidden md:inline">3D Station Twin</span>
         </NavLink>
 
         {/* Admin Console (RBAC protected) */}

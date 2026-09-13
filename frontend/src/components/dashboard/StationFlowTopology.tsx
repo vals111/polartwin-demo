@@ -911,43 +911,7 @@ export const StationFlowTopology: React.FC<{
         </svg>
       </div>
 
-      {/* ── GRAPH LEGEND & QUICK GUIDE ────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono text-slate-400 border-t border-slate-800/80 pt-3">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="font-bold text-slate-300">RELATIONSHIP TYPES:</span>
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-0.5 bg-cyan-400 inline-block" />
-            <span>Solid: Physical Resource / Energy Flow</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-0.5 border-t border-dashed border-emerald-400 inline-block" />
-            <span>Dashed: Operational Influence &amp; Demand</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-4 h-0.5 border-t border-dotted border-teal-300 inline-block" />
-            <span>Dotted: SCADA Real-Time Telemetry</span>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Normal</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-amber-400" />
-            <span>Warning</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-400" />
-            <span>Critical</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-slate-500" />
-            <span>Standby / Offline</span>
-          </div>
-        </div>
-      </div>
 
       {/* ── NODE INSPECTION DRAWER / SIDECARD ─────────────────────────────── */}
       {activeNodeDetails && selectedNodeId && (
