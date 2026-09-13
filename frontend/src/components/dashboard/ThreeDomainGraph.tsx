@@ -86,14 +86,10 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
   const isMaitri = stationId === 'maitri';
   const snapshot = liveSnapshot[stationId];
 
-  const [selectedDomain, setSelectedDomain] = useState<Domain3DDef>(DOMAINS_3D[0]);
-  const selectedDomainRef = useRef<Domain3DDef>(DOMAINS_3D[0]);
-  const [hoveredDomain, setHoveredDomain] = useState<Domain3DDef | null>(null);
-  const hoveredDomainRef = useRef<Domain3DDef | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<Domain3DDef | null>(null);
+  const selectedDomainRef = useRef<Domain3DDef | null>(null);
 
   const controlsRef = useRef<OrbitControls | null>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isHoveringCardRef = useRef<boolean>(false);
   const updateGraphStatesRef = useRef<((id: string | null) => void) | null>(null);
 
   useEffect(() => {
@@ -563,14 +559,16 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
 
     updateGraphStatesRef.current = updateGraphStates;
 
-    // 10. Raycaster & Pointer Event Listeners
+    // 10. Raycaster & Pointer Event Listeners (Click to select & show card)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2(-999, -999);
+    let pointerDownPos = { x: 0, y: 0 };
+
+    const onPointerDown = (e: MouseEvent) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    };
 
     const onPointerMove = (e: MouseEvent) => {
-      // If user is actively hovering over the callout card, do not disturb state
-      if (isHoveringCardRef.current) return;
-
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -579,34 +577,18 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
       const intersects = raycaster.intersectObjects(nodeMeshes);
 
       if (intersects.length > 0) {
-        if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-          hoverTimeoutRef.current = null;
-        }
-        const hit = intersects[0].object as THREE.Mesh;
-        const dom = hit.userData.domain as Domain3DDef;
-        if (hoveredDomainRef.current?.id !== dom.id) {
-          hoveredDomainRef.current = dom;
-          setHoveredDomain(dom);
-          updateGraphStates(dom.id);
-        }
         renderer.domElement.style.cursor = 'pointer';
       } else {
-        // Hysteresis / debounce delay: gives smooth grace time before dropping hover
-        if (hoveredDomainRef.current !== null && !hoverTimeoutRef.current) {
-          hoverTimeoutRef.current = setTimeout(() => {
-            hoverTimeoutRef.current = null;
-            if (isHoveringCardRef.current) return;
-            hoveredDomainRef.current = null;
-            setHoveredDomain(null);
-            updateGraphStates(selectedDomainRef.current ? selectedDomainRef.current.id : null);
-          }, 350);
-        }
         renderer.domElement.style.cursor = 'grab';
       }
     };
 
     const onClick = (e: MouseEvent) => {
+      // If user was dragging to rotate orbit, ignore click
+      if (Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 6) {
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -620,6 +602,11 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
         selectedDomainRef.current = dom;
         setSelectedDomain(dom);
         updateGraphStates(dom.id);
+      } else {
+        // Clicked outside any globe: hide the card and return graph to nominal
+        selectedDomainRef.current = null;
+        setSelectedDomain(null);
+        updateGraphStates(null);
       }
     };
 
@@ -638,6 +625,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
       }
     };
 
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
     renderer.domElement.addEventListener('pointermove', onPointerMove);
     renderer.domElement.addEventListener('click', onClick);
     renderer.domElement.addEventListener('dblclick', onDblClick);
@@ -685,8 +673,8 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
       // Orbit continuously rotates uninterruptedly
       controls.autoRotate = true;
 
-      // Project active 3D node to screen space with SMART STANDOFF DISTANCE
-      const targetDomain = hoveredDomainRef.current || selectedDomainRef.current;
+      // Project active clicked 3D node to screen space with SMART STANDOFF DISTANCE
+      const targetDomain = selectedDomainRef.current;
       if (targetDomain && calloutRef.current) {
         const v = new THREE.Vector3(...targetDomain.pos);
         v.project(camera);
@@ -777,12 +765,9 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
     // 13. Cleanup on Unmount
     return () => {
       cancelAnimationFrame(animId);
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
       updateGraphStatesRef.current = null;
       window.removeEventListener('resize', handleResize);
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       renderer.domElement.removeEventListener('click', onClick);
       renderer.domElement.removeEventListener('dblclick', onDblClick);
@@ -886,7 +871,7 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
     };
   }, [snapshot, isMaitri]);
 
-  const activeDomain = hoveredDomain || selectedDomain;
+  const activeDomain = selectedDomain;
   const treeNode = activeDomain ? TREE_NODES.find((n) => n.id === activeDomain.id) : null;
   const activeDomainData = activeDomain
     ? (domainData && domainData[activeDomain.id]) || (fallbackData as any)[activeDomain.id]
@@ -958,31 +943,27 @@ export const ThreeDomainGraph: React.FC<Props> = ({ stationId, domainData, onSel
         />
       </svg>
 
-      {/* ── Floating Holographic Callout Card (Exact Replica of 2D Operational Domain Card) ── */}
+      {/* ── Floating Holographic Callout Card (Shown ONLY upon clicking on a globe) ── */}
       <div
         ref={calloutRef}
         className="absolute top-0 left-0 z-30 pointer-events-auto transition-opacity duration-150"
         style={{ display: 'none', willChange: 'transform' }}
-        onMouseEnter={() => {
-          isHoveringCardRef.current = true;
-          if (hoverTimeoutRef.current) {
-            clearTimeout(hoverTimeoutRef.current);
-            hoverTimeoutRef.current = null;
-          }
-        }}
-        onMouseLeave={() => {
-          isHoveringCardRef.current = false;
-          hoverTimeoutRef.current = setTimeout(() => {
-            hoverTimeoutRef.current = null;
-            if (isHoveringCardRef.current) return;
-            hoveredDomainRef.current = null;
-            setHoveredDomain(null);
-            updateGraphStatesRef.current?.(selectedDomainRef.current.id);
-          }, 250);
-        }}
       >
         {activeDomain && treeNode && activeDomainData && (
           <div className="w-[430px] shadow-2xl backdrop-blur-xl transition-all relative">
+            {/* Direct Close / Dismiss Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedDomain(null);
+                selectedDomainRef.current = null;
+                updateGraphStatesRef.current?.(null);
+              }}
+              className="absolute -top-3 -right-3 z-50 p-1.5 rounded-full bg-slate-900/95 text-slate-400 hover:text-white border border-slate-700 hover:border-cyan-400 shadow-xl transition-all cursor-pointer"
+              title="Close Card"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
             <OperationalDomainCard
               node={treeNode}
               data={activeDomainData}
