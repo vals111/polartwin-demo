@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useTelemetryStore, createInitialTelemetryHistory } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
 import { telemetryApi } from '../api/client';
 import { SparklineChart } from '../components/charts/SparklineChart';
@@ -188,7 +188,7 @@ const StationCard: React.FC<{
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { selectStation, loadStations } = useStationStore();
-  const { liveSnapshot, liveRisk, updateLiveWeather } = useTelemetryStore();
+  const { liveSnapshot, liveRisk, updateLiveWeather, telemetryHistory } = useTelemetryStore();
   const { alerts, loadAlerts } = useAlertStore();
   const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
@@ -222,10 +222,8 @@ export const DashboardPage: React.FC = () => {
   const bharatiSnap = liveSnapshot['bharati'];
   const bharatiRisk = liveRisk['bharati'];
 
-  const genHist = (base: number) =>
-    Array.from({ length: 20 }, () => base + (Math.random() - 0.5) * 15);
-  const fuelHist = (base: number) =>
-    Array.from({ length: 20 }, (_, i) => Math.max(0, base - i * 0.4 + (Math.random() - 0.5))).reverse();
+  const maitriHistory = telemetryHistory['maitri'] || createInitialTelemetryHistory('maitri', maitriSnap);
+  const bharatiHistory = telemetryHistory['bharati'] || createInitialTelemetryHistory('bharati', bharatiSnap);
 
   return (
     <div className="space-y-0 max-w-7xl mx-auto">
@@ -270,8 +268,8 @@ export const DashboardPage: React.FC = () => {
             accentColor="#06b6d4"
             borderColor="rgba(6,182,212,0.4)"
             shadowColor="rgba(6,182,212,0.12)"
-            genHistory={genHist(maitriSnap?.energy?.generator_load ?? 68)}
-            fuelHistory={fuelHist(maitriSnap?.fuel?.fuel_percentage ?? 77)}
+            genHistory={maitriHistory.generator_load}
+            fuelHistory={maitriHistory.fuel_percentage}
             onLaunch={() => handleLaunchStation('maitri')}
           />
 
@@ -302,8 +300,8 @@ export const DashboardPage: React.FC = () => {
             accentColor="#60a5fa"
             borderColor="rgba(96,165,250,0.4)"
             shadowColor="rgba(96,165,250,0.12)"
-            genHistory={genHist(bharatiSnap?.energy?.generator_load ?? 74)}
-            fuelHistory={fuelHist(bharatiSnap?.fuel?.fuel_percentage ?? 74)}
+            genHistory={bharatiHistory.generator_load}
+            fuelHistory={bharatiHistory.fuel_percentage}
             onLaunch={() => handleLaunchStation('bharati')}
           />
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { TankLevelBar } from '../components/charts/TankLevelBar';
@@ -56,7 +56,7 @@ const ResupplyCountdown: React.FC<{ days: number; maxDays?: number }> = ({
 const genBurnTrend = (base: number, n = 30): { time: string; value: number }[] =>
   Array.from({ length: n }, (_, i) => ({
     time: `D-${n - i}`,
-    value: Math.max(0, base + (Math.random() - 0.5) * base * 0.2 + Math.sin(i / 5) * base * 0.1),
+    value: Math.max(0, Number((base + Math.sin(i / 4) * base * 0.08 + Math.cos(i / 6) * base * 0.04).toFixed(1))),
   }));
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -87,9 +87,9 @@ export const ResourceMonitoringPage: React.FC = () => {
   const genLoad = energy?.generator_load ?? 68;
   const solarOut = energy?.solar_output ?? 22;
 
-  // 30-day burn trends
-  const fuelTrend = genBurnTrend(fuelBurnRate, 30);
-  const waterTrend = genBurnTrend(35, 30); // L/h
+  // 30-day burn trends (memoized to keep chart stable)
+  const fuelTrend = useMemo(() => genBurnTrend(fuelBurnRate, 30), [fuelBurnRate]);
+  const waterTrend = useMemo(() => genBurnTrend(35, 30), []);
 
   // Daily consumption for bar chart
   const dailyConsumption = [

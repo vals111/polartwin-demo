@@ -305,7 +305,9 @@ export const EnvironmentPage: React.FC = () => {
 
   // Hourly 24h history from MET Norway locationforecast timeseries if available
   const genHistory = (base: number, variance: number, n = 24) =>
-    Array.from({ length: n }, (_, i) => base + (Math.random() - 0.5) * variance * 2 + Math.sin(i / 4) * variance * 0.5);
+    Array.from({ length: n }, (_, i) =>
+      Number((base + Math.sin(i / 3.2) * variance * 0.75 + Math.cos(i / 4.8) * variance * 0.25).toFixed(1))
+    );
 
   const tempHistory = metWeather?.forecast_24h?.length
     ? metWeather.forecast_24h.map((f: any) => f.temperature)

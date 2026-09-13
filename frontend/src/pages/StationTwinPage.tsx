@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useTelemetryStore, createInitialTelemetryHistory } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
 import { StationHealthGauge } from '../components/dashboard/StationHealthGauge';
 import { StationFlowTopology } from '../components/dashboard/StationFlowTopology';
@@ -16,7 +16,7 @@ export const StationTwinPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime } = useTelemetryStore();
+  const { liveSnapshot, liveRisk, lastTickTime, telemetryHistory, updateAlertHistory } = useTelemetryStore();
   const { alerts } = useAlertStore();
 
   const station = stations.find((s) => s.station_id === stationId) || {
@@ -34,16 +34,17 @@ export const StationTwinPage: React.FC = () => {
 
   const accentColor = isMaitri ? '#06b6d4' : '#60a5fa';
 
-  // Simulated mini sparklines for key metrics
-  const genHist = Array.from({ length: 20 }, (_, i) =>
-    (snapshot?.energy?.generator_load ?? 68) + (Math.random() - 0.5) * 15
+  // Keep alert history synchronized with current alert count
+  useEffect(() => {
+    updateAlertHistory(stationId, stationAlerts.length);
+  }, [stationId, stationAlerts.length, updateAlertHistory]);
+
+  // Stable, physics-informed rolling telemetry history (no Math.random re-rolls on every tick)
+  const fallbackHistory = useMemo(
+    () => createInitialTelemetryHistory(stationId, snapshot, stationAlerts.length),
+    [stationId]
   );
-  const fuelHist = Array.from({ length: 20 }, (_, i) =>
-    Math.max(0, (snapshot?.fuel?.fuel_percentage ?? 77) - i * 0.3 + (Math.random() - 0.5))
-  ).reverse();
-  const tempHist = Array.from({ length: 20 }, () =>
-    (snapshot?.environment?.temperature ?? -25) + (Math.random() - 0.5) * 4
-  );
+  const history = telemetryHistory[stationId] || fallbackHistory;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -145,29 +146,29 @@ export const StationTwinPage: React.FC = () => {
         {[
           {
             label: 'Generator Load',
-            value: `${snapshot?.energy?.generator_load ?? 68} kW`,
-            history: genHist,
+            value: `${snapshot?.energy?.generator_load ?? (isMaitri ? 68 : 74)} kW`,
+            history: history.generator_load,
             color: '#f59e0b',
             icon: <Zap className="w-3.5 h-3.5" />,
           },
           {
             label: 'Fuel Reserve',
-            value: `${snapshot?.fuel?.fuel_percentage?.toFixed(1) ?? 77}%`,
-            history: fuelHist,
+            value: `${snapshot?.fuel?.fuel_percentage?.toFixed(1) ?? (isMaitri ? 77.0 : 74.0)}%`,
+            history: history.fuel_percentage,
             color: '#06b6d4',
             icon: <Droplet className="w-3.5 h-3.5" />,
           },
           {
             label: 'Ambient Temp',
-            value: `${snapshot?.environment?.temperature?.toFixed(1) ?? -25.2}°C`,
-            history: tempHist,
+            value: `${snapshot?.environment?.temperature?.toFixed(1) ?? (isMaitri ? -25.2 : -19.6)}°C`,
+            history: history.temperature,
             color: '#818cf8',
             icon: <Thermometer className="w-3.5 h-3.5" />,
           },
           {
             label: 'Active Alerts',
             value: stationAlerts.length,
-            history: Array.from({ length: 20 }, () => Math.round(Math.random() * 5)),
+            history: history.alerts,
             color: stationAlerts.length > 3 ? '#ef4444' : '#10b981',
             icon: <AlertTriangle className="w-3.5 h-3.5" />,
           },

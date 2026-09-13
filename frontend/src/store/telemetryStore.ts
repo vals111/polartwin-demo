@@ -1,15 +1,55 @@
 import { create } from 'zustand';
 import { TelemetrySnapshot, RiskData } from '../types';
 
+export interface RollingMetricHistory {
+  generator_load: number[];
+  fuel_percentage: number[];
+  temperature: number[];
+  alerts: number[];
+}
+
+export function createInitialTelemetryHistory(
+  stationId: string,
+  initialSnap?: Partial<TelemetrySnapshot>,
+  initialAlertCount: number = 0
+): RollingMetricHistory {
+  const isMaitri = stationId === 'maitri';
+  const genBase = initialSnap?.energy?.generator_load ?? (isMaitri ? 68 : 74);
+  const fuelBase = initialSnap?.fuel?.fuel_percentage ?? (isMaitri ? 77 : 74);
+  const tempBase = initialSnap?.environment?.temperature ?? (isMaitri ? -25.2 : -19.6);
+
+  const len = 24;
+  const generator_load = Array.from({ length: len }, (_, i) => {
+    const offset = Math.sin((i - len + 1) * 0.35) * 1.5;
+    return Number((genBase + offset).toFixed(1));
+  });
+
+  const fuel_percentage = Array.from({ length: len }, (_, i) => {
+    const pastDelta = (len - 1 - i) * 0.025;
+    return Number((fuelBase + pastDelta).toFixed(1));
+  });
+
+  const temperature = Array.from({ length: len }, (_, i) => {
+    const offset = Math.sin((i - len + 1) * 0.28) * 1.2;
+    return Number((tempBase + offset).toFixed(1));
+  });
+
+  const alerts = Array.from({ length: len }, () => initialAlertCount);
+
+  return { generator_load, fuel_percentage, temperature, alerts };
+}
+
 interface TelemetryState {
   liveSnapshot: Record<string, TelemetrySnapshot>; // keyed by station_id
   liveRisk: Record<string, RiskData>;
   isConnected: boolean;
   lastTickTime: Record<string, string>;
+  telemetryHistory: Record<string, RollingMetricHistory>;
   setConnected: (status: boolean) => void;
   updateTelemetry: (stationId: string, data: any) => void;
   updateLiveWeather: (stationId: string, weatherData: any) => void;
   updateRisk: (stationId: string, risk: RiskData) => void;
+  updateAlertHistory: (stationId: string, alertCount: number) => void;
   setInitialState: (stationId: string, state: any, risk: RiskData) => void;
 }
 
@@ -18,8 +58,25 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
   liveRisk: {},
   isConnected: false,
   lastTickTime: {},
+  telemetryHistory: {},
 
   setConnected: (status: boolean) => set({ isConnected: status }),
+
+  updateAlertHistory: (stationId: string, alertCount: number) => {
+    set((state) => {
+      const prevHist = state.telemetryHistory[stationId] || createInitialTelemetryHistory(stationId, state.liveSnapshot[stationId], alertCount);
+      const alerts = [...prevHist.alerts.slice(1), alertCount];
+      return {
+        telemetryHistory: {
+          ...state.telemetryHistory,
+          [stationId]: {
+            ...prevHist,
+            alerts,
+          }
+        }
+      };
+    });
+  },
 
   updateLiveWeather: (stationId: string, weatherData: any) => {
     set((state) => {
@@ -107,9 +164,19 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
         },
       };
 
+      const prevHist = state.telemetryHistory[stationId] || createInitialTelemetryHistory(stationId, newSnap);
+      const newTempHist = temp !== undefined ? [...prevHist.temperature.slice(1), Number(temp.toFixed(1))] : prevHist.temperature;
+
       return {
         liveSnapshot: { ...state.liveSnapshot, [stationId]: newSnap },
-        lastTickTime: { ...state.lastTickTime, [stationId]: new Date().toLocaleTimeString() }
+        lastTickTime: { ...state.lastTickTime, [stationId]: new Date().toLocaleTimeString() },
+        telemetryHistory: {
+          ...state.telemetryHistory,
+          [stationId]: {
+            ...prevHist,
+            temperature: newTempHist,
+          }
+        }
       };
     });
   },
@@ -135,7 +202,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
         };
       }
 
-      const newSnap = {
+      const newSnap: TelemetrySnapshot = {
         ...prevSnap,
         station_id: stationId,
         timestamp: data.timestamp || new Date().toISOString(),
@@ -148,10 +215,36 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
         station_ops: data.station_ops || prevSnap.station_ops,
         logistics: data.logistics || prevSnap.logistics,
         inventory: data.inventory || prevSnap.inventory
+      } as TelemetrySnapshot;
+
+      const prevHist = state.telemetryHistory[stationId] || createInitialTelemetryHistory(stationId, newSnap);
+
+      const nextGen = newSnap.energy?.generator_load !== undefined
+        ? Number(newSnap.energy.generator_load)
+        : prevHist.generator_load[prevHist.generator_load.length - 1];
+
+      const nextFuel = newSnap.fuel?.fuel_percentage !== undefined
+        ? Number(Number(newSnap.fuel.fuel_percentage).toFixed(1))
+        : prevHist.fuel_percentage[prevHist.fuel_percentage.length - 1];
+
+      const nextTemp = newSnap.environment?.temperature !== undefined
+        ? Number(Number(newSnap.environment.temperature).toFixed(1))
+        : prevHist.temperature[prevHist.temperature.length - 1];
+
+      const newHistory: RollingMetricHistory = {
+        generator_load: [...prevHist.generator_load.slice(1), nextGen],
+        fuel_percentage: [...prevHist.fuel_percentage.slice(1), nextFuel],
+        temperature: [...prevHist.temperature.slice(1), nextTemp],
+        alerts: prevHist.alerts,
       };
+
       return {
-        liveSnapshot: { ...state.liveSnapshot, [stationId]: newSnap as TelemetrySnapshot },
-        lastTickTime: { ...state.lastTickTime, [stationId]: new Date().toLocaleTimeString() }
+        liveSnapshot: { ...state.liveSnapshot, [stationId]: newSnap },
+        lastTickTime: { ...state.lastTickTime, [stationId]: new Date().toLocaleTimeString() },
+        telemetryHistory: {
+          ...state.telemetryHistory,
+          [stationId]: newHistory,
+        }
       };
     });
   },
@@ -166,7 +259,11 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
     set((state) => ({
       liveSnapshot: { ...state.liveSnapshot, [stationId]: stateData },
       liveRisk: { ...state.liveRisk, [stationId]: risk },
-      lastTickTime: { ...state.lastTickTime, [stationId]: new Date().toLocaleTimeString() }
+      lastTickTime: { ...state.lastTickTime, [stationId]: new Date().toLocaleTimeString() },
+      telemetryHistory: {
+        ...state.telemetryHistory,
+        [stationId]: state.telemetryHistory[stationId] || createInitialTelemetryHistory(stationId, stateData),
+      }
     }));
   }
 }));
