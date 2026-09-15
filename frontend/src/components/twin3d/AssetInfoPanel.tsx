@@ -1,112 +1,213 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TelemetrySnapshot } from '../../types';
-import { X, Activity, Wrench, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Activity, Layers, ArrowRight } from 'lucide-react';
+import { OperationalDomainCard } from '../dashboard/OperationalDomainCard';
+import {
+  ALL_DOMAIN_NODES,
+  FACILITY_TO_DOMAIN_MAP,
+  getDomainCausalConduits,
+  extractLiveDomainData
+} from '../../utils/domainDataHelper';
 
 interface Props {
   assetId: string | null;
   onClose: () => void;
   snapshot?: TelemetrySnapshot;
+  stationId?: string;
+  onSelectAsset?: (assetId: string) => void;
 }
 
-export const AssetInfoPanel: React.FC<Props> = ({ assetId, onClose, snapshot }) => {
+// Ordered facility list aligned with causal domain hierarchy
+const ORDERED_FACILITIES: string[] = [
+  'main_station',
+  'power_house',
+  'solar_array',
+  'fuel_depot',
+  'water_facility',
+  'waste_management',
+  'personnel_area',
+  'communication',
+  'research_lab',
+  'environment',
+  'storage',
+  'logistics_area'
+];
+
+// Human readable facility titles for the 3D twin
+const FACILITY_LABELS: Record<string, string> = {
+  main_station: 'Main Station Operations Complex',
+  power_house: 'Power House & Diesel Generators',
+  solar_array: 'Photovoltaic Solar PV Array',
+  fuel_depot: 'AGO Polar Diesel Fuel Tank Farm',
+  water_facility: 'Potable Water & RO Desalination',
+  waste_management: 'Waste Processing & Incinerator',
+  research_lab: 'Atmospheric & Scientific Research Lab',
+  communication: 'Satellite Radome & Comms Tower',
+  personnel_area: 'Expedition Living Quarters & Habitat',
+  storage: 'Heavy Logistics & Spares Warehouse',
+  logistics_area: 'Traverse Staging & Supply Depot',
+  environment: 'Meteorological Tower & Weather Sensors',
+};
+
+export const AssetInfoPanel: React.FC<Props> = ({
+  assetId,
+  onClose,
+  snapshot,
+  stationId = 'maitri',
+  onSelectAsset
+}) => {
+  const navigate = useNavigate();
+
   if (!assetId) return null;
 
-  const env = snapshot?.environment;
-  const eng = snapshot?.energy;
-  const fuel = snapshot?.fuel;
-  const water = snapshot?.water;
-  const equip = snapshot?.equipment;
+  const currentIndex = ORDERED_FACILITIES.indexOf(assetId);
+  const prevFacility = currentIndex > 0 ? ORDERED_FACILITIES[currentIndex - 1] : ORDERED_FACILITIES[ORDERED_FACILITIES.length - 1];
+  const nextFacility = currentIndex < ORDERED_FACILITIES.length - 1 ? ORDERED_FACILITIES[currentIndex + 1] : ORDERED_FACILITIES[0];
 
-  let title = 'Selected Station Asset';
-  let category = 'Operational Module';
-  let details: Array<{ label: string; value: string | number; color?: string }> = [];
+  const mapping = FACILITY_TO_DOMAIN_MAP[assetId] || { domainId: 'main_station' };
+  const domainNode = ALL_DOMAIN_NODES[mapping.domainId] || ALL_DOMAIN_NODES['main_station'];
+  const allDomainData = extractLiveDomainData(stationId, snapshot);
+  const domainData = (allDomainData as any)[mapping.domainId] || allDomainData.main_station;
+  const causalConduits = getDomainCausalConduits(domainNode.id);
+  const facilityTitle = FACILITY_LABELS[assetId] || domainNode.name;
 
-  if (assetId === 'generator') {
-    title = snapshot?.station_id === 'maitri' ? 'Main Diesel Generator Block' : '3x100-kVA CHP Power Plant';
-    category = 'Power Generation & Heat Recovery';
-    details = [
-      { label: 'Current Generator Load', value: `${eng?.generator_load ?? 68} kW`, color: 'text-amber-400' },
-      { label: 'Active Generator Units', value: `${eng?.generator_count_active ?? 2} Units Online` },
-      { label: 'Grid Frequency', value: `${eng?.grid_frequency ?? 50.02} Hz` },
-      { label: 'Fuel Consumption Rate', value: `${fuel?.consumption_rate_l_per_hr ?? 17.5} L/hr` },
-      { label: 'Estimated Health Score', value: `${equip?.items[0]?.health_score ?? 94.5}%`, color: 'text-emerald-400' },
-      { label: 'Operational Status', value: eng?.status ?? 'Nominal' }
-    ];
-  } else if (assetId === 'fuel_tank') {
-    title = snapshot?.station_id === 'maitri' ? 'Maitri Fuel Depot' : 'Bharati 300,000L Automated Fuel Farm';
-    category = 'Energy Storage & Life Reserve';
-    details = [
-      { label: 'Storage Level', value: `${fuel?.current_level?.toLocaleString() ?? '140,000'} Liters` },
-      { label: 'Total Capacity', value: `${fuel?.total_capacity?.toLocaleString() ?? '180,000'} Liters` },
-      { label: 'Reserve Percentage', value: `${fuel?.fuel_percentage ?? 78}%`, color: 'text-cyan-400' },
-      { label: 'Days Remaining Margin', value: `${fuel?.days_remaining ?? 19} Days`, color: 'text-emerald-400' },
-      { label: 'Reserve Zone', value: fuel?.reserve_zone ?? 'Normal' },
-      { label: 'Resupply Window ETA', value: `${fuel?.resupply_eta_days ?? 88} Days` }
-    ];
-  } else if (assetId === 'water_pump') {
-    title = snapshot?.station_id === 'maitri' ? 'Priyadarshini (Zub) Lake Pump House' : 'Quilty Bay Seawater RO Intake';
-    category = 'Water Extraction & Treatment';
-    details = [
-      { label: 'Source Architecture', value: water?.source_type ?? 'Lake Extraction' },
-      { label: 'Stored Freshwater', value: `${water?.storage_liters?.toLocaleString() ?? '18,500'} L` },
-      { label: 'Pipeline Temperature', value: `${water?.pipe_temp_c ?? 3.8}°C` },
-      { label: 'Freeze Hazard Risk', value: water?.freeze_risk ?? 'Low', color: water?.freeze_risk === 'Low' ? 'text-emerald-400' : 'text-red-400' },
-      { label: 'Trace Heating Status', value: water?.trace_heating_active ? 'Active (Energized)' : 'Standby' },
-      { label: 'Daily Consumption', value: `${water?.daily_consumption_l ?? 1450} L/day` }
-    ];
-  } else if (assetId === 'habitat') {
-    title = snapshot?.station_id === 'maitri' ? 'Main Station Habitat Block' : 'Modular Container Complex';
-    category = 'Life Support & Crew Quarters';
-    details = [
-      { label: 'Indoor Temperature', value: '19.4°C' },
-      { label: 'Expedition Headcount', value: '25 Personnel (Winter Over)' },
-      { label: 'HVAC Air Exchange', value: '4,200 m³/hr (Nominal)' },
-      { label: 'Structural Wind Stress', value: '18% Capacity' },
-      { label: 'Lockdown Protocol', value: env?.blizzard_active ? 'Level 2 Lockdown' : 'Level 0 Normal' }
-    ];
-  } else if (assetId === 'satcom') {
-    title = 'Polar Tracking Satcom Terminal';
-    category = 'Long-Range Communication Array';
-    details = [
-      { label: 'Primary Link Bandwidth', value: '120.0 Mbps (LEO Polar Satellite)' },
-      { label: 'Round-Trip Latency', value: '78 ms' },
-      { label: 'Packet Loss', value: '0.2%' },
-      { label: 'Radome De-Icing Heater', value: 'Active (Preventing Rime Ice)' },
-      { label: 'Backup Channel', value: 'Inmarsat BGAN / Iridium L-Band Standby' }
-    ];
-  }
+  const handleDomainFocus = (conduitDomain: { id: string }) => {
+    // If a conduit domain is clicked, reverse-map to the 3D building if onSelectAsset provided
+    if (onSelectAsset) {
+      // Find facility mapped to this domain
+      const targetFac = Object.entries(FACILITY_TO_DOMAIN_MAP).find(
+        ([_, v]) => v.domainId === conduitDomain.id
+      );
+      if (targetFac) {
+        onSelectAsset(targetFac[0]);
+        return;
+      }
+    }
+    navigate(`/station/${stationId}/${conduitDomain.id}`);
+  };
 
   return (
-    <div className="absolute top-4 right-4 w-80 glass-panel-glow rounded-xl p-5 border border-cyan-500/50 shadow-2xl z-20 animate-fadeIn">
-      <div className="flex items-start justify-between pb-3 border-b border-polar-border">
-        <div>
-          <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">{category}</span>
-          <h4 className="text-sm font-bold text-white mt-0.5">{title}</h4>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-polar-navy transition-colors"
+    <div
+      className="absolute top-4 right-4 z-40 w-[385px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-7.5rem)] flex flex-col animate-in fade-in slide-in-from-right-4 duration-300 pointer-events-auto"
+      style={{
+        filter: 'drop-shadow(0 12px 36px rgba(0, 0, 0, 0.75))',
+      }}
+    >
+      {/* Container Frame with domain-colored top glow */}
+      <div
+        className="rounded-2xl border flex flex-col overflow-hidden backdrop-blur-xl shadow-2xl"
+        style={{
+          background: 'rgba(5, 15, 36, 0.94)',
+          borderColor: `rgba(${domainNode.accentRgb}, 0.5)`,
+          boxShadow: `0 0 35px rgba(${domainNode.accentRgb}, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+        }}
+      >
+        {/* Top Header Strip with Domain Badge & Prev/Next Facility Navigator */}
+        <div
+          className="px-3.5 py-2.5 flex items-center justify-between border-b flex-shrink-0"
+          style={{
+            borderColor: `rgba(${domainNode.accentRgb}, 0.25)`,
+            background: `linear-gradient(90deg, rgba(${domainNode.accentRgb}, 0.2) 0%, transparent 100%)`,
+          }}
         >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="py-3 space-y-2.5">
-        {details.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">{item.label}:</span>
-            <span className={`font-mono font-semibold ${item.color || 'text-slate-100'}`}>
-              {item.value}
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0"
+              style={{
+                background: domainNode.color,
+                boxShadow: `0 0 12px ${domainNode.color}`,
+              }}
+            />
+            <span
+              className="text-[10px] font-mono font-bold uppercase tracking-wider truncate"
+              style={{ color: domainNode.color }}
+            >
+              {domainNode.tier}
             </span>
           </div>
-        ))}
-      </div>
 
-      <div className="pt-3 border-t border-polar-border flex items-center justify-between text-[11px] font-mono text-slate-400">
-        <span className="flex items-center space-x-1.5 text-emerald-400">
-          <CheckCircle className="w-3.5 h-3.5" />
-          <span>Synchronized with Live Twin</span>
-        </span>
+          <div className="flex items-center gap-1.5">
+            {/* Prev / Next Facility Navigator */}
+            {onSelectAsset && (
+              <div className="flex items-center bg-slate-900/80 border border-slate-700/60 rounded-lg overflow-hidden mr-1">
+                <button
+                  onClick={() => onSelectAsset(prevFacility)}
+                  className="px-1.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Previous Facility"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] font-mono text-slate-400 px-1 border-x border-slate-800">
+                  {currentIndex + 1}/{ORDERED_FACILITIES.length}
+                </span>
+                <button
+                  onClick={() => onSelectAsset(nextFacility)}
+                  className="px-1.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Next Facility"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg bg-polar-dark/90 text-slate-400 hover:text-white hover:bg-slate-700/60 border border-slate-700/50 transition-colors cursor-pointer"
+              title="Close Card"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Selected 3D Building Context Bar */}
+        <div className="px-4 pt-2 pb-1 flex items-center justify-between text-xs flex-shrink-0 bg-slate-950/40">
+          <div className="flex items-center gap-1.5 min-w-0 text-slate-300">
+            <Layers className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+            <span className="font-semibold text-slate-200 truncate">{facilityTitle}</span>
+          </div>
+          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex-shrink-0">
+            {stationId.toUpperCase()} BASE
+          </span>
+        </div>
+
+        {/* Scrollable Container for 2D Operational Domain Card */}
+        <div className="p-3 pt-2 overflow-y-auto max-h-[calc(100vh-14rem)] space-y-2 custom-scrollbar">
+          <OperationalDomainCard
+            node={domainNode}
+            data={domainData}
+            stationId={stationId}
+            isSelected={true}
+            showFooterButtons={true}
+            causalConduits={{
+              incoming: causalConduits.incoming,
+              outgoing: causalConduits.outgoing,
+              onFocusDomain: handleDomainFocus,
+            }}
+            onClick={() => navigate(`/station/${stationId}/${domainNode.route}`)}
+            className="!shadow-none !border-cyan-500/40"
+          />
+        </div>
+
+        {/* Bottom Quick Cockpit Bar */}
+        <div
+          className="px-4 py-2 border-t flex items-center justify-between text-[11px] font-mono bg-black/30"
+          style={{ borderColor: `rgba(${domainNode.accentRgb}, 0.2)` }}
+        >
+          <span className="text-slate-400 flex items-center gap-1.5">
+            <Activity className="w-3 h-3 text-emerald-400" />
+            Live Telemetry Synced
+          </span>
+
+          <button
+            onClick={() => navigate(`/station/${stationId}/${domainNode.route}`)}
+            className="flex items-center gap-1 font-bold text-cyan-300 hover:text-cyan-100 hover:underline transition-colors cursor-pointer"
+          >
+            <span>Open Domain Cockpit</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+        </div>
       </div>
     </div>
   );

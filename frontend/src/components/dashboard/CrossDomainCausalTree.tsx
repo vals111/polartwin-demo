@@ -4,9 +4,8 @@ import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
-  ExternalLink, GitCompare, GitCommit, Box, Brain, ChevronRight
+  ExternalLink, GitCompare, GitCommit, Brain, ChevronRight
 } from 'lucide-react';
-import { ThreeDomainGraph } from './ThreeDomainGraph';
 import { OperationalDomainCard } from './OperationalDomainCard';
 
 export interface TreeNode {
@@ -249,8 +248,6 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
   const accentColor = isMaitri ? '#06b6d4' : '#60a5fa';
   const snapshot = liveSnapshot[currentStationId];
 
-  // View mode switcher: '2d' DAG or '3d' Spatial Orbit
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Fallback Live KPIs per domain
@@ -550,36 +547,8 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           </h1>
         </div>
 
-        {/* Right Action Controls: 2D/3D View Mode Toggle & Compare Stations Toolbar */}
+        {/* Right Action Controls: Compare Stations Toolbar */}
         <div className="flex items-center gap-3 flex-nowrap overflow-x-auto flex-shrink-0">
-          {/* 2D / 3D Mode Toggle */}
-          <div className="h-10 bg-polar-dark/90 p-1 rounded-xl border border-polar-border flex items-center shadow-md flex-shrink-0">
-            <button
-              onClick={() => setViewMode('2d')}
-              title="2D Topological DAG"
-              className={`h-full px-3.5 rounded-lg text-sm font-mono font-bold transition-all flex items-center gap-2 ${
-                viewMode === '2d'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
-            >
-              <GitCommit className="w-4 h-4 text-cyan-400" />
-              <span>2D</span>
-            </button>
-            <button
-              onClick={() => setViewMode('3d')}
-              title="3D Spatial Constellation"
-              className={`h-full px-3.5 rounded-lg text-sm font-mono font-bold transition-all flex items-center gap-2 ${
-                viewMode === '3d'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
-            >
-              <Box className="w-4 h-4 text-cyan-400" />
-              <span>3D</span>
-            </button>
-          </div>
-
           {/* Compare Stations Button */}
           {onOpenCompare && (
             <button
@@ -593,15 +562,8 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── GRAPH VIEW: 3D SPATIAL VS 2D TOPOLOGICAL DAG ── */}
+      {/* ── GRAPH VIEW: 2D TOPOLOGICAL DAG ── */}
       <div className="relative w-full">
-        {viewMode === '3d' ? (
-          <ThreeDomainGraph
-            stationId={currentStationId}
-            domainData={domainData || fallbackData}
-            onSelectDomain={onSelectDomain}
-          />
-        ) : (
         <div className="relative overflow-x-auto mt-2 py-2 rounded-2xl bg-polar-dark/60 border border-polar-border/50">
           <div className="min-w-[1220px] h-[1040px] relative">
             {/* ── HTML NODE CARDS: RICH OPERATIONAL DOMAIN INSTRUMENTS ── */}
@@ -760,7 +722,6 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             </svg>
           </div>
         </div>
-      )}
 
       </div>
     </div>

@@ -1,99 +1,355 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { StationScene } from '../components/twin3d/StationScene';
 import { AssetInfoPanel } from '../components/twin3d/AssetInfoPanel';
-import { Box, Layers, Radio, Compass, ArrowLeft, RefreshCw } from 'lucide-react';
+import { OperationalDomainCard } from '../components/dashboard/OperationalDomainCard';
+import {
+  ALL_DOMAIN_NODES,
+  FACILITY_TO_DOMAIN_MAP,
+  getDomainCausalConduits,
+  extractLiveDomainData
+} from '../utils/domainDataHelper';
+import {
+  Zap, Droplet, Radio, Truck, Layers, LayoutGrid, X,
+  ChevronUp, ChevronDown, CheckCircle2, AlertTriangle, Building2, LucideIcon
+} from 'lucide-react';
+
+// Domain cluster groupings for perfect alignment
+interface DomainGroup {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  color: string;
+  facilities: Array<{
+    id: string;
+    label: string;
+    icon: string;
+    domainId: string;
+  }>;
+}
+
+const DOMAIN_GROUPS: DomainGroup[] = [
+  {
+    id: 'energy',
+    title: 'Energy & Power',
+    icon: Zap,
+    color: '#F4C430',
+    facilities: [
+      { id: 'power_house', label: 'Power House', icon: '⚡', domainId: 'energy' },
+      { id: 'solar_array', label: 'Solar Array', icon: '☀️', domainId: 'energy' },
+      { id: 'fuel_depot', label: 'Fuel Depot', icon: '🛢', domainId: 'fuel' },
+    ],
+  },
+  {
+    id: 'life_support',
+    title: 'Life Support & Habitat',
+    icon: Droplet,
+    color: '#3882F6',
+    facilities: [
+      { id: 'water_facility', label: 'Water Facility', icon: '💧', domainId: 'water' },
+      { id: 'waste_management', label: 'Waste Processing', icon: '♻️', domainId: 'water' },
+      { id: 'personnel_area', label: 'Habitat Quarters', icon: '👥', domainId: 'personnel' },
+    ],
+  },
+  {
+    id: 'science_comms',
+    title: 'Telemetry & Science',
+    icon: Radio,
+    color: '#00D4FF',
+    facilities: [
+      { id: 'communication', label: 'Comms Tower', icon: '📡', domainId: 'communication' },
+      { id: 'research_lab', label: 'Research Lab', icon: '🔬', domainId: 'equipment' },
+      { id: 'environment', label: 'Weather Tower', icon: '❄️', domainId: 'environment' },
+    ],
+  },
+  {
+    id: 'operations',
+    title: 'Logistics & Command',
+    icon: Truck,
+    color: '#00E5FF',
+    facilities: [
+      { id: 'storage', label: 'Warehouse', icon: '📦', domainId: 'inventory' },
+      { id: 'logistics_area', label: 'Traverse Staging', icon: '🚛', domainId: 'logistics' },
+      { id: 'main_station', label: 'Station Command', icon: '🏛', domainId: 'main_station' },
+    ],
+  },
+];
 
 export const Twin3DPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const stationId = id || 'maitri';
+  const rawId = id || 'maitri';
 
-  const { stations } = useStationStore();
   const { liveSnapshot } = useTelemetryStore();
-  const [selectedAsset, setSelectedAsset] = useState<string | null>('generator');
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+  const [isGridOpen, setIsGridOpen] = useState<boolean>(false);
+  const [isDockCollapsed, setIsDockCollapsed] = useState<boolean>(false);
 
-  const station = stations.find(s => s.station_id === stationId) || {
-    station_id: stationId,
-    name: stationId === 'maitri' ? 'Maitri Antarctic Station' : 'Bharati Antarctic Station',
-    location_type: stationId === 'maitri' ? 'inland' : 'coastal'
-  };
+  // Clear selected asset if station changes
+  useEffect(() => {
+    setSelectedAsset(null);
+  }, [rawId]);
 
-  const snapshot = liveSnapshot[stationId];
-
-  const assetsList = [
-    { id: 'generator', name: 'Power Plant', label: stationId === 'maitri' ? 'Main Gen Block' : '3x100kVA CHP' },
-    { id: 'fuel_tank', name: 'Fuel Farm', label: 'Fuel Storage Depot' },
-    { id: 'water_pump', name: 'Water Intake', label: stationId === 'maitri' ? 'Zub Lake Pump' : 'Quilty Bay RO' },
-    { id: 'habitat', name: 'Habitat Complex', label: 'Living & Lab Complex' },
-    { id: 'satcom', name: 'Satellite Dome', label: 'Satcom Terminal' },
-  ];
+  const snapshot = liveSnapshot[rawId];
+  const allDomainData = useMemo(() => extractLiveDomainData(rawId, snapshot), [rawId, snapshot]);
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto h-[calc(100vh-6.5rem)] flex flex-col">
-      {/* Top Controls Bar */}
-      <div className="flex items-center justify-between glass-panel px-4 py-3 rounded-xl border border-polar-border flex-shrink-0">
-        <div className="flex items-center space-x-3">
+    <div className="w-full h-[calc(100vh-6.5rem)] relative rounded-2xl overflow-hidden border border-[rgba(30,58,95,0.8)] shadow-2xl bg-polar-dark">
+      {/* 3D Scene Viewport */}
+      <StationScene
+        key={rawId}
+        snapshot={snapshot}
+        selectedAsset={selectedAsset}
+        onSelectAsset={(assetId) => {
+          setSelectedAsset(assetId);
+          setIsGridOpen(false);
+        }}
+        stationId={rawId}
+      />
+
+      {/* Top Floating Controls Bar */}
+      <div className="absolute top-3 left-3 z-30 flex items-center gap-2 pointer-events-auto">
+        <button
+          onClick={() => setIsGridOpen(!isGridOpen)}
+          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 border transition-all cursor-pointer shadow-lg backdrop-blur-md ${
+            isGridOpen
+              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/80 shadow-[0_0_15px_rgba(0,212,255,0.3)]'
+              : 'bg-polar-dark/90 text-slate-300 hover:text-white border-slate-700/70 hover:border-cyan-500/50'
+          }`}
+          title="Toggle Aligned Domain Cards Grid"
+        >
+          <LayoutGrid className="w-3.5 h-3.5 text-cyan-400" />
+          <span>{isGridOpen ? 'Close Domain Grid' : 'All Domain Cards'}</span>
+        </button>
+
+        {selectedAsset && (
           <button
-            onClick={() => navigate(`/station/${stationId}`)}
-            className="p-1.5 rounded-lg bg-polar-dark hover:bg-polar-navy border border-polar-border text-slate-300 hover:text-white transition-colors"
+            onClick={() => setSelectedAsset(null)}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-mono text-slate-400 hover:text-white bg-slate-900/80 hover:bg-slate-800/90 border border-slate-700/60 transition-colors cursor-pointer flex items-center gap-1.5 shadow"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <X className="w-3 h-3" />
+            <span>Deselect</span>
           </button>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-bold text-white">3D Spatial Digital Twin</span>
-              <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">
-                {station.name}
-              </span>
+        )}
+      </div>
+
+      {/* ── Active 2D Domain Card on Building Click ── */}
+      <AssetInfoPanel
+        assetId={selectedAsset}
+        onClose={() => setSelectedAsset(null)}
+        snapshot={snapshot}
+        stationId={rawId}
+        onSelectAsset={setSelectedAsset}
+      />
+
+      {/* ── Aligned Domain Quick-Dock at Bottom ── */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-[1240px] px-3 pointer-events-none">
+        <div className="bg-[#050f24]/92 border border-slate-700/60 rounded-2xl shadow-2xl backdrop-blur-xl p-2.5 pointer-events-auto transition-all duration-300">
+          {/* Header Strip with collapse toggle */}
+          <div className="flex items-center justify-between px-2 pb-1.5 border-b border-slate-800/80 text-[11px] font-mono">
+            <div className="flex items-center gap-2 text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="font-bold text-cyan-400 tracking-wider">OPERATIONAL DOMAINS</span>
+              <span className="text-slate-500">• Click building or domain to focus 3D twin</span>
             </div>
-            <div className="text-[11px] text-slate-400">
-              Interactive WebGL canvas • Click physical station meshes or select below
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsGridOpen(true)}
+                className="text-[10px] text-cyan-400 hover:text-cyan-200 underline flex items-center gap-1 cursor-pointer font-bold"
+              >
+                <span>Full Domain Grid</span>
+              </button>
+              <button
+                onClick={() => setIsDockCollapsed(!isDockCollapsed)}
+                className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                title={isDockCollapsed ? 'Expand Domain Bar' : 'Collapse Domain Bar'}
+              >
+                {isDockCollapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Quick Asset Filter Pills */}
-        <div className="hidden md:flex items-center space-x-2 bg-polar-dark/80 p-1 rounded-lg border border-polar-border">
-          {assetsList.map((a) => (
+          {/* 4 Aligned Domain Columns */}
+          {!isDockCollapsed && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+              {DOMAIN_GROUPS.map((group) => {
+                const GroupIcon = group.icon;
+                return (
+                  <div
+                    key={group.id}
+                    className="flex flex-col gap-1.5 p-1.5 rounded-xl bg-slate-900/50 border border-slate-800/60"
+                  >
+                    {/* Domain Category Label */}
+                    <div className="flex items-center gap-1.5 px-1 text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">
+                      <GroupIcon className="w-3 h-3" style={{ color: group.color }} />
+                      <span className="truncate">{group.title}</span>
+                    </div>
+
+                    {/* Facility Buttons aligned under domain */}
+                    <div className="flex flex-col gap-1">
+                      {group.facilities.map((fac) => {
+                        const isSelected = selectedAsset === fac.id;
+                        const domainData = (allDomainData as any)[fac.domainId];
+                        const readiness = domainData?.readinessScore ?? 95;
+                        const isWarning = readiness < 75;
+
+                        return (
+                          <button
+                            key={fac.id}
+                            onClick={() => {
+                              setSelectedAsset(fac.id);
+                              setIsGridOpen(false);
+                            }}
+                            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-cyan-950/70 border-cyan-400 shadow-[0_0_12px_rgba(0,229,255,0.3)]'
+                                : 'bg-slate-950/60 hover:bg-slate-800/80 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs flex-shrink-0">{fac.icon}</span>
+                              <span
+                                className={`text-[11px] font-mono truncate ${
+                                  isSelected ? 'text-cyan-200 font-bold' : 'text-slate-300'
+                                }`}
+                              >
+                                {fac.label}
+                              </span>
+                            </div>
+
+                            <span
+                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold flex-shrink-0 ${
+                                isWarning
+                                  ? 'text-amber-400 bg-amber-950/50 border border-amber-800/50'
+                                  : 'text-emerald-400 bg-emerald-950/40 border border-emerald-800/40'
+                              }`}
+                            >
+                              {readiness}%
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── FULL ALIGNED DOMAIN CARDS GRID OVERLAY ── */}
+      {isGridOpen && (
+        <div className="absolute inset-0 z-50 bg-[#030919]/90 backdrop-blur-xl p-4 md:p-6 overflow-y-auto animate-in fade-in duration-200">
+          {/* Grid Header */}
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+            <div>
+              <h2 className="text-lg font-bold font-mono text-white flex items-center gap-2">
+                <LayoutGrid className="w-5 h-5 text-cyan-400" />
+                <span>OPERATIONAL DOMAIN CARDS • {rawId.toUpperCase()} STATION</span>
+              </h2>
+              <p className="text-xs font-mono text-slate-400 mt-0.5">
+                All 12 live operational cards aligned across power, life support, telemetry and logistics domains
+              </p>
+            </div>
+
             <button
-              key={a.id}
-              onClick={() => setSelectedAsset(a.id)}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition-all ${
-                selectedAsset === a.id
-                  ? 'bg-cyan-500/30 text-cyan-300 border border-cyan-500/50 font-bold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => setIsGridOpen(false)}
+              className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-colors flex items-center gap-2 cursor-pointer text-xs font-mono"
             >
-              {a.name}
+              <X className="w-4 h-4" />
+              <span>Back to 3D Twin</span>
             </button>
-          ))}
+          </div>
+
+          {/* Aligned 4-Column Domain Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {DOMAIN_GROUPS.map((group) => {
+              const GroupIcon = group.icon;
+              return (
+                <div key={group.id} className="flex flex-col gap-3">
+                  {/* Category Banner */}
+                  <div
+                    className="px-3 py-2 rounded-xl border flex items-center gap-2 font-mono font-bold text-xs uppercase"
+                    style={{
+                      borderColor: `${group.color}40`,
+                      background: `linear-gradient(90deg, ${group.color}18 0%, transparent 100%)`,
+                      color: group.color,
+                    }}
+                  >
+                    <GroupIcon className="w-4 h-4" />
+                    <span>{group.title}</span>
+                  </div>
+
+                  {/* Cards under this domain */}
+                  {group.facilities.map((fac) => {
+                    const domainNode = ALL_DOMAIN_NODES[fac.domainId] || ALL_DOMAIN_NODES['main_station'];
+                    const domainData = (allDomainData as any)[fac.domainId] || allDomainData.main_station;
+                    const causalConduits = getDomainCausalConduits(domainNode.id);
+                    const isSelected = selectedAsset === fac.id;
+
+                    return (
+                      <div
+                        key={fac.id}
+                        className="relative transition-transform hover:-translate-y-0.5"
+                      >
+                        {/* Facility quick-target badge */}
+                        <div className="flex items-center justify-between text-[11px] font-mono px-2 py-1 bg-slate-900/90 rounded-t-xl border-x border-t border-slate-700/60 text-slate-300">
+                          <span className="flex items-center gap-1 font-semibold">
+                            <span>{fac.icon}</span>
+                            <span>{fac.label}</span>
+                          </span>
+                          <button
+                            onClick={() => {
+                              setSelectedAsset(fac.id);
+                              setIsGridOpen(false);
+                            }}
+                            className="text-[10px] text-cyan-400 hover:text-cyan-200 font-bold underline cursor-pointer"
+                          >
+                            Focus in 3D →
+                          </button>
+                        </div>
+
+                        {/* Exact Operational Domain Card */}
+                        <OperationalDomainCard
+                          node={domainNode}
+                          data={domainData}
+                          stationId={rawId}
+                          isSelected={isSelected}
+                          showFooterButtons={false}
+                          causalConduits={{
+                            incoming: causalConduits.incoming,
+                            outgoing: causalConduits.outgoing,
+                            onFocusDomain: (cd) => {
+                              const target = Object.entries(FACILITY_TO_DOMAIN_MAP).find(
+                                ([_, v]) => v.domainId === cd.id
+                              );
+                              if (target) {
+                                setSelectedAsset(target[0]);
+                                setIsGridOpen(false);
+                              } else {
+                                navigate(`/station/${rawId}/${cd.id}`);
+                              }
+                            },
+                          }}
+                          onClick={() => {
+                            setSelectedAsset(fac.id);
+                            setIsGridOpen(false);
+                          }}
+                          className="!rounded-t-none !border-t-0"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-      {/* 3D Viewport Area */}
-      <div className="flex-1 relative rounded-2xl overflow-hidden border border-polar-border shadow-2xl">
-        <StationScene
-          snapshot={snapshot}
-          selectedAsset={selectedAsset}
-          onSelectAsset={(id) => setSelectedAsset(id)}
-        />
-
-        {/* Floating Asset Live Data Overlay Panel */}
-        <AssetInfoPanel
-          assetId={selectedAsset}
-          onClose={() => setSelectedAsset(null)}
-          snapshot={snapshot}
-        />
-
-        {/* Bottom Control Hint */}
-        <div className="absolute bottom-4 left-4 glass-panel px-3 py-1.5 rounded-lg border border-polar-border text-[11px] font-mono text-slate-400 pointer-events-none flex items-center space-x-2">
-          <Layers className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Left click + drag to rotate • Scroll to zoom • Right click to pan</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
+
