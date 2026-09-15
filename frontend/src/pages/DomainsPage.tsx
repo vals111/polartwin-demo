@@ -385,7 +385,7 @@ export const DomainsPage: React.FC = () => {
       {/* ── 4. Interactive Visual Domain Studio Modal / Drawer ────────────────── */}
       {selectedDomainId && activeDomainConfig && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-4xl rounded-3xl border border-cyan-500/50 bg-[#071326]/95 shadow-[0_0_50px_rgba(6,182,212,0.3)] p-6 relative max-h-[90vh] overflow-y-auto">
+          <div className="glass-panel w-full max-w-4xl rounded-3xl border border-cyan-500/50 bg-[#071326]/95 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-polar-border">
               <div className="flex items-center gap-3">

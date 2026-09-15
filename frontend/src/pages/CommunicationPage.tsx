@@ -29,12 +29,6 @@ const SignalArcGauge: React.FC<{
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={size} height={size * 0.82} viewBox={`0 0 ${size} ${size * 0.82}`}>
-        <defs>
-          <filter id={`sig-glow-${label}`}>
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke="rgba(255,255,255,0.05)" strokeWidth={10} strokeLinecap="round"
           strokeDasharray={`${arcLen} ${circ - arcLen}`}
@@ -45,7 +39,6 @@ const SignalArcGauge: React.FC<{
           strokeDasharray={`${filled} ${circ - filled}`}
           strokeDashoffset={-(circ - arcLen) * 0.125 + arcLen - filled}
           transform={`rotate(135 ${size / 2} ${size / 2})`}
-          filter={`url(#sig-glow-${label})`}
           style={{ transition: 'stroke-dashoffset 1.2s ease' }} />
         <text x={size / 2} y={size / 2 - 4} textAnchor="middle"
           fill="white" fontSize={size * 0.17} fontWeight="900" fontFamily="monospace">{value}</text>
@@ -174,7 +167,7 @@ const QoSStackedBar: React.FC<{ tiers: any[]; totalBw: number }> = ({ tiers, tot
           </div>
           <div className="h-2 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${pct}%`, background: `linear-gradient(to right, ${tc}88, ${tc})`, boxShadow: `0 0 6px ${tc}44` }} />
+              style={{ width: `${pct}%`, background: `linear-gradient(to right, ${tc}88, ${tc})` }} />
           </div>
           <div className="text-[9px] font-mono text-slate-500">{tier.description}</div>
         </div>
@@ -193,10 +186,6 @@ const SatelliteTopologyViz: React.FC<{
   return (
     <svg width="100%" viewBox="0 0 360 180" className="overflow-visible">
       <defs>
-        <filter id="sat-glow">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
         <radialGradient id="sat-grad">
           <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
@@ -222,7 +211,7 @@ const SatelliteTopologyViz: React.FC<{
       <line x1={50} y1={118} x2={50} y2={125} stroke={statusColor} strokeWidth={1.5} />
 
       {/* LEO Satellite */}
-      <circle cx={180} cy={35} r={18} fill="rgba(10,15,30,0.9)" stroke="#38bdf8" strokeWidth={1.5} filter="url(#sat-glow)" />
+      <circle cx={180} cy={35} r={18} fill="rgba(10,15,30,0.9)" stroke="#38bdf8" strokeWidth={1.5} />
       <text x={180} y={32} textAnchor="middle" fill="#38bdf8" fontSize={7} fontFamily="monospace" fontWeight="bold">LEO SAT</text>
       <text x={180} y={43} textAnchor="middle" fill="#64748b" fontSize={7} fontFamily="monospace">INSAT-4</text>
       {/* Satellite solar panels */}
@@ -443,7 +432,7 @@ export const CommunicationPage: React.FC = () => {
               <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=communication`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/communication' : '/station/maitri/communication')}
@@ -553,7 +542,7 @@ export const CommunicationPage: React.FC = () => {
                     <circle cx="32" cy="32" r="26" fill="none" stroke={riskColor} strokeWidth="8"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 26 * (1 - riskScore / 100)} ${2 * Math.PI * 26}`}
-                      style={{ filter: `drop-shadow(0 0 5px ${riskColor})` }} />
+                      style={{  }} />
                     <text x="32" y="37" textAnchor="middle" fill="white" fontSize="12" fontWeight="900" fontFamily="monospace">{riskScore}</text>
                   </svg>
                 </div>
@@ -677,7 +666,7 @@ export const CommunicationPage: React.FC = () => {
                           strokeLinecap="round"
                           strokeDasharray={`${2 * Math.PI * 18 * (hp / 100)} ${2 * Math.PI * 18}`}
                           transform="rotate(-90 24 24)"
-                          style={{ filter: `drop-shadow(0 0 3px ${sc})` }} />
+                          style={{  }} />
                         <text x="24" y="28" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" fontFamily="monospace">{hp}%</text>
                       </svg>
                     </div>

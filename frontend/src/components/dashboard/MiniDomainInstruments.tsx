@@ -35,7 +35,7 @@ export const MiniRing: React.FC<{
           strokeDashoffset={offset}
           strokeLinecap="round"
           fill="none"
-          style={{ transition: 'stroke-dashoffset 0.8s ease-out', filter: `drop-shadow(0 0 6px ${color})` }}
+          style={{ transition: 'stroke-dashoffset 0.8s ease-out' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
@@ -63,7 +63,7 @@ export const MiniFluidTank: React.FC<{
           width,
           height,
           background: 'rgba(15, 23, 42, 0.7)',
-          boxShadow: `inset 0 0 6px rgba(0,0,0,0.5), 0 0 8px ${color}20`
+          boxShadow: 'inset 0 0 6px rgba(0,0,0,0.5)'
         }}
       >
         {/* Fill level */}
@@ -72,7 +72,6 @@ export const MiniFluidTank: React.FC<{
           style={{
             height: `${clamped}%`,
             background: `linear-gradient(to top, ${color}cc, ${color}88)`,
-            boxShadow: `0 0 8px ${color}`
           }}
         >
           {/* Surface Meniscus */}
@@ -123,10 +122,10 @@ export const MiniThermometer: React.FC<{ tempC: number; chillC: number; height?:
           height={(pct / 100) * 35}
           rx="2"
           fill={color}
-          style={{ filter: `drop-shadow(0 0 4px ${color})`, transition: 'all 0.8s ease-out' }}
+          style={{ transition: 'all 0.8s ease-out' }}
         />
         {/* Bulb */}
-        <circle cx="9" cy="42" r="6" fill={color} style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
+        <circle cx="9" cy="42" r="6" fill={color} />
         <circle cx="9" cy="42" r="3" fill="rgba(255,255,255,0.25)" />
       </svg>
       <div className="flex flex-col font-mono leading-tight">
@@ -156,7 +155,7 @@ export const MiniWindCompass: React.FC<{ speedKmh: number; gustKmh: number; angl
           style={{ transform: `rotate(${angleDeg}deg)` }}
         >
           <div className="w-1.5 h-4.5 relative flex flex-col items-center">
-            <div className="w-0 h-0 border-l-[2.5px] border-l-transparent border-r-[2.5px] border-r-transparent border-b-[6px] border-b-cyan-400 drop-shadow-[0_0_4px_#06b6d4]" />
+            <div className="w-0 h-0 border-l-[2.5px] border-l-transparent border-r-[2.5px] border-r-transparent border-b-[6px] border-b-cyan-400" />
             <div className="w-0.5 h-2.5 bg-cyan-400" />
           </div>
         </div>
@@ -187,8 +186,8 @@ export const MiniTraverseTrack: React.FC<{ progressPct: number; isMaitri: boolea
         />
         {/* Animated Vehicle Dot */}
         <div
-          className="absolute top-0 bottom-0 w-2.5 h-2.5 -mt-[2px] rounded-full bg-white shadow-[0_0_6px_#06b6d4] animate-pulse"
-          style={{ left: `calc(${Math.max(15, Math.min(95, progressPct))}% - 5px)` }}
+          className="absolute top-0 bottom-0 w-2 h-2 -mt-[1px] rounded-full bg-cyan-300"
+          style={{ left: `calc(${Math.max(15, Math.min(95, progressPct))}% - 4px)` }}
         />
       </div>
       <div className="flex justify-between text-[7.5px] text-slate-500 font-semibold">

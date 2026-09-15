@@ -35,7 +35,7 @@ const StockHexGrid: React.FC<{
                 <polygon points={pts} fill="rgba(10,15,30,0.8)" stroke="rgba(255,255,255,0.08)" strokeWidth={1.5} />
                 {/* Fill hex (scaled from center) */}
                 <polygon points={fillPts} fill={`${fillColor}33`} stroke={fillColor} strokeWidth={1.5}
-                  style={{ filter: `drop-shadow(0 0 4px ${fillColor}88)` }} />
+                  style={{  }} />
                 {/* Percentage */}
                 <text x={hexW / 2} y={hexH / 2 + 4} textAnchor="middle"
                   fill="white" fontSize="13" fontWeight="900" fontFamily="monospace">{clamp.toFixed(0)}%</text>
@@ -333,7 +333,7 @@ export const InventoryPage: React.FC = () => {
               <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=inventory`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/inventory' : '/station/maitri/inventory')}
@@ -527,7 +527,7 @@ export const InventoryPage: React.FC = () => {
                 </div>
                 <div className="h-2.5 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
                   <div className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${item.stock_pct}%`, background: `linear-gradient(to right, ${sc}88, ${sc})`, boxShadow: `0 0 8px ${sc}44` }} />
+                    style={{ width: `${item.stock_pct}%`, background: `linear-gradient(to right, ${sc}88, ${sc})` }} />
                 </div>
                 <div className="text-[10px] font-mono text-slate-500 mt-2">
                   ⚡ Action: Include in next resupply manifest · Notify logistics chain

@@ -38,10 +38,6 @@ const WaterStorageTank: React.FC<{
           <clipPath id="tankClip">
             <rect x={30} y={20} width={w} height={h} rx={rx} />
           </clipPath>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-            <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
         </defs>
 
         {/* Tank shell */}
@@ -85,7 +81,7 @@ const WaterStorageTank: React.FC<{
         {/* Center text */}
         <text x={30 + w / 2} y={20 + h / 2 - 8} textAnchor="middle"
           fill="white" fontSize={28} fontWeight="900" fontFamily="monospace"
-          filter="url(#glow)">{clamp.toFixed(0)}%</text>
+        >{clamp.toFixed(0)}%</text>
         <text x={30 + w / 2} y={20 + h / 2 + 12} textAnchor="middle"
           fill={fillColor} fontSize={12} fontFamily="monospace">
           {(liters / 1000).toFixed(2)}k L
@@ -400,7 +396,7 @@ export const WaterPage: React.FC = () => {
               <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=water`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/water' : '/station/maitri/water')}
@@ -458,7 +454,7 @@ export const WaterPage: React.FC = () => {
             <div className="w-full space-y-1.5">
               <div className="h-2.5 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
                 <div className="h-full rounded-full transition-all duration-1000"
-                  style={{ width: `${fillPct}%`, background: 'linear-gradient(to right, #38bdf888, #38bdf8)', boxShadow: '0 0 10px #38bdf844' }} />
+                  style={{ width: `${fillPct}%`, background: 'linear-gradient(to right, #38bdf888, #38bdf8)' }} />
               </div>
               <div className="flex justify-between text-[9px] font-mono text-slate-500">
                 <span>0</span><span>CRITICAL 20%</span><span>BUFFER 40%</span><span>FULL</span>
@@ -566,8 +562,7 @@ export const WaterPage: React.FC = () => {
                     <circle cx="40" cy="40" r="32" fill="none" stroke={freezeColor} strokeWidth="8"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 32 * Math.min(1, Math.max(0, (pipeTemp - 0) / 10))} ${2 * Math.PI * 32}`}
-                      transform="rotate(-90 40 40)"
-                      style={{ filter: `drop-shadow(0 0 5px ${freezeColor})` }} />
+                      transform="rotate(-90 40 40)" />
                     <text x="40" y="44" textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="monospace">
                       {pipeTemp}°
                     </text>

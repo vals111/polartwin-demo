@@ -35,7 +35,7 @@ const ResupplyCountdown: React.FC<{ days: number; maxDays?: number }> = ({
             strokeDasharray={circ}
             strokeDashoffset={offset}
             transform="rotate(-90 65 65)"
-            style={{ transition: 'stroke-dashoffset 1.2s ease-out', filter: `drop-shadow(0 0 8px ${color})` }}
+            style={{ transition: 'stroke-dashoffset 1.2s ease-out',  }}
           />
           <text x="65" y="60" textAnchor="middle" fill="white" fontSize="22" fontWeight="900" fontFamily="monospace">
             {days}
@@ -133,7 +133,7 @@ export const ResourceMonitoringPage: React.FC = () => {
               <Layers className="w-3.5 h-3.5 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=energy`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-3.5 h-3.5 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/energy' : '/station/maitri/energy')}
@@ -369,7 +369,6 @@ export const ResourceMonitoringPage: React.FC = () => {
                     style={{
                       width: `${item.pct}%`,
                       background: `linear-gradient(to right, ${item.color}88, ${item.color})`,
-                      boxShadow: `0 0 8px ${item.color}55`,
                     }}
                   />
                 </div>

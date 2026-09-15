@@ -43,10 +43,10 @@ const MercuryThermometer: React.FC<{ tempC: number; windChill?: number }> = ({ t
           height={(pct / 100) * 90}
           rx="3"
           fill={color}
-          style={{ transition: 'all 1s ease-out', filter: `drop-shadow(0 0 4px ${color})` }}
+          style={{ transition: 'all 1s ease-out' }}
         />
         {/* Bulb */}
-        <circle cx="17" cy="110" r="10" fill={color} style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
+        <circle cx="17" cy="110" r="10" fill={color} />
         <circle cx="17" cy="110" r="6" fill="rgba(255,255,255,0.2)" />
       </svg>
       <div className="flex flex-col justify-center">
@@ -164,7 +164,6 @@ const VisibilityBeam: React.FC<{ km: number; maxKm?: number }> = ({ km, maxKm = 
           style={{
             width: `${pct}%`,
             background: `linear-gradient(to right, ${color}88, ${color})`,
-            boxShadow: `0 0 12px ${color}55`,
           }}
         />
         {/* Fog overlay */}
@@ -205,7 +204,7 @@ const ForecastArchiveCard: React.FC<{
         <div className="flex items-center gap-2">
           <span
             className="w-2 h-2 rounded-full flex-shrink-0 transition-all group-hover:scale-125"
-            style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}88` }}
+            style={{ backgroundColor: color }}
           />
           <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-200">
             {label}
@@ -372,7 +371,7 @@ export const EnvironmentPage: React.FC = () => {
               <Layers className="w-3.5 h-3.5 text-cyan-400" /> Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=environment`)}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-3.5 h-3.5 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/environment' : '/station/maitri/environment')}
@@ -389,17 +388,17 @@ export const EnvironmentPage: React.FC = () => {
         {/* ── LEFT: Wind Vector Analysis & Polar Dynamics (col-span-1) ── */}
         <div className="xl:col-span-1 glass-panel p-4 rounded-2xl border border-polar-border flex flex-col justify-between gap-3.5 h-full">
           {/* Highlighted Wind Vector Analysis Header */}
-          <div className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-950/70 via-blue-950/50 to-slate-900/90 border border-cyan-500/40 shadow-[0_0_15px_rgba(6,182,212,0.18)] flex items-center justify-between">
+          <div className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-950/70 via-blue-950/50 to-slate-900/90 border border-cyan-500/40 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="relative flex items-center justify-center">
                 <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping absolute opacity-75" />
                 <span className="w-2 h-2 rounded-full bg-cyan-400 relative" />
               </div>
-              <span className="text-xs font-mono font-black tracking-wider uppercase text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]">
+              <span className="text-xs font-mono font-black tracking-wider uppercase text-cyan-300">
                 Wind Vector Analysis
               </span>
             </div>
-            <div className="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/50 shadow-[0_0_12px_rgba(6,182,212,0.3)] flex items-baseline gap-1">
+            <div className="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/50 shadow-sm flex items-baseline gap-1">
               <span className="text-sm font-mono font-black text-cyan-300 tracking-tight">
                 {windMs.toFixed(1)}
               </span>
@@ -419,7 +418,7 @@ export const EnvironmentPage: React.FC = () => {
           </div>
 
           {/* Primary Wind Telemetry Card (Information outside compass) */}
-          <div className="w-full bg-gradient-to-br from-slate-900/95 via-polar-dark to-slate-950/95 p-3 rounded-xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+          <div className="w-full bg-gradient-to-br from-slate-900/95 via-polar-dark to-slate-950/95 p-3 rounded-xl border border-cyan-500/30 shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 mb-2">
               <span className="text-[9px] font-mono uppercase tracking-widest text-cyan-400 font-bold flex items-center gap-1.5">
                 <Wind className="w-3 h-3 text-cyan-400" />

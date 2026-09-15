@@ -527,10 +527,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
 
   return (
     <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden bg-gradient-to-b from-[#071326]/95 to-[#030914]/98 shadow-2xl transition-all duration-300">
-      <div
-        className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none opacity-20"
-        style={{ background: accentColor }}
-      />
+      
 
       {/* ── TOP INTEGRATED HEADER & MISSION CONTROLS ── */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-3 mb-3">
@@ -646,8 +643,8 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                     className="transition-all duration-300"
                     style={{
                       filter: isIncoming
-                        ? 'drop-shadow(0 0 6px rgba(0, 242, 254, 0.75)) drop-shadow(0 0 14px rgba(0, 198, 255, 0.45))'
-                        : 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.75)) drop-shadow(0 0 14px rgba(245, 158, 11, 0.45))'
+                        ? 'none'
+                        : 'none'
                     }}
                   >
                     {/* Layer 1: Wide Deep Neon Halo Aura */}

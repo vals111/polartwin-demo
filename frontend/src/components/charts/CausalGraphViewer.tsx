@@ -481,12 +481,6 @@ export const CausalGraphViewer: React.FC<Props> = ({
 
   return (
     <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden space-y-5">
-      {/* Ambient background glow */}
-      <div
-        className="absolute -top-24 -left-24 w-72 h-72 rounded-full blur-3xl pointer-events-none opacity-20 transition-all duration-700"
-        style={{ background: isMaitri ? '#06b6d4' : '#3b82f6' }}
-      />
-
       {/* ── TOP MISSION HEADER & OPERATIONAL CONTROLS ─────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-polar-border/60 pb-4">
         <div>
@@ -616,11 +610,11 @@ export const CausalGraphViewer: React.FC<Props> = ({
                 onKeyDown={(e) => handleKeyDown(e, card.id)}
                 className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer h-full flex flex-col justify-between select-none relative focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
                   isSelected
-                    ? 'border-cyan-400 bg-[#0c1f38] shadow-[0_0_20px_rgba(6,182,212,0.25)] scale-[1.02] z-20'
+                    ? 'border-cyan-400 bg-[#0c1f38] shadow-lg scale-[1.02] z-20'
                     : isUpstream
-                    ? 'border-amber-400/80 bg-amber-950/25 shadow-[0_0_15px_rgba(245,158,11,0.15)] z-10'
+                    ? 'border-amber-400/80 bg-amber-950/25 shadow-md z-10'
                     : isDownstream
-                    ? 'border-purple-400/80 bg-purple-950/25 shadow-[0_0_15px_rgba(168,85,247,0.15)] z-10'
+                    ? 'border-purple-400/80 bg-purple-950/25 shadow-md z-10'
                     : isUnrelated
                     ? 'border-slate-800/60 bg-[#07101d]/60 opacity-40 hover:opacity-80'
                     : 'border-slate-800 bg-[#071324]/80 hover:border-slate-700 hover:scale-[1.01]'
@@ -673,7 +667,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
                 <div className="hidden xl:flex absolute -right-3 top-1/2 -translate-y-1/2 z-30 pointer-events-none">
                   <div className={`p-1 rounded-full transition-all duration-300 ${
                     isImpactTraceActive || (isSelected && isDownstream) || (isUpstream && isSelected)
-                      ? 'bg-cyan-500/20 text-cyan-300 ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)] scale-110'
+                      ? 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-400 shadow-md scale-110'
                       : 'text-slate-600'
                   }`}>
                     <ArrowRight className={`w-3.5 h-3.5 ${isImpactTraceActive ? 'animate-pulse text-cyan-300' : ''}`} />
@@ -690,15 +684,15 @@ export const CausalGraphViewer: React.FC<Props> = ({
         <div className="flex items-center gap-4 flex-wrap">
           <span className="font-bold text-slate-300">CAUSAL TRACE ROLES:</span>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-cyan-400 shadow-[0_0_6px_rgba(6,182,212,0.8)] inline-block" />
+            <span className="w-2.5 h-2.5 rounded-sm bg-cyan-400 inline-block" />
             <span className="text-cyan-300 font-semibold">Active Selection</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)] inline-block" />
+            <span className="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block" />
             <span className="text-amber-300 font-semibold">Direct Upstream Driver</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)] inline-block" />
+            <span className="w-2.5 h-2.5 rounded-sm bg-purple-400 inline-block" />
             <span className="text-purple-300 font-semibold">Downstream Consequence</span>
           </div>
           <div className="flex items-center gap-1.5">

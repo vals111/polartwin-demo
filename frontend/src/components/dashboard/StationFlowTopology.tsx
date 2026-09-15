@@ -478,10 +478,7 @@ export const StationFlowTopology: React.FC<{
   return (
     <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden space-y-5">
       {/* Background ambient lighting */}
-      <div
-        className="absolute -top-32 -right-32 w-80 h-80 rounded-full blur-3xl pointer-events-none opacity-20 transition-all duration-700"
-        style={{ background: isMaitri ? '#06b6d4' : '#3b82f6' }}
-      />
+      
 
       {/* ── TOP HEADER & CONTROLS ─────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
@@ -811,7 +808,6 @@ export const StationFlowTopology: React.FC<{
                     strokeWidth="2"
                     strokeDasharray={isTraced ? '4 2' : undefined}
                     opacity="0.8"
-                    filter="url(#node-glow)"
                   >
                     {isTraced && (
                       <animate attributeName="stroke-dashoffset" values="12;0" dur="1s" repeatCount="indefinite" />

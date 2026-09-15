@@ -76,7 +76,7 @@ const RiskScoreRing: React.FC<{ score: number; level: string; accentColor: strin
           strokeDasharray={circ}
           strokeDashoffset={offset}
           transform="rotate(-90 90 90)"
-          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)', filter: `drop-shadow(0 0 10px ${color})` }}
+          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.34,1.56,0.64,1)',  }}
         />
         {/* Threshold ticks */}
         {[25, 50, 75].map((t) => {

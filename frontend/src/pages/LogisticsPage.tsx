@@ -28,12 +28,6 @@ const VoyageProgressArc: React.FC<{
   return (
     <div className="flex flex-col items-center gap-2">
       <svg width={180} height={180} viewBox="0 0 180 180">
-        <defs>
-          <filter id="voyage-glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
         {/* Track */}
         <circle cx={90} cy={90} r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={14}
           strokeLinecap="round"
@@ -52,7 +46,6 @@ const VoyageProgressArc: React.FC<{
           strokeDasharray={`${filled} ${circ - filled}`}
           strokeDashoffset={-(circ - arcLen) * 0.125 + arcLen - filled}
           transform="rotate(135 90 90)"
-          filter="url(#voyage-glow)"
           style={{ transition: 'stroke-dashoffset 1.2s ease' }} />
         {/* Ship icon position */}
         {(() => {
@@ -60,7 +53,7 @@ const VoyageProgressArc: React.FC<{
           const sx = 90 + r * Math.cos(angle);
           const sy = 90 + r * Math.sin(angle);
           return (
-            <circle cx={sx} cy={sy} r={6} fill={color} filter="url(#voyage-glow)">
+            <circle cx={sx} cy={sy} r={6} fill={color}>
               <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
             </circle>
           );
@@ -365,7 +358,7 @@ export const LogisticsPage: React.FC = () => {
               <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=logistics`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/logistics' : '/station/maitri/logistics')}
@@ -473,7 +466,7 @@ export const LogisticsPage: React.FC = () => {
                     <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={10} strokeLinecap="round" />
                     <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#10b981" strokeWidth={10} strokeLinecap="round"
                       strokeDasharray={`${Math.PI * 50 * (selectedAsset.readiness_pct / 100)} ${Math.PI * 50}`}
-                      style={{ filter: 'drop-shadow(0 0 6px #10b981)' }} />
+                      style={{  }} />
                     <text x="60" y="55" textAnchor="middle" fill="white" fontSize="16" fontWeight="900" fontFamily="monospace">{selectedAsset.readiness_pct}%</text>
                     <text x="60" y="68" textAnchor="middle" fill="#10b981" fontSize="8" fontFamily="monospace">READINESS</text>
                   </svg>

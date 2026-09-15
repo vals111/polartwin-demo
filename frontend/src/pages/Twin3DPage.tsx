@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { StationScene } from '../components/twin3d/StationScene';
@@ -11,8 +11,8 @@ import {
   extractLiveDomainData
 } from '../utils/domainDataHelper';
 import {
-  Zap, Droplet, Radio, Truck, Layers, LayoutGrid, X,
-  ChevronUp, ChevronDown, CheckCircle2, AlertTriangle, Building2, LucideIcon
+  Zap, Droplet, Radio, Truck, LayoutGrid, X,
+  Building2, LucideIcon
 } from 'lucide-react';
 
 // Domain cluster groupings for perfect alignment
@@ -84,7 +84,6 @@ export const Twin3DPage: React.FC = () => {
   const { liveSnapshot } = useTelemetryStore();
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [isGridOpen, setIsGridOpen] = useState<boolean>(false);
-  const [isDockCollapsed, setIsDockCollapsed] = useState<boolean>(false);
 
   // Clear selected asset if station changes
   useEffect(() => {
@@ -94,6 +93,12 @@ export const Twin3DPage: React.FC = () => {
   const snapshot = liveSnapshot[rawId];
   const allDomainData = useMemo(() => extractLiveDomainData(rawId, snapshot), [rawId, snapshot]);
 
+  // Stable callback — never recreated so StationScene's useEffect never re-fires
+  const handleSelectAsset = useCallback((assetId: string) => {
+    setSelectedAsset(assetId);
+    setIsGridOpen(false);
+  }, []);
+
   return (
     <div className="w-full h-[calc(100vh-6.5rem)] relative rounded-2xl overflow-hidden border border-[rgba(30,58,95,0.8)] shadow-2xl bg-polar-dark">
       {/* 3D Scene Viewport */}
@@ -101,29 +106,13 @@ export const Twin3DPage: React.FC = () => {
         key={rawId}
         snapshot={snapshot}
         selectedAsset={selectedAsset}
-        onSelectAsset={(assetId) => {
-          setSelectedAsset(assetId);
-          setIsGridOpen(false);
-        }}
+        onSelectAsset={handleSelectAsset}
         stationId={rawId}
       />
 
       {/* Top Floating Controls Bar */}
-      <div className="absolute top-3 left-3 z-30 flex items-center gap-2 pointer-events-auto">
-        <button
-          onClick={() => setIsGridOpen(!isGridOpen)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 border transition-all cursor-pointer shadow-lg backdrop-blur-md ${
-            isGridOpen
-              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/80 shadow-[0_0_15px_rgba(0,212,255,0.3)]'
-              : 'bg-polar-dark/90 text-slate-300 hover:text-white border-slate-700/70 hover:border-cyan-500/50'
-          }`}
-          title="Toggle Aligned Domain Cards Grid"
-        >
-          <LayoutGrid className="w-3.5 h-3.5 text-cyan-400" />
-          <span>{isGridOpen ? 'Close Domain Grid' : 'All Domain Cards'}</span>
-        </button>
-
-        {selectedAsset && (
+      {selectedAsset && (
+        <div className="absolute top-3 left-3 z-30 flex items-center gap-2 pointer-events-auto">
           <button
             onClick={() => setSelectedAsset(null)}
             className="px-2.5 py-1.5 rounded-xl text-xs font-mono text-slate-400 hover:text-white bg-slate-900/80 hover:bg-slate-800/90 border border-slate-700/60 transition-colors cursor-pointer flex items-center gap-1.5 shadow"
@@ -131,8 +120,8 @@ export const Twin3DPage: React.FC = () => {
             <X className="w-3 h-3" />
             <span>Deselect</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Active 2D Domain Card on Building Click ── */}
       <AssetInfoPanel
@@ -143,102 +132,7 @@ export const Twin3DPage: React.FC = () => {
         onSelectAsset={setSelectedAsset}
       />
 
-      {/* ── Aligned Domain Quick-Dock at Bottom ── */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-[1240px] px-3 pointer-events-none">
-        <div className="bg-[#050f24]/92 border border-slate-700/60 rounded-2xl shadow-2xl backdrop-blur-xl p-2.5 pointer-events-auto transition-all duration-300">
-          {/* Header Strip with collapse toggle */}
-          <div className="flex items-center justify-between px-2 pb-1.5 border-b border-slate-800/80 text-[11px] font-mono">
-            <div className="flex items-center gap-2 text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="font-bold text-cyan-400 tracking-wider">OPERATIONAL DOMAINS</span>
-              <span className="text-slate-500">• Click building or domain to focus 3D twin</span>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsGridOpen(true)}
-                className="text-[10px] text-cyan-400 hover:text-cyan-200 underline flex items-center gap-1 cursor-pointer font-bold"
-              >
-                <span>Full Domain Grid</span>
-              </button>
-              <button
-                onClick={() => setIsDockCollapsed(!isDockCollapsed)}
-                className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                title={isDockCollapsed ? 'Expand Domain Bar' : 'Collapse Domain Bar'}
-              >
-                {isDockCollapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          </div>
-
-          {/* 4 Aligned Domain Columns */}
-          {!isDockCollapsed && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
-              {DOMAIN_GROUPS.map((group) => {
-                const GroupIcon = group.icon;
-                return (
-                  <div
-                    key={group.id}
-                    className="flex flex-col gap-1.5 p-1.5 rounded-xl bg-slate-900/50 border border-slate-800/60"
-                  >
-                    {/* Domain Category Label */}
-                    <div className="flex items-center gap-1.5 px-1 text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">
-                      <GroupIcon className="w-3 h-3" style={{ color: group.color }} />
-                      <span className="truncate">{group.title}</span>
-                    </div>
-
-                    {/* Facility Buttons aligned under domain */}
-                    <div className="flex flex-col gap-1">
-                      {group.facilities.map((fac) => {
-                        const isSelected = selectedAsset === fac.id;
-                        const domainData = (allDomainData as any)[fac.domainId];
-                        const readiness = domainData?.readinessScore ?? 95;
-                        const isWarning = readiness < 75;
-
-                        return (
-                          <button
-                            key={fac.id}
-                            onClick={() => {
-                              setSelectedAsset(fac.id);
-                              setIsGridOpen(false);
-                            }}
-                            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all cursor-pointer border ${
-                              isSelected
-                                ? 'bg-cyan-950/70 border-cyan-400 shadow-[0_0_12px_rgba(0,229,255,0.3)]'
-                                : 'bg-slate-950/60 hover:bg-slate-800/80 border-slate-800 hover:border-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-xs flex-shrink-0">{fac.icon}</span>
-                              <span
-                                className={`text-[11px] font-mono truncate ${
-                                  isSelected ? 'text-cyan-200 font-bold' : 'text-slate-300'
-                                }`}
-                              >
-                                {fac.label}
-                              </span>
-                            </div>
-
-                            <span
-                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold flex-shrink-0 ${
-                                isWarning
-                                  ? 'text-amber-400 bg-amber-950/50 border border-amber-800/50'
-                                  : 'text-emerald-400 bg-emerald-950/40 border border-emerald-800/40'
-                              }`}
-                            >
-                              {readiness}%
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* ── FULL ALIGNED DOMAIN CARDS GRID OVERLAY ── */}
       {isGridOpen && (

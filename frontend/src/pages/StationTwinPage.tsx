@@ -50,12 +50,6 @@ export const StationTwinPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Station context header */}
       <div className="glass-panel p-6 rounded-2xl border border-polar-border relative overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        {/* Ambient glow */}
-        <div
-          className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-20"
-          style={{ background: accentColor }}
-        />
-
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full relative z-10">
           {/* Station Gauge & Title */}
           <div className="flex items-center gap-6">
@@ -83,7 +77,7 @@ export const StationTwinPage: React.FC = () => {
           {/* 3 Individual Cards: Tick Loop, Risk, Alerts */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Card 1: Tick Loop Active */}
-            <div className="bg-[#091526]/85 border border-cyan-500/25 rounded-2xl p-3.5 shadow-[0_0_15px_rgba(6,182,212,0.08)] flex items-center gap-3.5 min-w-[190px] hover:border-cyan-400/40 transition-colors">
+            <div className="bg-[#091526]/85 border border-cyan-500/25 rounded-2xl p-3.5 shadow-md flex items-center gap-3.5 min-w-[190px] hover:border-cyan-400/40 transition-colors">
               <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
                 <Activity className="w-4 h-4 animate-pulse" />
               </div>
@@ -100,7 +94,7 @@ export const StationTwinPage: React.FC = () => {
             </div>
 
             {/* Card 2: Risk: LOW (18 pts) */}
-            <div className="bg-[#091526]/85 border border-slate-700/50 rounded-2xl p-3.5 shadow-[0_0_15px_rgba(0,0,0,0.3)] flex items-center gap-3.5 min-w-[190px] hover:border-slate-600/60 transition-colors">
+            <div className="bg-[#091526]/85 border border-slate-700/50 rounded-2xl p-3.5 shadow-md flex items-center gap-3.5 min-w-[190px] hover:border-slate-600/60 transition-colors">
               <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex-shrink-0">
                 <Shield className="w-4 h-4" />
               </div>
@@ -117,7 +111,7 @@ export const StationTwinPage: React.FC = () => {
             </div>
 
             {/* Card 3: Alerts: 0 active */}
-            <div className="bg-[#091526]/85 border border-slate-700/50 rounded-2xl p-3.5 shadow-[0_0_15px_rgba(0,0,0,0.3)] flex items-center gap-3.5 min-w-[190px] hover:border-slate-600/60 transition-colors">
+            <div className="bg-[#091526]/85 border border-slate-700/50 rounded-2xl p-3.5 shadow-md flex items-center gap-3.5 min-w-[190px] hover:border-slate-600/60 transition-colors">
               <div className={`p-2.5 rounded-xl flex-shrink-0 border ${
                 stationAlerts.length > 0
                   ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'

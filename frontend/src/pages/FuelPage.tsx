@@ -57,7 +57,7 @@ const CylinderTank: React.FC<{
           style={{
             top: 8, left: 0, width: w, height: h,
             background: 'rgba(8,15,30,0.9)',
-            boxShadow: selected ? `0 0 20px ${activeColor}55, inset 0 0 12px rgba(0,0,0,0.5)` : 'inset 0 0 12px rgba(0,0,0,0.5)',
+            boxShadow: 'inset 0 0 12px rgba(0,0,0,0.5)',
           }}>
           {/* Grid lines */}
           {[25, 50, 75].map(t => (
@@ -70,7 +70,6 @@ const CylinderTank: React.FC<{
             style={{
               height: `${clamp}%`,
               background: `linear-gradient(to top, ${activeColor}cc 0%, ${activeColor}44 100%)`,
-              boxShadow: `0 -3px 12px ${activeColor}66`,
             }}>
             {/* Wave shimmer */}
             <div className="absolute top-0 left-0 right-0 h-2 animate-pulse opacity-60"
@@ -142,7 +141,7 @@ const BurnRadialGauge: React.FC<{
           strokeLinecap="round" strokeDasharray={`${filled} ${circ - filled}`}
           strokeDashoffset={offset - (circ - arcLen) * 0.125 + arcLen - filled}
           transform={`rotate(${rotation} ${size / 2} ${size / 2})`}
-          style={{ filter: `drop-shadow(0 0 6px ${color})`, transition: 'stroke-dashoffset 1s ease' }} />
+          style={{ transition: 'stroke-dashoffset 1s ease' }} />
         {/* Center */}
         <text x={size / 2} y={size / 2 - 4} textAnchor="middle"
           fill="white" fontSize={size * 0.16} fontWeight="900" fontFamily="monospace">
@@ -538,7 +537,7 @@ export const FuelPage: React.FC = () => {
               <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=fuel`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/fuel' : '/station/maitri/fuel')}
@@ -617,7 +616,6 @@ export const FuelPage: React.FC = () => {
                   style={{
                     width: `${percentage}%`,
                     background: `linear-gradient(to right, ${zoneColor}88, ${zoneColor})`,
-                    boxShadow: `0 0 12px ${zoneColor}44`,
                   }} />
                 {/* Zone markers */}
                 {[15, 30, 50].map(m => (
@@ -655,7 +653,7 @@ export const FuelPage: React.FC = () => {
                 {/* Mini fill bar */}
                 <div className="h-2 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
                   <div className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${selectedTank.level_pct}%`, background: 'linear-gradient(to right, #f59e0b88, #f59e0b)', boxShadow: '0 0 8px #f59e0b44' }} />
+                    style={{ width: `${selectedTank.level_pct}%`, background: 'linear-gradient(to right, #f59e0b88, #f59e0b)' }} />
                 </div>
 
                 {/* Burn rate gauges */}

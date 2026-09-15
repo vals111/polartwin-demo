@@ -26,12 +26,6 @@ const HealthGauge: React.FC<{
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <defs>
-          <filter id="health-glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke="rgba(255,255,255,0.06)" strokeWidth={11} strokeLinecap="round"
           strokeDasharray={`${arcLen} ${circ - arcLen}`}
@@ -42,7 +36,6 @@ const HealthGauge: React.FC<{
           strokeDasharray={`${filled} ${circ - filled}`}
           strokeDashoffset={-(circ - arcLen) * 0.125 + arcLen - filled}
           transform={`rotate(135 ${size / 2} ${size / 2})`}
-          filter="url(#health-glow)"
           style={{ transition: 'stroke-dashoffset 1.2s ease, stroke 0.5s ease' }} />
         <text x={size / 2} y={size / 2 - 4} textAnchor="middle"
           fill="white" fontSize={size * 0.18} fontWeight="900" fontFamily="monospace">{value.toFixed(0)}</text>
@@ -350,7 +343,7 @@ export const EquipmentPage: React.FC = () => {
               <Layers className="w-4 h-4 text-cyan-400" /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=equipment`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(168,85,247,0.3)]">
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/equipment' : '/station/maitri/equipment')}
@@ -573,7 +566,7 @@ export const EquipmentPage: React.FC = () => {
                 {/* Urgency bar */}
                 <div className="h-2 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
                   <div className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${urgency}%`, background: `linear-gradient(to right, ${hc}88, ${hc})`, boxShadow: `0 0 8px ${hc}44` }} />
+                    style={{ width: `${urgency}%`, background: `linear-gradient(to right, ${hc}88, ${hc})` }} />
                 </div>
                 <div className="text-[9px] font-mono text-slate-500 mt-1.5 text-right">Maintenance urgency: {urgency.toFixed(0)}%</div>
               </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TelemetrySnapshot } from '../../types';
-import { X, ChevronLeft, ChevronRight, Activity, Layers, ArrowRight } from 'lucide-react';
+import { X, Activity, ArrowRight, Zap, Droplet, Radio, Thermometer, Sun, Flame, Recycle, Package, Truck, FlaskConical, Users, Building2 } from 'lucide-react';
 import { OperationalDomainCard } from '../dashboard/OperationalDomainCard';
 import {
   ALL_DOMAIN_NODES,
@@ -18,36 +18,45 @@ interface Props {
   onSelectAsset?: (assetId: string) => void;
 }
 
-// Ordered facility list aligned with causal domain hierarchy
-const ORDERED_FACILITIES: string[] = [
-  'main_station',
-  'power_house',
-  'solar_array',
-  'fuel_depot',
-  'water_facility',
-  'waste_management',
-  'personnel_area',
-  'communication',
-  'research_lab',
-  'environment',
-  'storage',
-  'logistics_area'
-];
-
-// Human readable facility titles for the 3D twin
 const FACILITY_LABELS: Record<string, string> = {
-  main_station: 'Main Station Operations Complex',
-  power_house: 'Power House & Diesel Generators',
-  solar_array: 'Photovoltaic Solar PV Array',
-  fuel_depot: 'AGO Polar Diesel Fuel Tank Farm',
-  water_facility: 'Potable Water & RO Desalination',
-  waste_management: 'Waste Processing & Incinerator',
-  research_lab: 'Atmospheric & Scientific Research Lab',
-  communication: 'Satellite Radome & Comms Tower',
-  personnel_area: 'Expedition Living Quarters & Habitat',
-  storage: 'Heavy Logistics & Spares Warehouse',
-  logistics_area: 'Traverse Staging & Supply Depot',
-  environment: 'Meteorological Tower & Weather Sensors',
+  main_station:    'Main Station Operations Complex',
+  power_house:     'Power House & Diesel Generators',
+  solar_array:     'Photovoltaic Solar PV Array',
+  fuel_depot:      'AGO Polar Diesel Fuel Tank Farm',
+  water_facility:  'Potable Water & RO Desalination',
+  waste_management:'Waste Processing & Incinerator',
+  research_lab:    'Atmospheric & Scientific Research Lab',
+  communication:   'Satellite Radome & Comms Tower',
+  personnel_area:  'Expedition Living Quarters & Habitat',
+  storage:         'Heavy Logistics & Spares Warehouse',
+  logistics_area:  'Traverse Staging & Supply Depot',
+  environment:     'Meteorological Tower & Weather Sensors',
+};
+
+type IconFC = React.FC<{className?:string}>;
+
+interface FacVisual {
+  emoji: string;
+  bgPos: string;
+  accentFrom: string;
+  accentTo: string;
+  statLabel: string;
+  statIcon: IconFC;
+}
+
+const FACILITY_VISUALS: Record<string, FacVisual> = {
+  main_station:    { emoji:'🏛',  bgPos:'50% 30%', accentFrom:'rgba(2,132,199,0.88)',   accentTo:'rgba(2,132,199,0)',    statLabel:'Command Hub',       statIcon:Building2 as IconFC },
+  power_house:     { emoji:'⚡',  bgPos:'70% 60%', accentFrom:'rgba(217,119,6,0.88)',   accentTo:'rgba(217,119,6,0)',    statLabel:'Power Generation',  statIcon:Zap as IconFC },
+  solar_array:     { emoji:'☀️',  bgPos:'55% 20%', accentFrom:'rgba(245,158,11,0.88)',  accentTo:'rgba(245,158,11,0)',   statLabel:'Solar Output',      statIcon:Sun as IconFC },
+  fuel_depot:      { emoji:'🛢',  bgPos:'80% 70%', accentFrom:'rgba(220,38,38,0.88)',   accentTo:'rgba(220,38,38,0)',    statLabel:'Fuel Reserve',      statIcon:Flame as IconFC },
+  water_facility:  { emoji:'💧',  bgPos:'40% 45%', accentFrom:'rgba(14,165,233,0.88)',  accentTo:'rgba(14,165,233,0)',   statLabel:'Water Supply',      statIcon:Droplet as IconFC },
+  waste_management:{ emoji:'♻️',  bgPos:'60% 75%', accentFrom:'rgba(5,150,105,0.88)',   accentTo:'rgba(5,150,105,0)',    statLabel:'Waste Processing',  statIcon:Recycle as IconFC },
+  research_lab:    { emoji:'🔬',  bgPos:'35% 35%', accentFrom:'rgba(124,58,237,0.88)',  accentTo:'rgba(124,58,237,0)',   statLabel:'Research Active',   statIcon:FlaskConical as IconFC },
+  communication:   { emoji:'📡',  bgPos:'20% 25%', accentFrom:'rgba(0,212,255,0.88)',   accentTo:'rgba(0,212,255,0)',    statLabel:'Comms Online',      statIcon:Radio as IconFC },
+  personnel_area:  { emoji:'👥',  bgPos:'50% 50%', accentFrom:'rgba(37,99,235,0.88)',   accentTo:'rgba(37,99,235,0)',    statLabel:'Crew Habitat',      statIcon:Users as IconFC },
+  storage:         { emoji:'📦',  bgPos:'75% 55%', accentFrom:'rgba(5,150,105,0.88)',   accentTo:'rgba(5,150,105,0)',    statLabel:'Storage Capacity',  statIcon:Package as IconFC },
+  logistics_area:  { emoji:'🚛',  bgPos:'85% 65%', accentFrom:'rgba(249,115,22,0.88)',  accentTo:'rgba(249,115,22,0)',   statLabel:'Traverse Ops',      statIcon:Truck as IconFC },
+  environment:     { emoji:'❄️',  bgPos:'25% 20%', accentFrom:'rgba(125,211,252,0.88)', accentTo:'rgba(125,211,252,0)', statLabel:'Weather Monitoring',statIcon:Thermometer as IconFC },
 };
 
 export const AssetInfoPanel: React.FC<Props> = ({
@@ -58,122 +67,101 @@ export const AssetInfoPanel: React.FC<Props> = ({
   onSelectAsset
 }) => {
   const navigate = useNavigate();
-
   if (!assetId) return null;
 
-  const currentIndex = ORDERED_FACILITIES.indexOf(assetId);
-  const prevFacility = currentIndex > 0 ? ORDERED_FACILITIES[currentIndex - 1] : ORDERED_FACILITIES[ORDERED_FACILITIES.length - 1];
-  const nextFacility = currentIndex < ORDERED_FACILITIES.length - 1 ? ORDERED_FACILITIES[currentIndex + 1] : ORDERED_FACILITIES[0];
-
-  const mapping = FACILITY_TO_DOMAIN_MAP[assetId] || { domainId: 'main_station' };
+  const mapping    = FACILITY_TO_DOMAIN_MAP[assetId] || { domainId: 'main_station' };
   const domainNode = ALL_DOMAIN_NODES[mapping.domainId] || ALL_DOMAIN_NODES['main_station'];
   const allDomainData = extractLiveDomainData(stationId, snapshot);
   const domainData = (allDomainData as any)[mapping.domainId] || allDomainData.main_station;
   const causalConduits = getDomainCausalConduits(domainNode.id);
-  const facilityTitle = FACILITY_LABELS[assetId] || domainNode.name;
+  const facilityTitle  = FACILITY_LABELS[assetId] || domainNode.name;
+  const vis = FACILITY_VISUALS[assetId] ?? FACILITY_VISUALS['main_station'];
+  const StatIcon = vis.statIcon;
 
   const handleDomainFocus = (conduitDomain: { id: string }) => {
-    // If a conduit domain is clicked, reverse-map to the 3D building if onSelectAsset provided
     if (onSelectAsset) {
-      // Find facility mapped to this domain
       const targetFac = Object.entries(FACILITY_TO_DOMAIN_MAP).find(
         ([_, v]) => v.domainId === conduitDomain.id
       );
-      if (targetFac) {
-        onSelectAsset(targetFac[0]);
-        return;
-      }
+      if (targetFac) { onSelectAsset(targetFac[0]); return; }
     }
     navigate(`/station/${stationId}/${conduitDomain.id}`);
   };
 
   return (
     <div
-      className="absolute top-4 right-4 z-40 w-[385px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-7.5rem)] flex flex-col animate-in fade-in slide-in-from-right-4 duration-300 pointer-events-auto"
-      style={{
-        filter: 'drop-shadow(0 12px 36px rgba(0, 0, 0, 0.75))',
-      }}
+      className="absolute top-4 right-4 z-40 w-[390px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-7.5rem)] flex flex-col animate-in fade-in slide-in-from-right-4 duration-300 pointer-events-auto"
+      style={{ filter: 'drop-shadow(0 12px 40px rgba(0,0,0,0.82))' }}
     >
-      {/* Container Frame with domain-colored top glow */}
       <div
-        className="rounded-2xl border flex flex-col overflow-hidden backdrop-blur-xl shadow-2xl"
+        className="rounded-2xl border flex flex-col overflow-hidden shadow-2xl"
         style={{
-          background: 'rgba(5, 15, 36, 0.94)',
-          borderColor: `rgba(${domainNode.accentRgb}, 0.5)`,
-          boxShadow: `0 0 35px rgba(${domainNode.accentRgb}, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+          background: 'rgba(4,12,30,0.96)',
+          borderColor: `rgba(${domainNode.accentRgb},0.55)`,
+          boxShadow: `0 0 0 1px rgba(${domainNode.accentRgb},0.12), 0 8px 32px rgba(0,0,0,0.75)`,
         }}
       >
-        {/* Top Header Strip with Domain Badge & Prev/Next Facility Navigator */}
-        <div
-          className="px-3.5 py-2.5 flex items-center justify-between border-b flex-shrink-0"
-          style={{
-            borderColor: `rgba(${domainNode.accentRgb}, 0.25)`,
-            background: `linear-gradient(90deg, rgba(${domainNode.accentRgb}, 0.2) 0%, transparent 100%)`,
-          }}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span
-              className="w-2.5 h-2.5 rounded-full animate-pulse flex-shrink-0"
+        {/* FACILITY IMAGE BANNER */}
+        <div className="relative w-full h-[148px] overflow-hidden flex-shrink-0">
+          <img
+            src="/station_banner.jpg"
+            alt={facilityTitle}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: vis.bgPos }}
+            draggable={false}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:`linear-gradient(135deg,${vis.accentFrom} 0%,${vis.accentTo} 55%,rgba(0,0,0,0.45) 100%)`,
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-14"
+            style={{ background:'linear-gradient(to bottom,transparent,rgba(4,12,30,0.96))' }}
+          />
+          <div className="absolute top-3 left-3 flex items-center gap-2.5">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl border shadow-lg"
               style={{
-                background: domainNode.color,
-                boxShadow: `0 0 12px ${domainNode.color}`,
+                background:`rgba(${domainNode.accentRgb},0.22)`,
+                borderColor:`rgba(${domainNode.accentRgb},0.6)`,
+                backdropFilter:'blur(8px)',
               }}
-            />
-            <span
-              className="text-[10px] font-mono font-bold uppercase tracking-wider truncate"
-              style={{ color: domainNode.color }}
             >
-              {domainNode.tier}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {/* Prev / Next Facility Navigator */}
-            {onSelectAsset && (
-              <div className="flex items-center bg-slate-900/80 border border-slate-700/60 rounded-lg overflow-hidden mr-1">
-                <button
-                  onClick={() => onSelectAsset(prevFacility)}
-                  className="px-1.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Previous Facility"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-[10px] font-mono text-slate-400 px-1 border-x border-slate-800">
-                  {currentIndex + 1}/{ORDERED_FACILITIES.length}
-                </span>
-                <button
-                  onClick={() => onSelectAsset(nextFacility)}
-                  className="px-1.5 py-1 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Next Facility"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+              {vis.emoji}
+            </div>
+            <div>
+              <div className="text-[10px] font-mono font-bold uppercase tracking-widest flex items-center gap-1" style={{color:domainNode.color}}>
+                <StatIcon className="w-3 h-3" />
+                <span>{vis.statLabel}</span>
               </div>
-            )}
-
-            <button
-              onClick={onClose}
-              className="p-1 rounded-lg bg-polar-dark/90 text-slate-400 hover:text-white hover:bg-slate-700/60 border border-slate-700/50 transition-colors cursor-pointer"
-              title="Close Card"
+              <div className="text-[10px] font-mono text-white/55 mt-0.5">{stationId.toUpperCase()} BASE</div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 p-1.5 rounded-lg text-white/70 hover:text-white border border-white/20 hover:border-white/50 transition-colors cursor-pointer"
+            style={{ background:'rgba(0,0,0,0.5)', backdropFilter:'blur(6px)' }}
+            title="Close"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          <div className="absolute bottom-2.5 left-3 right-12">
+            <div
+              className="text-[13px] font-mono font-bold leading-snug"
+              style={{ color:'#fff', textShadow:'0 1px 8px rgba(0,0,0,0.95)' }}
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
+              {facilityTitle}
+            </div>
           </div>
         </div>
 
-        {/* Selected 3D Building Context Bar */}
-        <div className="px-4 pt-2 pb-1 flex items-center justify-between text-xs flex-shrink-0 bg-slate-950/40">
-          <div className="flex items-center gap-1.5 min-w-0 text-slate-300">
-            <Layers className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-            <span className="font-semibold text-slate-200 truncate">{facilityTitle}</span>
-          </div>
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex-shrink-0">
-            {stationId.toUpperCase()} BASE
-          </span>
-        </div>
-
-        {/* Scrollable Container for 2D Operational Domain Card */}
-        <div className="p-3 pt-2 overflow-y-auto max-h-[calc(100vh-14rem)] space-y-2 custom-scrollbar">
+        {/* SCROLLABLE DOMAIN CARD */}
+        <div
+          className="p-3 pt-2 overflow-y-auto flex-1 space-y-2 custom-scrollbar"
+          style={{ maxHeight:'calc(100vh - 19rem)' }}
+        >
           <OperationalDomainCard
             node={domainNode}
             data={domainData}
@@ -185,26 +173,26 @@ export const AssetInfoPanel: React.FC<Props> = ({
               outgoing: causalConduits.outgoing,
               onFocusDomain: handleDomainFocus,
             }}
-            onClick={() => navigate(`/station/${stationId}/${domainNode.route}`)}
+            onClick={()=>navigate(`/station/${stationId}/${domainNode.route}`)}
             className="!shadow-none !border-cyan-500/40"
           />
         </div>
 
-        {/* Bottom Quick Cockpit Bar */}
+        {/* BOTTOM ACTION BAR */}
         <div
-          className="px-4 py-2 border-t flex items-center justify-between text-[11px] font-mono bg-black/30"
-          style={{ borderColor: `rgba(${domainNode.accentRgb}, 0.2)` }}
+          className="px-4 py-2.5 border-t flex items-center justify-between text-[11px] font-mono bg-black/40 flex-shrink-0"
+          style={{ borderColor:`rgba(${domainNode.accentRgb},0.25)` }}
         >
           <span className="text-slate-400 flex items-center gap-1.5">
             <Activity className="w-3 h-3 text-emerald-400" />
             Live Telemetry Synced
           </span>
-
           <button
-            onClick={() => navigate(`/station/${stationId}/${domainNode.route}`)}
-            className="flex items-center gap-1 font-bold text-cyan-300 hover:text-cyan-100 hover:underline transition-colors cursor-pointer"
+            onClick={()=>navigate(`/station/${stationId}/${domainNode.route}`)}
+            className="flex items-center gap-1 font-bold hover:underline transition-colors cursor-pointer"
+            style={{ color:domainNode.color }}
           >
-            <span>Open Domain Cockpit</span>
+            <span>Open Full Cockpit</span>
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>

@@ -35,10 +35,10 @@ body {
 }
 
 .glass-panel-glow {
-  background: rgba(13, 35, 64, 0.8);
+  background: rgba(13, 35, 64, 0.85);
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(0, 229, 255, 0.35);
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* Telemetry number styling */

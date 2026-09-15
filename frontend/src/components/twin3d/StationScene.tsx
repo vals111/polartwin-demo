@@ -930,46 +930,7 @@ function buildTerrain(isMaitri:boolean):THREE.Group{
     g.add(dMesh);
   }
 
-  // Ice Patches with Specular Glint (Natural polar blue ice)
-  const iceMat=new THREE.MeshStandardMaterial({
-    color:0x8ec3ea,
-    roughness:0.15,
-    metalness:0.20,
-    transparent:true,
-    opacity:0.85,
-  });
-  const icePatches:Array<[number,number,number,number,number]> = [
-    [-34,-26, 6.2, 4.4, 0.4],
-    [32,-28,  5.8, 4.2,-0.3],
-    [-38,24,  6.5, 4.8, 0.6],
-    [30,36,   6.8, 4.6, 0.2],
-    [-18,-35, 5.5, 3.8, 0.1],
-    [16,38,   5.8, 4.0,-0.5],
-  ];
-  for(const [ix,iz,iw,id,ir] of icePatches){
-    const iceMesh=new THREE.Mesh(new THREE.CylinderGeometry(iw/2,iw/2,0.02,16),iceMat);
-    iceMesh.scale.set(1.0,1.0,id/iw);
-    iceMesh.rotation.y=ir;
-    iceMesh.position.set(ix,0.04,iz);
-    iceMesh.receiveShadow=true;
-    g.add(iceMesh);
-  }
-
-  // Granite Scree nunatak rocks at outer edges
-  const rockMat=new THREE.MeshStandardMaterial({color:0x2a3340,roughness:0.92,metalness:0.15,flatShading:true});
-  const screePositions:Array<[number,number,number]> = [
-    [-48,-25,1.5],[-49,-12,1.2],[-48,22,1.6],[-49,32,1.3],
-    [48,-22,1.4],[49,10,1.2],[48,26,1.1],[49,-30,1.7],
-    [-30,-40,1.4],[-15,-41,1.6],[18,-40,1.5],[32,-41,1.2],
-    [-32,45,1.4],[22,46,1.2],[-8,-41,1.1],[10,46,1.5],
-  ];
-  for(const [rx,rz,rs] of screePositions){
-    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(rs*0.55,1),rockMat);
-    rock.scale.set(1.0+Math.random()*0.4,0.6+Math.random()*0.5,1.0+Math.random()*0.4);
-    rock.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);
-    rock.position.set(rx,rs*0.25,rz);
-    rock.castShadow=true; rock.receiveShadow=true; g.add(rock);
-  }
+  // Ice patches and perimeter rocks removed (appeared as dark blobs on snow)
 
   // Mountains
   const midMountains=createJaggedMountainMesh(320,55,140,50,-80,42.0,4.2);
@@ -996,45 +957,7 @@ function buildTerrain(isMaitri:boolean):THREE.Group{
   return g;
 }
 
-// =============================================================================
-// Snow Particle System (Dusk Polar Snowfall)
-// =============================================================================
-function buildSnowParticles():{mesh:THREE.Points;update:(t:number)=>void}{
-  const N=3000; const SPREAD=80; const HEIGHT=32;
-  const positions=new Float32Array(N*3);
-  const velocities=new Float32Array(N*3);
-  const phases=new Float32Array(N);
-  for(let i=0;i<N;i++){
-    positions[i*3]=(Math.random()-0.5)*SPREAD;
-    positions[i*3+1]=Math.random()*HEIGHT;
-    positions[i*3+2]=(Math.random()-0.5)*SPREAD;
-    velocities[i*3]=(Math.random()-0.5)*0.015;
-    velocities[i*3+1]=-(0.04+Math.random()*0.06);
-    velocities[i*3+2]=(Math.random()-0.5)*0.015;
-    phases[i]=Math.random()*Math.PI*2;
-  }
-  const geo=new THREE.BufferGeometry();
-  const posAttr=new THREE.BufferAttribute(positions,3);
-  posAttr.setUsage(THREE.DynamicDrawUsage);
-  geo.setAttribute('position',posAttr);
-  const pm=new THREE.PointsMaterial({color:0xffffff,size:0.22,transparent:true,opacity:0.75,sizeAttenuation:true,depthWrite:false});
-  const mesh=new THREE.Points(geo,pm);
-  const update=(t:number)=>{
-    const arr=posAttr.array as Float32Array;
-    for(let i=0;i<N;i++){
-      arr[i*3]+=velocities[i*3]+Math.sin(t*0.6+phases[i])*0.005;
-      arr[i*3+1]+=velocities[i*3+1];
-      arr[i*3+2]+=velocities[i*3+2]+Math.cos(t*0.5+phases[i])*0.005;
-      if(arr[i*3+1]<-0.5){
-        arr[i*3]=(Math.random()-0.5)*SPREAD;
-        arr[i*3+1]=HEIGHT+Math.random()*3;
-        arr[i*3+2]=(Math.random()-0.5)*SPREAD;
-      }
-    }
-    posAttr.needsUpdate=true;
-  };
-  return {mesh,update};
-}
+// Snow particle system removed for performance
 
 // =============================================================================
 // Single Continuous Low Perimeter Wall / Safety Railing (Encompassing Spaced Campus)
@@ -1428,15 +1351,17 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
   const camRef=useRef<THREE.PerspectiveCamera|null>(null);
   const ctrlRef=useRef<OrbitControls|null>(null);
   const facGrps=useRef<Map<string,THREE.Group>>(new Map());
-  const glowRings=useRef<Map<string,THREE.Mesh>>(new Map());
   const relLines=useRef<THREE.Group>(new THREE.Group());
   const beacons=useRef<THREE.Mesh[]>([]);
   const frameRef=useRef<number>(0);
   const clockRef=useRef(new THREE.Clock());
   const selRef=useRef<string|null>(selectedAsset);
   const showRelRef=useRef(showRelationships);
-  const snowRef=useRef<{update:(t:number)=>void}|null>(null);
-  const [pins,setPins]=useState<Pin[]>([]);
+  // Stable ref for onSelectAsset — avoids scene rebuild when parent re-renders
+  const onSelectAssetRef=useRef(onSelectAsset);
+  useEffect(()=>{onSelectAssetRef.current=onSelectAsset;},[onSelectAsset]);
+  // DOM refs for zero-React-overhead HUD pin updates
+  const pinElemsRef=useRef<Map<string,HTMLDivElement>>(new Map());
   const sceneRef=useRef<THREE.Scene|null>(null);
   const isMaitri=stationId!=='bharati';
   const FACILITIES=isMaitri?MAITRI_FACILITIES:BHARATI_FACILITIES;
@@ -1472,12 +1397,11 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
   useEffect(()=>{
     const el=mountRef.current; if(!el) return;
     const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
     renderer.setSize(el.clientWidth,el.clientHeight);
     renderer.shadowMap.enabled=true;
-    renderer.shadowMap.type=THREE.PCFShadowMap;
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     renderer.toneMapping=THREE.ACESFilmicToneMapping;
-    // Crisp daylight polar exposure showing pure natural white snow and rich colored buildings
     renderer.toneMappingExposure=1.04;
     renderer.setClearColor(0xbfe0f7);
     el.appendChild(renderer.domElement);
@@ -1493,12 +1417,24 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     scene.add(skyDome);
 
     // Camera positioned to view the spacious, sprawling campus comfortably
-    const cam=new THREE.PerspectiveCamera(45,el.clientWidth/el.clientHeight,0.1,800);
-    cam.position.set(48,58,72); cam.lookAt(0,0,4); camRef.current=cam;
+    const cam=new THREE.PerspectiveCamera(48,el.clientWidth/el.clientHeight,0.1,800);
+    // Low front-facing south view: station fills frame, mountains as backdrop
+    cam.position.set(2,36,95); cam.lookAt(0,2,4); camRef.current=cam;
     const ctrl=new OrbitControls(cam,renderer.domElement);
     ctrl.enableDamping=true; ctrl.dampingFactor=0.07;
     ctrl.maxPolarAngle=Math.PI/2.04; ctrl.minDistance=10; ctrl.maxDistance=280;
-    ctrl.target.set(0,0,4); ctrlRef.current=ctrl;
+    ctrl.target.set(0,2,4); ctrlRef.current=ctrl;
+
+    // Touch gesture configuration:
+    //  1 finger  = orbit / rotate the view
+    //  2 fingers = pinch to zoom + drag to pan
+    ctrl.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
+    ctrl.rotateSpeed=0.55;   // comfortable single-finger orbit
+    ctrl.panSpeed=0.45;      // gentle two-finger pan
+    ctrl.zoomSpeed=0.75;     // smooth two-finger pinch zoom
+
+    // Prevent browser scroll/zoom hijacking touch on the canvas
+    renderer.domElement.style.touchAction='none';
 
     // --- Clean Polar Daylight Lighting (Natural Pure White Snow + Vibrant Building Colors) ---
     // 1. Natural polar skylight ambient fill
@@ -1508,12 +1444,12 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     const sun=new THREE.DirectionalLight(0xffffff,1.95);
     sun.position.set(65,42,38);
     sun.castShadow=true;
-    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.mapSize.set(1024,1024);
     sun.shadow.camera.left=-90; sun.shadow.camera.right=90;
     sun.shadow.camera.top=90; sun.shadow.camera.bottom=-90;
     sun.shadow.camera.near=10; sun.shadow.camera.far=240;
     sun.shadow.bias=-0.0003;
-    sun.shadow.radius=2.2;
+    sun.shadow.radius=1.5;
     scene.add(sun);
 
     // 3. Polar fill light from opposite quadrant
@@ -1530,11 +1466,10 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     // Roads, pathways, aprons, vehicles, elevated pipes, and low safety boundary
     scene.add(buildStationDetails());
 
-    // Falling snow particles
-    const snow=buildSnowParticles(); scene.add(snow.mesh); snowRef.current=snow;
+    // Snow particles removed for performance
 
     // Facility Buildings
-    facGrps.current.clear(); glowRings.current.clear(); beacons.current=[];
+    facGrps.current.clear(); beacons.current=[];
     const bColorMap:Record<string,number>={
       water_facility:0x3882f6,waste_management:0x22c55e,logistics_area:0xf97316,
     };
@@ -1554,19 +1489,13 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
         case 'small':     bld=buildSmallFacility(bColorMap[fac.id]??0x3882f6,sc); break;
         default:          bld=buildMainStation(sc);
       }
+      // Scale all buildings up 22% for better visibility
+      bld.scale.multiplyScalar(1.22);
       bld.position.set(...fac.position); bld.userData.facId=fac.id; scene.add(bld);
       facGrps.current.set(fac.id,bld);
 
       // Collect red beacons for blinking
       bld.traverse((obj)=>{if((obj as THREE.Mesh).userData?.beacon) beacons.current.push(obj as THREE.Mesh);});
-
-      // Ground Glow Ring
-      const ring=new THREE.Mesh(
-        new THREE.RingGeometry(3.5*sc,4.2*sc,32),
-        new THREE.MeshBasicMaterial({color:fac.glowHex,transparent:true,opacity:0.25,side:THREE.DoubleSide})
-      );
-      ring.rotation.x=-Math.PI/2; ring.position.set(fac.position[0],0.03,fac.position[2]);
-      scene.add(ring); glowRings.current.set(fac.id,ring);
     }
 
     scene.add(relLines.current);
@@ -1585,10 +1514,34 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
       facGrps.current.forEach((grp)=>grp.traverse((c)=>{if((c as THREE.Mesh).isMesh) meshes.push(c as THREE.Mesh);}));
       const hits=raycaster.intersectObjects(meshes,false);
       if(hits.length>0){
+        // Walk up to find the building group with facId — check EVERY node including scene children
         let cur:THREE.Object3D|null=hits[0].object;
-        while(cur&&cur.parent!==scene){
-          if(cur.userData?.facId){onSelectAsset(cur.userData.facId);return;}
-          cur=cur.parent;
+        while(cur){
+          if(cur.userData?.facId){
+            const facId=cur.userData.facId as string;
+            // Fire zoom animation directly — no React effect timing issues
+            const facDef=FACILITIES.find(f=>f.id===facId);
+            if(facDef&&camRef.current&&ctrlRef.current){
+              const tgt=new THREE.Vector3(...facDef.position);
+              const startCam=camRef.current.position.clone();
+              const endCam=tgt.clone().add(new THREE.Vector3(14,18,18));
+              const startTgt=ctrlRef.current.target.clone();
+              let t0:number|null=null;
+              const doZoom=(ts:number)=>{
+                if(!t0) t0=ts;
+                const p=Math.min(1,(ts-t0)/700);
+                const e2=p<0.5?2*p*p:-1+(4-2*p)*p;
+                camRef.current?.position.lerpVectors(startCam,endCam,e2);
+                ctrlRef.current?.target.lerpVectors(startTgt,tgt,e2);
+                if(p<1) requestAnimationFrame(doZoom);
+                else ctrlRef.current?.update();
+              };
+              requestAnimationFrame(doZoom);
+            }
+            onSelectAssetRef.current(facId);
+            return;
+          }
+          cur=cur.parent;  // walk all the way up, including scene-level group
         }
       }
     };
@@ -1596,67 +1549,157 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     dom.addEventListener('mousedown',onMouseDown);
     dom.addEventListener('mouseup',onMouseUp);
 
-    // Animation Loop
+    // ── Touch building click (single-finger tap on a 3D mesh) ──
+    // A "tap" = touchstart followed by touchend with minimal movement
+    let touchDownX=0,touchDownY=0;
+    const onTouchStart=(e:TouchEvent)=>{
+      if(e.touches.length===1){
+        touchDownX=e.touches[0].clientX;
+        touchDownY=e.touches[0].clientY;
+      }
+    };
+    const onTouchEnd=(e:TouchEvent)=>{
+      // Only treat as tap when single finger and barely moved
+      if(e.changedTouches.length!==1) return;
+      const t=e.changedTouches[0];
+      if(Math.hypot(t.clientX-touchDownX,t.clientY-touchDownY)>10) return;
+      const rect=dom.getBoundingClientRect();
+      mouse.x=((t.clientX-rect.left)/rect.width)*2-1;
+      mouse.y=-((t.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera(mouse,cam);
+      const meshes:THREE.Mesh[]=[];
+      facGrps.current.forEach((grp)=>grp.traverse((c)=>{if((c as THREE.Mesh).isMesh) meshes.push(c as THREE.Mesh);}));
+      const hits=raycaster.intersectObjects(meshes,false);
+      if(hits.length>0){
+        let cur:THREE.Object3D|null=hits[0].object;
+        while(cur){
+          if(cur.userData?.facId){
+            const facId=cur.userData.facId as string;
+            const facDef=FACILITIES.find(f=>f.id===facId);
+            if(facDef&&camRef.current&&ctrlRef.current){
+              const tgt=new THREE.Vector3(...facDef.position);
+              const startCam=camRef.current.position.clone();
+              const endCam=tgt.clone().add(new THREE.Vector3(14,18,18));
+              const startTgt=ctrlRef.current.target.clone();
+              let t0:number|null=null;
+              const doZoom=(ts:number)=>{
+                if(!t0) t0=ts;
+                const p=Math.min(1,(ts-t0)/700);
+                const e2=p<0.5?2*p*p:-1+(4-2*p)*p;
+                camRef.current?.position.lerpVectors(startCam,endCam,e2);
+                ctrlRef.current?.target.lerpVectors(startTgt,tgt,e2);
+                if(p<1) requestAnimationFrame(doZoom);
+                else ctrlRef.current?.update();
+              };
+              requestAnimationFrame(doZoom);
+            }
+            onSelectAssetRef.current(facId);
+            return;
+          }
+          cur=cur.parent;
+        }
+      }
+    };
+    dom.addEventListener('touchstart',onTouchStart,{passive:true});
+    dom.addEventListener('touchend',onTouchEnd,{passive:true});
+
+    // Pre-build cached relationship lines (rebuilt only when selection changes)
     const posMap=new Map(FACILITIES.map(f=>[f.id,f.position]));
+    let cachedRelSel:string|null=null;
+    const rebuildRelLines=(sel:string|null)=>{
+      while(relLines.current.children.length){
+        const c=relLines.current.children[0];
+        (c as THREE.Line).geometry?.dispose();
+        ((c as THREE.Line).material as THREE.Material)?.dispose();
+        relLines.current.remove(c);
+      }
+      if(!sel) return;
+      const targets=RELATIONSHIPS[sel]??[];
+      const srcPos=posMap.get(sel);
+      if(!srcPos) return;
+      for(const rel of targets){
+        const tgtPos=posMap.get(rel.target);
+        if(!tgtPos) continue;
+        const pts:THREE.Vector3[]=[];
+        const p0=new THREE.Vector3(srcPos[0],1.5,srcPos[2]);
+        const p2=new THREE.Vector3(tgtPos[0],1.5,tgtPos[2]);
+        const mid=p0.clone().lerp(p2,0.5); mid.y+=Math.min(5,p0.distanceTo(p2)*0.28);
+        for(let i=0;i<=24;i++){
+          const u=i/24;
+          pts.push(new THREE.Vector3(
+            (1-u)*(1-u)*p0.x+2*(1-u)*u*mid.x+u*u*p2.x,
+            (1-u)*(1-u)*p0.y+2*(1-u)*u*mid.y+u*u*p2.y,
+            (1-u)*(1-u)*p0.z+2*(1-u)*u*mid.z+u*u*p2.z,
+          ));
+        }
+        const gLine=new THREE.BufferGeometry().setFromPoints(pts);
+        const mLine=new THREE.LineBasicMaterial({color:REL_COLORS[rel.severity]??0x00d4ff,transparent:true,opacity:0.85});
+        relLines.current.add(new THREE.Line(gLine,mLine));
+      }
+      cachedRelSel=sel;
+    };
+
+    // Reusable vector to avoid per-frame allocation
+    const _wp=new THREE.Vector3();
+
+    // Fixed pin heights per facility — tuned so no labels overlap
+    // (defined once here, not re-created every animation frame)
+    const PIN_Y: Record<string,number> = {
+      solar_array:     14,  // Z=-32, far back centre
+      environment:     11,  // Z=-30, far back right
+      research_lab:    10,  // Z=-18, back left
+      power_house:      9,  // Z=-16, back right
+      communication:    8,  // Z=-10, mid left
+      fuel_depot:       7,  // Z=-8,  mid right
+      main_station:     6,  // Z=0,   centre hub
+      storage:          6,  // Z=14,  front right
+      water_facility:   5,  // Z=16,  front centre-right
+      personnel_area:   5,  // Z=16,  front left
+      logistics_area:   4,  // Z=28,  far front right
+      waste_management: 4,  // Z=30,  far front left
+    };
+
+    // Animation Loop
     const animate=()=>{
       frameRef.current=requestAnimationFrame(animate);
       const t=clockRef.current.getElapsedTime();
       ctrl.update();
-      if(snowRef.current) snowRef.current.update(t);
 
-      // Blink red beacons
-      const bOp=(Math.sin(t*4)+1)/2;
+      // Blink red beacons (update only when intensity bucket changes)
+      const bBright=(Math.sin(t*4)+1)>1.0;
+      const newIntensity=bBright?3.5:0.2;
       for(const b of beacons.current){
-        ((b.material as THREE.MeshStandardMaterial)).emissiveIntensity=bOp>0.5?3.5:0.2;
+        const bm=b.material as THREE.MeshStandardMaterial;
+        if(bm.emissiveIntensity!==newIntensity) bm.emissiveIntensity=newIntensity;
       }
 
-      // Selection pulse & ring opacity
+      // Rebuild relationship lines only when selection changes
       const sel=selRef.current;
-      glowRings.current.forEach((ring,id)=>{
-        const isSel=id===sel;
-        const mat=ring.material as THREE.MeshBasicMaterial;
-        mat.opacity=isSel?0.55+Math.sin(t*3)*0.2:0.2;
-        ring.scale.setScalar(isSel?1.0+Math.sin(t*3)*0.08:1.0);
-      });
-
-      // Relationship flow lines
-      while(relLines.current.children.length) relLines.current.remove(relLines.current.children[0]);
-      if(showRelRef.current&&sel){
-        const targets=RELATIONSHIPS[sel]??[];
-        const srcPos=posMap.get(sel);
-        if(srcPos){
-          for(const rel of targets){
-            const tgtPos=posMap.get(rel.target);
-            if(!tgtPos) continue;
-            const pts:THREE.Vector3[]=[];
-            const p0=new THREE.Vector3(srcPos[0],1.5,srcPos[2]);
-            const p2=new THREE.Vector3(tgtPos[0],1.5,tgtPos[2]);
-            const mid=p0.clone().lerp(p2,0.5); mid.y+=Math.min(5,p0.distanceTo(p2)*0.28);
-            for(let i=0;i<=24;i++){
-              const u=i/24;
-              pts.push(new THREE.Vector3(
-                (1-u)*(1-u)*p0.x+2*(1-u)*u*mid.x+u*u*p2.x,
-                (1-u)*(1-u)*p0.y+2*(1-u)*u*mid.y+u*u*p2.y,
-                (1-u)*(1-u)*p0.z+2*(1-u)*u*mid.z+u*u*p2.z,
-              ));
-            }
-            const gLine=new THREE.BufferGeometry().setFromPoints(pts);
-            const mLine=new THREE.LineBasicMaterial({color:REL_COLORS[rel.severity]??0x00d4ff,transparent:true,opacity:0.85});
-            relLines.current.add(new THREE.Line(gLine,mLine));
-          }
-        }
+      if(showRelRef.current){
+        if(cachedRelSel!==sel) rebuildRelLines(sel);
+      } else {
+        if(cachedRelSel!==null) rebuildRelLines(null);
       }
 
       renderer.render(scene,cam);
 
-      // Project HUD pins
-      const newPins:Pin[]=[];
+      // Update HUD pins via direct DOM — zero React re-renders
+      const pinElems=pinElemsRef.current;
       for(const fac of FACILITIES){
-        const wp=new THREE.Vector3(fac.position[0],(fac.scale??1)*3.8+1.2,fac.position[2]);
-        const p=project(wp);
-        newPins.push({id:fac.id,x:p.x,y:p.y,vis:p.vis});
+        const el2=pinElems.get(fac.id);
+        if(!el2) continue;
+      // Per-facility pin heights (from PIN_Y table defined above animate loop)
+      const pinY = PIN_Y[fac.id] ?? (fac.scale??1)*4.5+1.5;
+      _wp.set(fac.position[0], pinY, fac.position[2]);
+        const p=project(_wp);
+        if(p.vis){
+          el2.style.left=p.x+'px';
+          el2.style.top=p.y+'px';
+          el2.style.display='';
+        } else {
+          el2.style.display='none';
+        }
       }
-      setPins(newPins);
     };
     animate();
 
@@ -1672,48 +1715,39 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
       window.removeEventListener('resize',onResize);
       dom.removeEventListener('mousedown',onMouseDown);
       dom.removeEventListener('mouseup',onMouseUp);
+      dom.removeEventListener('touchstart',onTouchStart);
+      dom.removeEventListener('touchend',onTouchEnd);
       ctrl.dispose(); renderer.dispose();
       if(dom&&dom.parentNode===el) el.removeChild(dom);
     };
-  },[isMaitri,project,onSelectAsset]);
+  },[isMaitri,project]);
 
-  // Smooth camera zoom on selected asset
-  useEffect(()=>{
-    if(!selectedAsset||!camRef.current||!ctrlRef.current) return;
-    const fac=FACILITIES.find(f=>f.id===selectedAsset);
-    if(!fac) return;
-    const target=new THREE.Vector3(...fac.position);
-    const startCam=camRef.current.position.clone();
-    const endCam=target.clone().add(new THREE.Vector3(12,16,16));
-    const startTgt=ctrlRef.current.target.clone();
-    let startTime:number|null=null;
-    const animCam=(ts:number)=>{
-      if(!startTime) startTime=ts;
-      const prog=Math.min(1,(ts-startTime)/650);
-      const ease=prog<0.5?2*prog*prog:-1+(4-2*prog)*prog;
-      camRef.current?.position.lerpVectors(startCam,endCam,ease);
-      ctrlRef.current?.target.lerpVectors(startTgt,target,ease);
-      if(prog<1) requestAnimationFrame(animCam);
-    };
-    requestAnimationFrame(animCam);
-  },[selectedAsset]);
+  // HUD pin selection — no zoom, just select
+  // (zoom only fires from 3D mesh click handler above)
 
   return(
     <div style={{position:'relative',width:'100%',height:'100%',overflow:'hidden',background:'#102746'}}>
       <div ref={mountRef} style={{width:'100%',height:'100%'}}/>
 
-      {/* Floating 2D HUD Pins */}
-      {pins.map(pin=>{
-        if(!pin.vis) return null;
-        const fac=FACILITIES.find(f=>f.id===pin.id);
-        if(!fac) return null;
+      {/* Floating 2D HUD Pins — rendered once, updated via DOM refs in animate loop */}
+      {FACILITIES.map(fac=>{
         const isSel=fac.id===selectedAsset;
         const rgb=hexToRgb(fac.color);
         const liveLabel=getLiveSubLabel(fac.id,fac.subLabel);
         return(
-          <div key={fac.id} onClick={()=>onSelectAsset(fac.id)} style={{position:'absolute',left:pin.x,top:pin.y,transform:'translate(-50%,-100%)',pointerEvents:'auto',cursor:'pointer',zIndex:isSel?30:10,transition:'opacity 0.2s'}}>
+          <div
+            key={fac.id}
+            ref={(el)=>{ if(el) pinElemsRef.current.set(fac.id,el); }}
+            onClick={()=>onSelectAsset(fac.id)}
+            style={{
+              position:'absolute',left:0,top:0,
+              transform:'translate(-50%,-100%)',
+              pointerEvents:'auto',cursor:'pointer',
+              zIndex:isSel?30:10,transition:'opacity 0.2s'
+            }}
+          >
             <div style={{position:'absolute',bottom:-14,left:'50%',transform:'translateX(-50%)',width:isSel?2:1.5,height:14,background:`linear-gradient(to bottom,${fac.color},${fac.color}00)`,opacity:isSel?0.95:0.6}}/>
-            <div style={{background:isSel?`linear-gradient(135deg,rgba(4,14,35,0.97) 0%,rgba(${rgb},0.18) 100%)`:'rgba(6,16,38,0.88)',border:`1.5px solid ${isSel?fac.color:fac.color+'60'}`,borderRadius:9,padding:'5px 11px 5px 8px',minWidth:138,backdropFilter:'blur(14px)',boxShadow:isSel?`0 0 18px rgba(${rgb},0.4),0 4px 20px rgba(0,0,0,0.8)`:'0 3px 14px rgba(0,0,0,0.5)',transition:'all 0.2s ease',userSelect:'none'}}>
+            <div style={{background:isSel?`linear-gradient(135deg,rgba(4,14,35,0.97) 0%,rgba(${rgb},0.18) 100%)`:'rgba(6,16,38,0.88)',border:`1.5px solid ${isSel?fac.color:fac.color+'60'}`,borderRadius:9,padding:'5px 11px 5px 8px',minWidth:138,backdropFilter:'blur(14px)',boxShadow:isSel?'0 4px 20px rgba(0,0,0,0.8)':'0 3px 14px rgba(0,0,0,0.5)',transition:'all 0.2s ease',userSelect:'none'}}>
               <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
                 <span style={{fontSize:13,width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',background:`rgba(${rgb},0.18)`,borderRadius:5,flexShrink:0}}>{fac.icon}</span>
                 <span style={{fontSize:11,fontWeight:700,color:fac.color,fontFamily:'monospace',letterSpacing:'0.03em',whiteSpace:'nowrap'}}>{fac.label}</span>
@@ -1723,10 +1757,6 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
           </div>
         );
       })}
-      <div style={{position:'absolute',top:12,left:12,background:'rgba(6,18,40,0.88)',border:'1px solid rgba(0,212,255,0.3)',borderRadius:8,padding:'5px 12px',display:'flex',alignItems:'center',gap:8,pointerEvents:'none',zIndex:20,backdropFilter:'blur(10px)',boxShadow:'0 2px 10px rgba(0,0,0,0.4)'}}>
-        <span style={{width:8,height:8,borderRadius:'50%',background:'#00d4ff',display:'block',boxShadow:'0 0 8px #00d4ff'}}/>
-        <span style={{fontSize:11,fontFamily:'monospace',color:'#38bdf8',fontWeight:700,letterSpacing:'0.08em'}}>3D STATION TWIN  |  {isMaitri?'MAITRI INLAND':'BHARATI COASTAL'}</span>
-      </div>
     </div>
   );
 };

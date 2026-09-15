@@ -88,31 +88,22 @@ export const OperationalDomainCard: React.FC<Props> = ({
       style={style}
       className={`rounded-2xl px-4 py-3 select-none transition-all duration-200 flex flex-col justify-between group overflow-hidden relative cursor-pointer ${
         isSelected
-          ? 'ring-2 ring-cyan-400 border-2 border-cyan-400 bg-polar-navy/95 shadow-[0_0_30px_rgba(0,242,254,0.4)] z-25'
+          ? 'ring-1 ring-cyan-400 border border-cyan-400 bg-polar-navy/95 shadow-xl z-25'
           : isHovered
-          ? 'bg-polar-navy/95 border-2 shadow-2xl z-20 scale-[1.02]'
+          ? 'bg-polar-navy/95 border-2 shadow-xl z-20 scale-[1.01]'
           : isUpstream
-          ? 'bg-cyan-950/50 border-2 border-cyan-400/80 shadow-lg shadow-cyan-500/20 z-10'
+          ? 'bg-cyan-950/50 border-2 border-cyan-400/80 shadow-md z-10'
           : isDownstream
-          ? 'bg-amber-950/50 border-2 border-amber-400/80 shadow-lg shadow-amber-500/20 z-10'
+          ? 'bg-amber-950/50 border-2 border-amber-400/80 shadow-md z-10'
           : isDimmed
           ? 'opacity-25 bg-polar-dark/40 border border-polar-border/40 z-0'
           : 'glass-panel bg-polar-dark/90 hover:bg-polar-navy/80 border border-polar-border/80 hover:border-cyan-500/50 shadow-md z-0'
       } ${className}`}
     >
-      {/* Top Glowing Color Accent Stripe */}
+      {/* Top Color Accent Stripe */}
       <div
         className="absolute top-0 left-0 right-0 h-1 transition-all group-hover:h-1.5"
         style={{ background: node.color }}
-      />
-
-      {/* Glowing Aura on Hover */}
-      <div
-        className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity"
-        style={{
-          boxShadow: isHovered ? `0 0 30px rgba(${node.accentRgb}, 0.35)` : undefined,
-          borderColor: isHovered ? node.color : undefined
-        }}
       />
 
       {/* ── SECTION 1: HEADER (Identity, Tier Tag, Readiness & Quick Action) ── */}
@@ -180,7 +171,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
         <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-300 flex-shrink-0">
           <span
             className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
-            style={{ background: node.color, boxShadow: `0 0 8px ${node.color}` }}
+            style={{ background: node.color }}
           />
           <span className="font-semibold text-slate-200">{t?.status ?? 'ONLINE'}</span>
         </div>

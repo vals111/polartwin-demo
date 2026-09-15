@@ -42,7 +42,6 @@ const DispatchBar: React.FC<{
           style={{
             width: `${recPct}%`,
             background: `linear-gradient(to right, ${color}88, ${color})`,
-            boxShadow: `0 0 10px ${color}44`,
           }}
         />
         {/* Labels inside bar */}
@@ -208,7 +207,7 @@ export const OptimizationPage: React.FC = () => {
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                   : 'bg-gradient-to-r text-white border border-transparent shadow-lg'
               }`}
-              style={!applied ? { background: `linear-gradient(to right, ${accentColor}cc, ${accentColor})`, boxShadow: `0 0 20px ${accentColor}33` } : {}}
+              style={!applied ? { background: `linear-gradient(to right, ${accentColor}cc, ${accentColor})` } : {}}
             >
               {applying ? (
                 <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Applying…</>

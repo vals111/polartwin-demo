@@ -63,7 +63,7 @@ export const TankLevelBar: React.FC<TankLevelBarProps> = ({
           width,
           height,
           background: 'rgba(15,23,42,0.8)',
-          boxShadow: `0 0 20px ${bgGlow}, inset 0 0 10px rgba(0,0,0,0.4)`,
+          boxShadow: 'inset 0 0 10px rgba(0,0,0,0.4)',
         }}
       >
         {/* Grid lines */}
@@ -92,7 +92,6 @@ export const TankLevelBar: React.FC<TankLevelBarProps> = ({
           style={{
             height: `${clampedPct}%`,
             background: `linear-gradient(to top, ${activeColor}cc, ${activeColor}55)`,
-            boxShadow: `0 -2px 16px ${activeColor}66`,
           }}
         >
           {/* Wave shimmer on top */}

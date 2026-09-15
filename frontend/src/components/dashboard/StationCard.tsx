@@ -33,7 +33,7 @@ export const StationCard: React.FC<Props> = ({
       isSelected ? 'border-cyan-400 ring-1 ring-cyan-400/40 shadow-xl shadow-cyan-950/40' : 'hover:border-slate-600'
     }`}>
       {/* Background subtle radial glow */}
-      <div className="absolute -top-16 -right-16 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      
 
       <div>
         {/* Header */}

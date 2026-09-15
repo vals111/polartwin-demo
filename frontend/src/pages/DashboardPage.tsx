@@ -43,15 +43,9 @@ const StationCard: React.FC<{
 }) => {
   return (
     <div
-      className="glass-panel rounded-3xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:shadow-2xl group"
-      style={{ border: `2px solid ${borderColor}`, boxShadow: `0 0 40px ${shadowColor}` }}
+      className="glass-panel rounded-3xl flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-xl group"
+      style={{ border: `1.5px solid ${borderColor}` }}
     >
-      {/* Ambient glow */}
-      <div
-        className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none opacity-15 group-hover:opacity-25 transition-opacity"
-        style={{ background: accentColor }}
-      />
-
       {/* Top scan line animation */}
       <div
         className="absolute top-0 left-0 right-0 h-0.5 opacity-50"
@@ -170,10 +164,9 @@ const StationCard: React.FC<{
 
         <button
           onClick={onLaunch}
-          className="flex items-center gap-2 px-5 py-2.5 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all hover:scale-[1.03] active:scale-[0.97]"
+          className="flex items-center gap-2 px-5 py-2.5 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all hover:scale-[1.03] active:scale-[0.97]"
           style={{
             background: `linear-gradient(to right, ${accentColor}cc, ${accentColor})`,
-            boxShadow: `0 0 24px ${shadowColor}`,
           }}
         >
           <span>Launch Twin</span>

@@ -52,11 +52,11 @@ export const Navbar: React.FC = () => {
           title="POLARTWIN Antarctic Digital Twin"
         >
           {/* POLARTWIN Brand Logo */}
-          <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/40 shadow-lg shadow-cyan-500/15 transition-all duration-300 p-1 group-hover:scale-105 group-hover:border-cyan-400 group-hover:shadow-cyan-500/30">
+          <div className="relative flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/30 border border-cyan-500/50 shadow-md transition-all duration-300 p-1 group-hover:scale-105 group-hover:border-cyan-400">
             <img
               src="/logo.png"
               alt="POLARTWIN Logo"
-              className="h-full w-full object-contain rounded-lg drop-shadow-[0_0_8px_rgba(6,182,212,0.5)] transition-transform duration-300 group-hover:scale-110"
+              className="h-full w-full object-contain rounded-lg transition-transform duration-300 group-hover:scale-110"
             />
           </div>
 
@@ -99,7 +99,7 @@ export const Navbar: React.FC = () => {
           className={({ isActive }) =>
             `px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-2 ${
               isActive
-                ? 'bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                ? 'bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/60 shadow-sm'
                 : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`
           }
@@ -115,7 +115,7 @@ export const Navbar: React.FC = () => {
           className={({ isActive }) =>
             `px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-2 ${
               isActive
-                ? 'bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                ? 'bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/60 shadow-sm'
                 : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`
           }
@@ -131,7 +131,7 @@ export const Navbar: React.FC = () => {
           className={({ isActive }) =>
             `px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-2 ${
               isActive
-                ? 'bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/50 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
+                ? 'bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/60 shadow-sm'
                 : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
             }`
           }
@@ -148,7 +148,7 @@ export const Navbar: React.FC = () => {
             className={({ isActive }) =>
               `px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-2 ${
                 isActive
-                  ? 'bg-gradient-to-r from-amber-600/30 to-orange-500/30 text-amber-300 border border-amber-500/50 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                  ? 'bg-gradient-to-r from-amber-600/30 to-orange-500/30 text-amber-300 border border-amber-500/60 shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
               }`
             }

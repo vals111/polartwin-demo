@@ -175,7 +175,7 @@ const DispatchBar: React.FC<{ label: string; current: number; recommended: numbe
       <div className="relative h-5 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
         <div className="absolute inset-y-0 left-0 rounded-full opacity-25" style={{ width: `${curPct}%`, background: '#94a3b8' }} />
         <div className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-          style={{ width: `${recPct}%`, background: `linear-gradient(to right,${color}88,${color})`, boxShadow: `0 0 8px ${color}44` }} />
+          style={{ width: `${recPct}%`, background: `linear-gradient(to right,${color}88,${color})` }} />
       </div>
     </div>
   );

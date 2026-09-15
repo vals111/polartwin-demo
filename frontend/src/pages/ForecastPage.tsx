@@ -116,7 +116,7 @@ export const ForecastPage: React.FC = () => {
                   ? 'border-transparent text-white shadow-lg'
                   : 'bg-polar-dark/80 border-polar-border text-slate-400 hover:text-white hover:border-polar-border'
               }`}
-              style={active ? { background: `${d.color}22`, borderColor: `${d.color}55`, color: d.color, boxShadow: `0 0 20px ${d.color}22` } : {}}
+              style={active ? { background: `${d.color}22`, borderColor: `${d.color}55`, color: d.color } : {}}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{d.name}</span>
