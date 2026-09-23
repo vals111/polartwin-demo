@@ -379,11 +379,11 @@ export const OperationalDomainCard: React.FC<Props> = ({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex justify-between px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Data speed</span>
-                  <span className="font-bold text-blue-400">{t?.data speedMbps ?? 120} Mbps</span>
+                  <span className="font-bold text-blue-400">{t?.bandwidthMbps ?? 120} Mbps</span>
                 </div>
                 <div className="flex justify-between px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Signal delay</span>
-                  <span className="font-bold text-emerald-400">{t?.signal delayMs ?? 78}ms</span>
+                  <span className="font-bold text-emerald-400">{t?.latencyMs ?? 78}ms</span>
                 </div>
               </div>
               <div className="flex justify-between items-center text-[10.5px] px-2.5 py-1 rounded-lg" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>

@@ -177,8 +177,8 @@ const TREE_EDGES: TreeEdgeDef[] = [
   // 4. Environment -> Water (Direct conduit freeze hazard)
   { id: 'env-wat', from: 'environment', to: 'water', label: 'Conduit freeze hazard' },
 
-  // 5. Environment -> Communication (Weather layer RF charged particle effect attenuation)
-  { id: 'env-comm', from: 'environment', to: 'communication', label: 'Blizzard charged particle effect & RF attenuation' },
+  // 5. Environment -> Communication (Weather layer RF ionization attenuation)
+  { id: 'env-comm', from: 'environment', to: 'communication', label: 'Blizzard ionization & RF attenuation' },
 
   // 6. Logistics -> Energy & Fuel (Bulk AGO resupply tankers)
   { id: 'log-fl', from: 'logistics', to: 'energy_fuel', label: 'Annual diesel replenishment' },
@@ -189,8 +189,8 @@ const TREE_EDGES: TreeEdgeDef[] = [
   // 8. Infrastructure -> Equipment (Enclosure shelter for heavy machinery & pumps)
   { id: 'infra-eq', from: 'infrastructure', to: 'equipment', label: 'Machinery shelter & heating' },
 
-  // 9. Equipment -> Energy & Fuel (Mechanical power generator unit health & diesel generator synchro)
-  { id: 'eq-eng', from: 'equipment', to: 'energy_fuel', label: 'Diesel generator power generator unit uptime' },
+  // 9. Equipment -> Energy & Fuel (Mechanical generator health & diesel generator synchro)
+  { id: 'eq-eng', from: 'equipment', to: 'energy_fuel', label: 'Diesel generator alternator uptime' },
 
   // 10. Energy & Fuel -> Water (4.2 kW pipeline trace heating protection)
   { id: 'eng-wat', from: 'energy_fuel', to: 'water', label: '4.2 kW trace line heating' },
@@ -360,8 +360,8 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         score: 98,
         primaryKpi: `${comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160)} Mbps`,
         primaryLabel: 'LEO Constellation',
-        data speedMbps: comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160),
-        signal delayMs: comm?.latency_ms ?? (isMaitri ? 78 : 65),
+        bandwidthMbps: comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160),
+        latencyMs: comm?.latency_ms ?? (isMaitri ? 78 : 65),
         syncState: comm?.sync_state ?? 'SYNCED',
       }
     };

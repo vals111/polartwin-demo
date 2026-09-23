@@ -291,7 +291,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
             { label: 'Ambient Temperature', value: `${d.temp.toFixed(1)}°C`, sub: 'Target indoor: 21°C' },
             { label: 'Wind Velocity', value: `${d.wind.toFixed(0)} km/h`, sub: `Gusts to ${d.gust.toFixed(0)} km/h` },
             { label: 'Solar Irradiance', value: `${d.solarRad.toFixed(0)} W/m²`, sub: 'Double-sided insolation' },
-            { label: 'Weather layer Pressure', value: `${d.pressure.toFixed(0)} hPa`, sub: 'Air pressure tendency: Stable' },
+            { label: 'Atmospheric Pressure', value: `${d.pressure.toFixed(0)} hPa`, sub: 'Pressure tendency: Stable' },
             { label: 'Relative Humidity', value: `${d.humidity.toFixed(0)}%`, sub: 'Ice crystallization point' },
             { label: 'Weather Severity', value: `${(d.severity * 100).toFixed(0)}%`, sub: isM ? 'Moderate Polar downslope wind' : 'Mild Coastal' },
           ],
@@ -328,7 +328,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
           trend: [ 81, 83, 85, 84, 85, 86, 85 ],
           whyExplanation: isM
             ? `Demand is dominated by the 46.4°C thermal lift required between exterior (-25.4°C) and interior (21°C) temperatures, consuming 32.0 kW. Science and galley base operations contribute the remaining 53.0 kW.`
-            : `Bharati operates higher baseload (45 kW) due to containerized modular architecture, earth-station tracking aerial motors (18 kW), and dual reverse-osmosis seawater purification pump heaters.`,
+            : `Bharati operates higher baseload (45 kW) due to containerized modular architecture, earth-station tracking antenna motors (18 kW), and dual reverse-osmosis seawater purification pump heaters.`,
           upstreamDrivers: ['Environment (Exterior Cold Lift)', 'Crew Activity & Kitchen Meal Prep Cycles', 'Science Array Radar Transmissions'],
           downstreamConsequences: [
             `Directly sizes dispatch setpoint on Generator (${d.genLoad.toFixed(0)} kW load)`,

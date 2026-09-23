@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
@@ -1247,8 +1247,8 @@ export const EnergyFuelPage: React.FC = () => {
       {activeTab === 'fuel_intel' && (() => {
         const fuelType = isMaitri ? 'Arctic Gas Oil (AGO) — Freezing limit −50°C' : 'Polar Gas Oil (PGO) — Freezing limit −45°C';
         const fuelSpec = isMaitri
-          ? { grade: 'AGO −50°C', combustion rating: 48, flashPoint: 62, pourPoint: -50, viscosity: '4.6 cSt @ −20°C', weight per volume: '840 kg/m³', sulfur: '<10 ppm' }
-          : { grade: 'PGO −45°C', combustion rating: 51, flashPoint: 65, pourPoint: -45, viscosity: '5.1 cSt @ −20°C', weight per volume: '845 kg/m³', sulfur: '<15 ppm' };
+          ? { grade: 'AGO −50°C', cetane: 48, flashPoint: 62, pourPoint: -50, viscosity: '4.6 cSt @ −20°C', density: '840 kg/m³', sulfur: '<10 ppm' }
+          : { grade: 'PGO −45°C', cetane: 51, flashPoint: 65, pourPoint: -45, viscosity: '5.1 cSt @ −20°C', density: '845 kg/m³', sulfur: '<15 ppm' };
         const freezeRisk = fuelTemp < -45 ? 'CRITICAL' : fuelTemp < -40 ? 'WARNING' : fuelTemp < -35 ? 'WATCH' : 'NOMINAL';
         const freezeColor = freezeRisk === 'CRITICAL' ? '#ef4444' : freezeRisk === 'WARNING' ? '#f97316' : freezeRisk === 'WATCH' ? '#f59e0b' : '#10b981';
 
@@ -1304,11 +1304,11 @@ export const EnergyFuelPage: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {[
                   { label: 'Fuel Grade', val: fuelSpec.grade, color: '#f59e0b', icon: '⛽' },
-                  { label: 'Fuel combustion rating', val: fuelSpec.combustion rating.toString(), color: '#06b6d4', icon: '🔢' },
+                  { label: 'Combustion Quality', val: fuelSpec.cetane.toString(), color: '#06b6d4', icon: '🔢' },
                   { label: 'Flash Point', val: `${fuelSpec.flashPoint}°C`, color: '#f97316', icon: '🔥' },
-                  { label: 'Freezing limit', val: `${fuelSpec.pourPoint}°C`, color: '#818cf8', icon: '❄️' },
-                  { label: 'Fuel flow resistance', val: fuelSpec.viscosity, color: '#10b981', icon: '💧' },
-                  { label: 'Weight per volume', val: fuelSpec.weight per volume, color: '#38bdf8', icon: '⚖️' },
+                  { label: 'Freeze Limit', val: `${fuelSpec.pourPoint}°C`, color: '#818cf8', icon: '❄️' },
+                  { label: 'Flow Resistance', val: fuelSpec.viscosity, color: '#10b981', icon: '💧' },
+                  { label: 'Fuel Density', val: fuelSpec.density, color: '#38bdf8', icon: '⚖️' },
                   { label: 'Sulfur Content', val: fuelSpec.sulfur, color: '#22c55e', icon: '🌿' },
                 ].map(s => (
                   <div key={s.label} className="bg-polar-dark/60 p-3 rounded-xl border border-polar-border text-center">

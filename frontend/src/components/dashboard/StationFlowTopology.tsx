@@ -391,7 +391,7 @@ export const StationFlowTopology: React.FC<{
           riskContribution: { score: 1, level: 'NOMINAL', detail: 'Non-critical payload can be load-shed if required' },
           forecast: 'Continuous data acquisition scheduled through the 24-hour cycle.',
           recommendedAction: 'Confirm seismology accelerometer zero-drift calibration.',
-          impactSummary: 'Scientific mission payload. Can be self-operatingly shedding during emergency power conservation.',
+          impactSummary: 'Scientific mission payload. Can be autonomously shedding during emergency power conservation.',
           impactDownstream: ['scada_monitor']
         };
 

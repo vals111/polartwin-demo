@@ -1049,7 +1049,7 @@ export const PersonnelPage: React.FC = () => {
             {[
               { label: 'Medical Officer', value: ls.medical_officer_available ? 'AVAILABLE' : 'UNAVAILABLE', good: ls.medical_officer_available },
               { label: 'Medical Facility', value: ls.medical_facility_status, good: ls.medical_facility_status === 'OPERATIONAL' },
-              { label: 'Remote doctor service', value: `${ls.remote doctor service_link} — ${ls.remote doctor service_partner}`, good: ls.remote doctor service_link === 'CONNECTED' },
+              { label: 'Remote doctor service', value: `${ls.telemedicine_link} — ${ls.telemedicine_partner}`, good: ls.telemedicine_link === 'CONNECTED' },
               { label: 'Emergency Response', value: ls.emergency_response_readiness, good: ls.emergency_response_readiness === 'READY' },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-center py-1.5 border-b border-polar-border/30 text-xs font-mono">

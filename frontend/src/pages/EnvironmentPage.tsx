@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { telemetryApi } from '../api/client';
@@ -587,7 +587,7 @@ export const EnvironmentPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3. Air pressure Pressure */}
+              {/* 3. Atmospheric Pressure */}
               <div className="bg-slate-900/60 p-3.5 rounded-xl border border-polar-border/60 hover:border-purple-500/40 transition-all flex flex-col justify-between min-h-[175px] shadow-sm group">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800/70">
@@ -596,7 +596,7 @@ export const EnvironmentPage: React.FC = () => {
                       <Gauge className="w-3.5 h-3.5" />
                     </span>
                     <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-100">
-                      Air pressure Pressure
+                      Atmospheric Pressure
                     </span>
                   </div>
                   <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold">
@@ -734,7 +734,7 @@ export const EnvironmentPage: React.FC = () => {
               { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C' },
               { label: 'Wind Velocity', data: windHistory, color: '#818cf8', unit: 'km/h' },
               { label: 'Solar Radiation', data: solarHistory, color: '#f59e0b', unit: 'W/m²' },
-              { label: 'Air pressure Pressure', data: pressureHistory, color: '#a78bfa', unit: 'hPa' },
+              { label: 'Atmospheric Pressure', data: pressureHistory, color: '#a78bfa', unit: 'hPa' },
             ].map((trend) => (
               <ForecastArchiveCard
                 key={trend.label}
@@ -875,8 +875,8 @@ export const EnvironmentPage: React.FC = () => {
                 <Gauge className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Weather layer Pressure</div>
-                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Air pressure Trend · Pressure Tendency</div>
+                <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Atmospheric Pressure</div>
+                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Pressure Trend · Pressure Tendency</div>
               </div>
             </div>
             <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold bg-purple-500/10 border-purple-500/30 text-purple-300">BAROMETER</span>
@@ -1032,17 +1032,17 @@ export const EnvironmentPage: React.FC = () => {
           </div>
 
           {(() => {
-            const polar downslope windRisk = wind > 60 ? 'HIGH' : wind > 35 ? 'MODERATE' : 'LOW';
+            const katabaticRisk = wind > 60 ? 'HIGH' : wind > 35 ? 'MODERATE' : 'LOW';
             const blizzardRisk = stormSev > 0.65 ? 'ACTIVE' : stormSev > 0.4 ? 'DEVELOPING' : 'CLEAR';
             const seismicRisk = 'LOW'; // Antarctica is seismically quiet
-            const polarSpinning air massIdx = isMaitri ? 62 : 71; // 0-100 spinning air mass intensity
-            const spinning air massColor = polarSpinning air massIdx > 70 ? '#ef4444' : polarSpinning air massIdx > 50 ? '#f59e0b' : '#10b981';
+            const polarVortexIdx = isMaitri ? 62 : 71; // 0-100 polar vortex intensity
+            const vortexColor = polarVortexIdx > 70 ? '#ef4444' : polarVortexIdx > 50 ? '#f59e0b' : '#10b981';
             const events: { name: string; status: string; color: string; detail: string }[] = [
-              { name: '🌀 Polar downslope wind Gale', status: polar downslope windRisk, color: polar downslope windRisk === 'HIGH' ? '#ef4444' : polar downslope windRisk === 'MODERATE' ? '#f59e0b' : '#10b981', detail: `${wind} km/h drainage flow from polar plateau` },
+              { name: '🌀 Katabatic Gale', status: katabaticRisk, color: katabaticRisk === 'HIGH' ? '#ef4444' : katabaticRisk === 'MODERATE' ? '#f59e0b' : '#10b981', detail: `${wind} km/h drainage flow from polar plateau` },
               { name: '❄️ Blizzard System', status: blizzardRisk, color: blizzardRisk === 'ACTIVE' ? '#ef4444' : blizzardRisk === 'DEVELOPING' ? '#f59e0b' : '#10b981', detail: `Storm index: ${Math.round(stormSev * 100)}/100` },
               { name: '🌊 Coastal Storm Surge', status: isMaitri ? 'N/A' : (wind > 50 ? 'WATCH' : 'CALM'), color: isMaitri ? '#475569' : (wind > 50 ? '#f59e0b' : '#10b981'), detail: isMaitri ? 'Inland station — not applicable' : `Prydz Bay swell ${wind > 50 ? '2.8m est.' : '0.8m nominal'}` },
               { name: '🏔️ Seismic Activity', status: seismicRisk, color: '#10b981', detail: 'Last event: M1.2 · 340 km NE · 8 days ago' },
-              { name: '🌪️ Polar Spinning air mass', status: polarSpinning air massIdx > 70 ? 'STRONG' : polarSpinning air massIdx > 50 ? 'MODERATE' : 'WEAK', color: spinning air massColor, detail: `Spinning air mass intensity index: ${polarSpinning air massIdx}/100` },
+              { name: '🌪️ Polar Vortex', status: polarVortexIdx > 70 ? 'STRONG' : polarVortexIdx > 50 ? 'MODERATE' : 'WEAK', color: vortexColor, detail: `Vortex intensity index: ${polarVortexIdx}/100` },
             ];
             return (
               <div className="space-y-2.5">
@@ -1088,7 +1088,7 @@ export const EnvironmentPage: React.FC = () => {
             const solarFlux = isMaitri ? 142 : 148; // F10.7 cm radio flux
             const auroraBrightness = isMaitri ? 'KP3 — Faint Glow' : 'KP4 — Diffuse Aurora';
             const auroraColor = isMaitri ? '#a855f7' : '#818cf8';
-            const upper atmosphereState = kpIndex > 4 ? 'DISTURBED' : 'QUIET';
+            const ionosphereState = kpIndex > 4 ? 'DISTURBED' : 'QUIET';
             const solarWindSpeed = isMaitri ? 420 : 480; // km/s
             const bz = isMaitri ? -4.2 : -6.8; // Bz component (negative = southward = aurora)
             const bzColor = bz < -5 ? '#ef4444' : bz < -2 ? '#f59e0b' : '#10b981';
@@ -1141,7 +1141,7 @@ export const EnvironmentPage: React.FC = () => {
                       { label: 'Solar Wind', val: `${solarWindSpeed} km/s`, color: '#f59e0b', icon: '☀️', desc: 'ACE satellite measure' },
                       { label: 'Bz Component', val: `${bz} nT`, color: bzColor, icon: '🧭', desc: bz < -5 ? 'Southward — aurora likely' : 'Northward — quiet' },
                       { label: 'F10.7 Flux', val: `${solarFlux} sfu`, color: '#818cf8', icon: '📡', desc: '10.7cm radio flux' },
-                      { label: 'Upper atmosphere', val: upper atmosphereState, color: upper atmosphereState === 'DISTURBED' ? '#f59e0b' : '#10b981', icon: '🌐', desc: 'HF propagation state' },
+                      { label: 'Upper Atmosphere', val: ionosphereState, color: ionosphereState === 'DISTURBED' ? '#f59e0b' : '#10b981', icon: '🌐', desc: 'HF propagation state' },
                     ].map(s => (
                       <div key={s.label} className="bg-slate-900/60 p-3 rounded-xl border border-polar-border text-center">
                         <div className="text-xl mb-1">{s.icon}</div>

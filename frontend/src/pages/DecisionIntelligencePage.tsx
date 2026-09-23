@@ -897,7 +897,7 @@ export const DecisionIntelligencePage: React.FC = () => {
                 { priority: 'LOW', action: 'Coordinate vessel ice pilot scheduling for early season approach', domain: 'logistics', explanation: 'Early-season ice extent data suggests 2026 approach window may open 15 days earlier than historical average.' },
               ] : resolvedDomain === 'environment' ? [
                 { priority: 'HIGH', action: 'Issue outdoor operations stand-down for next 6 hours', domain: 'environment', explanation: 'Wind speed trending toward 45 km/h. Stand-down threshold is 50 km/h. Pre-emptive stand-down prevents personnel exposure during ramp-up.' },
-                { priority: 'LOW', action: 'Recalibrate air pressure pressure sensors', domain: 'environment', explanation: 'Sensor drift of ±2.1 hPa detected on unit ENV-02. Calibration using portable reference standard recommended before next weather window.' },
+                { priority: 'LOW', action: 'Recalibrate atmospheric pressure sensors', domain: 'environment', explanation: 'Sensor drift of ±2.1 hPa detected on unit ENV-02. Calibration using portable reference standard recommended before next weather window.' },
               ] : resolvedDomain === 'communication' ? [
                 { priority: 'LOW', action: 'Schedule radome de-icing maintenance', domain: 'communication', explanation: 'LEO satellite dish tracking accuracy degrades 8% under 3mm ice accumulation. Next window for de-icing: 14:00–16:00 local.' },
                 { priority: 'LOW', action: 'Test Inmarsat BGAN backup link functionality', domain: 'communication', explanation: 'Secondary communication link last tested 18 days ago. Monthly test cycle due. Ensures backup systems during primary LEO outage.' },

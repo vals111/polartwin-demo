@@ -283,7 +283,7 @@ export const DomainsPage: React.FC = () => {
         status: 'LEO Link Active',
         primaryKpi: isM ? '120 Mbps' : '160 Mbps',
         primaryLabel: 'Symmetrical Uplink',
-        signal delayMs: isM ? 78 : 65,
+        latencyMs: isM ? 78 : 65,
         packetLossPct: isM ? 0.05 : 0.02,
         qosShares: [
           { label: 'Life Safety Automated Control System', pct: 25, color: '#10b981' },

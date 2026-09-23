@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
@@ -139,7 +139,7 @@ export const InfrastructurePage: React.FC = () => {
     desc: 'Maitri Medical Clinic — NCPOR standard. Staffed by 1 Medical Officer (MO) and 1 paramedic. Primary emergency treatment and remote doctor service-capable.',
     staff: '1 MO + 1 Paramedic',
     beds: 4,
-    remote doctor service: true,
+    telemedicine: true,
     equipment: [
       { name: 'Emergency Resuscitation Unit', detail: 'AED defibrillator, manual bag-valve-mask, crash cart with ACLS medications. Last tested: 3 days ago.', status: 'Nominal', icon: Heart },
       { name: 'Surgical Theater (Minor Ops)', detail: 'Sterile field tent setup for minor surgeries: appendectomy, fracture reduction, wound closure. Ketamine anesthesia protocol for field conditions.', status: 'Nominal', icon: Zap },
@@ -154,7 +154,7 @@ export const InfrastructurePage: React.FC = () => {
     desc: 'Bharati Medical Center — Advanced 2012 NCPOR facility. Staffed by 2 Medical Officers and 1 ICU-trained nurse. Superior equipment vs Maitri.',
     staff: '2 MOs + 1 ICU Nurse',
     beds: 6,
-    remote doctor service: true,
+    telemedicine: true,
     equipment: [
       { name: 'ICU-Grade Monitoring Suite', detail: 'Bedside multi-parameter monitors for all 6 ICU-capable beds: SpO₂, NIBP, 12-lead ECG, capnography, temp. Powered by CHP UPS with 72-hr battery backup.', status: 'Nominal', icon: Heart },
       { name: 'Portable CT Scanner (Mini)', detail: 'Compact CT ring for head/chest/abdomen imaging — unique to Bharati, not available at Maitri. Critical for trauma triage and internal hemorrhage detection.', status: 'Nominal', icon: Cpu },
@@ -445,7 +445,7 @@ export const InfrastructurePage: React.FC = () => {
             {[
               { label: 'Medical Staff', val: medicalData.staff, color: '#ef4444' },
               { label: 'Hospital Beds', val: `${medicalData.beds} Beds`, color: '#f97316' },
-              { label: 'Remote doctor service', val: medicalData.remote doctor service ? 'ACTIVE' : 'OFFLINE', color: '#10b981' },
+              { label: 'Remote doctor service', val: medicalData.telemedicine ? 'ACTIVE' : 'OFFLINE', color: '#10b981' },
             ].map(s => (
               <div key={s.label} className="glass-panel p-4 rounded-xl border border-polar-border text-center">
                 <div className="text-[10px] font-mono text-slate-400 uppercase mb-1">{s.label}</div>
