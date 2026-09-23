@@ -54,7 +54,7 @@ export const RecommendationsPage: React.FC = () => {
             {stationId} Operator Decision Support & Mitigations
           </h1>
           <p className="text-xs text-slate-300 mt-1 max-w-3xl">
-            Ranked, actionable recommendations derived from multi-domain live data and physics-based models. 
+            Ranked, actionable recommendations derived from multi-domain telemetry and physics-based models. 
             Each recommendation provides a comprehensive causal justification before action is dispatched.
           </p>
         </div>
@@ -104,7 +104,7 @@ export const RecommendationsPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={(e) => {
-                        e.stopSignal spread();
+                        e.stopPropagation();
                         handleExecute(index);
                       }}
                       disabled={isDone}

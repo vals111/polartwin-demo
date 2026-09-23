@@ -313,7 +313,7 @@ export const AnalyticsPage: React.FC = () => {
 
       {/* Apache ECharts and D3.js 2D Visualization */}
       {history.length > 0 && (
-        <PolarEChartsAnalytics live dataHistory={history} stationName={stationId} />
+        <PolarEChartsAnalytics telemetryHistory={history} stationName={stationId} />
       )}
 
       {/* Actual vs Predicted Table */}
@@ -321,10 +321,10 @@ export const AnalyticsPage: React.FC = () => {
         <div className="p-4 border-b border-polar-border/60 flex items-center justify-between">
           <div>
             <h3 className="text-xs font-bold font-mono tracking-wider text-white uppercase">
-              24-Hour Live data Record: Actual vs Model Predicted
+              24-Hour Telemetry Record: Actual vs Model Predicted
             </h3>
             <p className="text-[11px] text-slate-400 font-mono">
-              Evaluated on synchronous live data time-steps
+              Evaluated on synchronous telemetry time-steps
             </p>
           </div>
 

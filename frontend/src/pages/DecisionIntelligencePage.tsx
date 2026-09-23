@@ -87,12 +87,12 @@ const DOMAIN_CONFIG: Record<string, {
     color: '#8b5cf6',
     icon: <Radio className="w-4 h-4" />,
     forecastDomain: 'energy',
-    riskKeywords: ['communication', 'satellite', 'data speed', 'link', 'signal', 'live data'],
+    riskKeywords: ['communication', 'satellite', 'data speed', 'link', 'signal', 'telemetry'],
     recKeywords: ['communication', 'satellite', 'link', 'data speed'],
     analyticsDomain: 'energy_fuel',
     scenarioPresets: [
       { id: 'primary_link_failure', title: '📡 Primary Link Failure', desc: 'LEO satellite dish lock lost' },
-      { id: 'data speed_reduction', title: '📉 Data speed Throttle −65%', desc: 'Transponder orbital contention' },
+      { id: 'bandwidth_reduction', title: '📉 Data speed Throttle −65%', desc: 'Transponder orbital contention' },
       { id: 'high_packet_loss', title: '🌩️ Auroral Packet Loss', desc: 'Solar flare ionospheric storm disrupts signal' },
     ]
   },
@@ -813,7 +813,7 @@ export const DecisionIntelligencePage: React.FC = () => {
                         <div className="text-xs font-mono font-bold" style={{ color: accentColor }}>
                           {domainCfg.scenarioPresets.find(s => s.id === whatIfScenario)?.title}
                         </div>
-                        <div className="text-[10px] font-mono text-emerald-300 mt-1">✓ Cloned-state simulation — live data untouched</div>
+                        <div className="text-[10px] font-mono text-emerald-300 mt-1">✓ Cloned-state simulation — telemetry untouched</div>
                       </div>
                       {whatIfResult.projected_states && Object.entries(whatIfResult.projected_states).slice(0, 5).map(([k, v]) => (
                         <div key={k} className="flex justify-between text-xs font-mono border-b border-polar-border/20 pb-2">
@@ -927,7 +927,7 @@ export const DecisionIntelligencePage: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={(e) => { e.stopSignal spread(); setExecutedRecs(p => ({ ...p, [i]: true })); }}
+                        <button onClick={(e) => { e.stopPropagation(); setExecutedRecs(p => ({ ...p, [i]: true })); }}
                           disabled={isDone}
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${isDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}>
                           {isDone ? '✓ Done' : 'Apply'}
@@ -967,7 +967,7 @@ export const DecisionIntelligencePage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button onClick={(e) => { e.stopSignal spread(); setExecutedRecs(p => ({ ...p, [i]: true })); }}
+                          <button onClick={(e) => { e.stopPropagation(); setExecutedRecs(p => ({ ...p, [i]: true })); }}
                             disabled={isDone}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${isDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}>
                             {isDone ? '✓ Done' : 'Apply'}

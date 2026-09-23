@@ -1,7 +1,7 @@
 ﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
-import { useLive dataStore } from '../../store/live dataStore';
+import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
   ExternalLink, GitCompare, GitCommit, Brain, ChevronRight, Building2
@@ -115,7 +115,7 @@ export const TREE_NODES: TreeNode[] = [
     accentRgb: '234, 179, 8'
   },
 
-  // ── Tier 4: Life Support, Human Habitation, Safety & Live data (y = 1010, h = 250) ──
+  // ── Tier 4: Life Support, Human Habitation, Safety & Telemetry (y = 1010, h = 250) ──
   {
     id: 'water',
     name: 'Water',
@@ -149,7 +149,7 @@ export const TREE_NODES: TreeNode[] = [
   {
     id: 'communication',
     name: 'Communication',
-    shortDesc: 'LEO Polar Constellation, Low Signal delay & QoS Live data Sync',
+    shortDesc: 'LEO Polar Constellation, Low Signal delay & QoS Telemetry Sync',
     tier: 'TIER 4 • REAL-TIME LIVE DATA',
     tierNumber: 4,
     x: 960,
@@ -211,7 +211,7 @@ const TREE_EDGES: TreeEdgeDef[] = [
 interface Props {
   stationId?: string;
   onOpenCompare?: () => void;
-  onSeleocean depth probeomain?: (domainId: string) => void;
+  onSelectDomain?: (domainId: string) => void;
   selectedDomainId?: string | null;
   domainData?: Record<string, any>;
   children?: React.ReactNode;
@@ -220,13 +220,13 @@ interface Props {
 export const CrossDomainCausalTree: React.FC<Props> = ({
   stationId: propStationId,
   onOpenCompare,
-  onSeleocean depth probeomain,
+  onSelectDomain,
   selectedDomainId,
   domainData,
 }) => {
   const navigate = useNavigate();
   const { selectedStationId } = useStationStore();
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   const currentStationId = propStationId || selectedStationId || 'maitri';
   const isMaitri = currentStationId === 'maitri';
@@ -358,10 +358,10 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       },
       communication: {
         score: 98,
-        primaryKpi: `${comm?.data speed_mbps ?? (isMaitri ? 120 : 160)} Mbps`,
+        primaryKpi: `${comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160)} Mbps`,
         primaryLabel: 'LEO Constellation',
-        data speedMbps: comm?.data speed_mbps ?? (isMaitri ? 120 : 160),
-        signal delayMs: comm?.signal delay_ms ?? (isMaitri ? 78 : 65),
+        data speedMbps: comm?.bandwidth_mbps ?? (isMaitri ? 120 : 160),
+        signal delayMs: comm?.latency_ms ?? (isMaitri ? 78 : 65),
         syncState: comm?.sync_state ?? 'SYNCED',
       }
     };
@@ -629,7 +629,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                   onMouseEnter={() => setHoveredNodeId(node.id)}
                   onMouseLeave={() => setHoveredNodeId(null)}
                   onClick={() => navigate(`/station/${currentStationId}/${node.route}`)}
-                  onSeleocean depth probeomain={onSeleocean depth probeomain}
+                  onSelectDomain={onSelectDomain}
                   style={{
                     position: 'absolute',
                     left: `${node.x}px`,

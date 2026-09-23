@@ -1,6 +1,6 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import { useStationStore } from '../store/stationStore';
 import {
   Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
@@ -83,7 +83,7 @@ const EIGHT_DOMAINS: DomainConfig[] = [
     route: 'communication',
     color: '#3b82f6',
     accentRgb: '59, 130, 246',
-    shortDesc: 'LEO Polar Satellite Tracking, Data speed QoS & Live data Sync',
+    shortDesc: 'LEO Polar Satellite Tracking, Data speed QoS & Telemetry Sync',
     upstream: ['energy_fuel', 'environment'],
     downstream: []
   },
@@ -133,7 +133,7 @@ export const DomainsPage: React.FC = () => {
   const stationId = id || 'maitri';
   const isMaitri = stationId === 'maitri';
 
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
   const otherStationId = isMaitri ? 'bharati' : 'maitri';
   const snapshot = liveSnapshot[stationId];
   const otherSnapshot = liveSnapshot[otherStationId];
@@ -287,7 +287,7 @@ export const DomainsPage: React.FC = () => {
         packetLossPct: isM ? 0.05 : 0.02,
         qosShares: [
           { label: 'Life Safety Automated Control System', pct: 25, color: '#10b981' },
-          { label: 'Science Live data', pct: 45, color: '#06b6d4' },
+          { label: 'Science Telemetry', pct: 45, color: '#06b6d4' },
           { label: 'Welfare Voice/Data', pct: 30, color: '#64748b' }
         ],
         trend: isM ? [118, 120, 119, 121, 120, 120] : [158, 160, 162, 159, 161, 160],

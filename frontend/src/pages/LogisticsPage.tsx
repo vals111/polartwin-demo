@@ -1,8 +1,8 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore } from '../store/live dataStore';
-import { live dataApi, scenariosApi } from '../api/client';
+import { useTelemetryStore } from '../store/telemetryStore';
+import { telemetryApi, scenariosApi } from '../api/client';
 import * as echarts from 'echarts';
 import {
   Truck, Ship, Anchor, AlertTriangle, ShieldCheck,
@@ -225,7 +225,7 @@ export const LogisticsPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   const [localLogistics, setLocalLogistics] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'voyage' | 'assets' | 'cargo' | 'risk'>('voyage');
@@ -243,7 +243,7 @@ export const LogisticsPage: React.FC = () => {
     let mounted = true;
     const load = async () => {
       try {
-        const data = await live dataApi.getLogistics(stationId);
+        const data = await telemetryApi.getLogistics(stationId);
         if (mounted && data) setLocalLogistics(data);
       } catch {}
     };

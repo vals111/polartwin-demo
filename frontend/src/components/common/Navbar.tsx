@@ -2,7 +2,7 @@
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
-import { useLive dataStore } from '../../store/live dataStore';
+import { useTelemetryStore } from '../../store/telemetryStore';
 import {
   LayoutDashboard,
   Layers,
@@ -18,7 +18,7 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const { selectedStationId, selectStation, stations } = useStationStore();
   const { user, role, logout } = useAuthStore();
-  const { liveRisk } = useLive dataStore();
+  const { liveRisk } = useTelemetryStore();
 
   const currentRisk = liveRisk[selectedStationId];
 

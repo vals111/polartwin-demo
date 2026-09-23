@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import { resourcesApi, scenariosApi } from '../api/client';
 import * as echarts from 'echarts';
 import {
@@ -455,7 +455,7 @@ export const EnergyFuelPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   const [fuelDetails, setFuelDetails] = useState<any>(null);
   const [selectedTankId, setSelectedTankId] = useState<string | null>(null);
@@ -507,7 +507,7 @@ export const EnergyFuelPage: React.FC = () => {
   const fuelTemp = liveFuel?.fuel_temperature ?? (isMaitri ? -4.2 : 2.1);
   const bridgingGap = Math.round(daysRemaining - resupplyEta);
 
-  // Other resource live data
+  // Other resource telemetry
   const waterPct = water?.percentage ?? 82.0;
   const waterLiters = water?.storage_liters ?? 18400;
   const foodPct = supplies?.food_days_remaining != null
@@ -1329,7 +1329,7 @@ export const EnergyFuelPage: React.FC = () => {
                     <ThermometerSnowflake className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-white">Fuel Temperature Monitor — Freeze-Risk Live data</div>
+                    <div className="text-sm font-bold text-white">Fuel Temperature Monitor — Freeze-Risk Telemetry</div>
                     <div className="text-[10px] font-mono text-slate-400 mt-0.5">Pour point: {fuelSpec.pourPoint}°C · Alarm threshold: {fuelSpec.pourPoint + 5}°C</div>
                   </div>
                 </div>
@@ -1549,7 +1549,7 @@ export const EnergyFuelPage: React.FC = () => {
           { name: 'Misc & Standby Loads', kw: Math.round(electricOut * 0.05), pct: 5, icon: '⚙️', color: '#64748b', subItems: ['Battery bank trickle charge', 'Metering & Automated Control System systems', 'Unallocated base load'] },
         ] : [
           { name: 'HVAC & Habitat Climate Control', kw: Math.round(electricOut * 0.28), pct: 28, icon: '🌡️', color: '#818cf8', subItems: ['3-story habitat air handling units', 'CHP heat exchange distribution', 'Under-floor heating coils (heat recovery)'] },
-          { name: 'Scientific Instruments & Labs', kw: Math.round(electricOut * 0.22), pct: 22, icon: '🔬', color: '#06b6d4', subItems: ['Prydz Bay ocean depth probe & ADCP', 'Light spectrum analyzer + all-sky imager', 'DNA sequencer, high-speed lab spinner, cryo-microscope'] },
+          { name: 'Scientific Instruments & Labs', kw: Math.round(electricOut * 0.22), pct: 22, icon: '🔬', color: '#06b6d4', subItems: ['Prydz Bay CTD sensor & ADCP', 'Light spectrum analyzer + all-sky imager', 'DNA sequencer, high-speed lab spinner, cryo-microscope'] },
           { name: 'Marine & Field Operations', kw: Math.round(electricOut * 0.12), pct: 12, icon: '🚤', color: '#38bdf8', subItems: ['Zodiac RHIB winch & crane', 'ROV (Prydz Bay 500m dive)', 'Helipad floodlights & beacon'] },
           { name: 'Seawater Filter Plant Seawater purification Plant', kw: Math.round(electricOut * 0.10), pct: 10, icon: '💧', color: '#3b82f6', subItems: ['Quilty Bay seawater intake pump', 'Reverse osmosis high-pressure pump', 'Post-treatment UV + mineraliser'] },
           { name: 'Lighting (All Areas)', kw: Math.round(electricOut * 0.06), pct: 6, icon: '💡', color: '#fbbf24', subItems: ['LED throughout all levels', 'Helipad & exterior safety', 'Emergency exit network'] },

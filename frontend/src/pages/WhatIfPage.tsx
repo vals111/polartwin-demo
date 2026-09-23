@@ -239,7 +239,7 @@ export const WhatIfPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="mt-4 text-[10px] font-mono text-slate-500">
-                    Calculated via Multi-Domain Constraint Signal spread Engine
+                    Calculated via Multi-Domain Constraint Propagation Engine
                   </div>
                 </div>
               </div>

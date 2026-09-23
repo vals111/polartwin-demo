@@ -1,8 +1,8 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Live dataSnapshot, RiskData } from '../../types';
+import { TelemetrySnapshot, RiskData } from '../../types';
 import { useStationStore } from '../../store/stationStore';
-import { useLive dataStore } from '../../store/live dataStore';
+import { useTelemetryStore } from '../../store/telemetryStore';
 import { useAlertStore } from '../../store/alertStore';
 import { SparklineChart } from './SparklineChart';
 import {
@@ -15,7 +15,7 @@ import {
 export type CausalCardId = 'env' | 'energy' | 'gen' | 'fuel' | 'logistics' | 'risk';
 
 interface Props {
-  snapshot?: Live dataSnapshot;
+  snapshot?: TelemetrySnapshot;
   risk?: RiskData;
   stationId?: string;
 }
@@ -101,7 +101,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
 }) => {
   const navigate = useNavigate();
   const { selectedStationId, selectStation } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime } = useLive dataStore();
+  const { liveSnapshot, liveRisk, lastTickTime } = useTelemetryStore();
   const { alerts } = useAlertStore();
 
   const currentStationId = propStationId || selectedStationId || 'maitri';
@@ -118,7 +118,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
     navigate(`/station/${stId}`);
   };
 
-  // Live data for both stations
+  // Telemetry for both stations
   const maitriSnap = liveSnapshot['maitri'] || propSnapshot;
   const bharatiSnap = liveSnapshot['bharati'] || propSnapshot;
   const activeSnap = isMaitri ? maitriSnap : bharatiSnap;

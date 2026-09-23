@@ -1,9 +1,9 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore, createInitialLive dataHistory } from '../store/live dataStore';
+import { useTelemetryStore, createInitialTelemetryHistory } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
-import { live dataApi } from '../api/client';
+import { telemetryApi } from '../api/client';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Compass, ArrowRight, Thermometer, Wind, Zap, Droplet,
@@ -26,7 +26,7 @@ const StationCard: React.FC<{
   locDesc: string;
   desc: string;
   systems: Array<{ icon: React.ComponentType<any>; title: string; detail: string; color: string }>;
-  live data: Array<{ label: string; value: string; color: string }>;
+  telemetry: Array<{ label: string; value: string; color: string }>;
   riskLevel: string;
   riskScore: number;
   alertCount: number;
@@ -38,7 +38,7 @@ const StationCard: React.FC<{
   onLaunch: () => void;
 }> = ({
   stationId, name, subtitle, founded, locationType, coords, locDesc, desc,
-  systems, live data, riskLevel, riskScore, alertCount,
+  systems, telemetry, riskLevel, riskScore, alertCount,
   accentColor, borderColor, shadowColor, genHistory, fuelHistory, onLaunch,
 }) => {
   return (
@@ -116,9 +116,9 @@ const StationCard: React.FC<{
           </div>
         </div>
 
-        {/* Live live data readout */}
+        {/* Live telemetry readout */}
         <div className="grid grid-cols-2 gap-2">
-          {live data.map((t) => (
+          {telemetry.map((t) => (
             <div
               key={t.label}
               className="rounded-xl p-2.5 text-center border"
@@ -181,7 +181,7 @@ const StationCard: React.FC<{
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { selectStation, loadStations } = useStationStore();
-  const { liveSnapshot, liveRisk, updateLiveWeather, live dataHistory } = useLive dataStore();
+  const { liveSnapshot, liveRisk, updateLiveWeather, telemetryHistory } = useTelemetryStore();
   const { alerts, loadAlerts } = useAlertStore();
   const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
@@ -191,11 +191,11 @@ export const DashboardPage: React.FC = () => {
     loadAlerts('bharati');
 
     // Instantly fetch live weather for both stations on dashboard mount
-    live dataApi.getWeather('maitri')
+    telemetryApi.getWeather('maitri')
       .then((data) => data && updateLiveWeather('maitri', data))
       .catch((err) => console.warn('Maitri initial weather load error:', err));
 
-    live dataApi.getWeather('bharati')
+    telemetryApi.getWeather('bharati')
       .then((data) => data && updateLiveWeather('bharati', data))
       .catch((err) => console.warn('Bharati initial weather load error:', err));
   }, [loadStations, loadAlerts, updateLiveWeather]);
@@ -215,8 +215,8 @@ export const DashboardPage: React.FC = () => {
   const bharatiSnap = liveSnapshot['bharati'];
   const bharatiRisk = liveRisk['bharati'];
 
-  const maitriHistory = live dataHistory['maitri'] || createInitialLive dataHistory('maitri', maitriSnap);
-  const bharatiHistory = live dataHistory['bharati'] || createInitialLive dataHistory('bharati', bharatiSnap);
+  const maitriHistory = telemetryHistory['maitri'] || createInitialTelemetryHistory('maitri', maitriSnap);
+  const bharatiHistory = telemetryHistory['bharati'] || createInitialTelemetryHistory('bharati', bharatiSnap);
 
   return (
     <div className="space-y-0 max-w-7xl mx-auto">
@@ -249,7 +249,7 @@ export const DashboardPage: React.FC = () => {
               { icon: Zap, title: '2×100 kVA Power grid', detail: 'Diesel + Heat Recovery', color: '#fbbf24' },
               { icon: PlaneTakeoff, title: 'Blue Ice Runway', detail: 'DROMLAN Aviation', color: '#818cf8' },
             ]}
-            live data={[
+            telemetry={[
               { label: 'Ambient Temp', value: `${maitriSnap?.environment?.temperature?.toFixed(1) ?? -22.4}°C`, color: '#06b6d4' },
               { label: 'Polar downslope wind Wind', value: `${maitriSnap?.environment?.wind_speed ?? 28} km/h`, color: '#e2e8f0' },
               { label: 'Generator Load', value: `${maitriSnap?.energy?.generator_load ?? 68} kW`, color: '#f59e0b' },
@@ -281,7 +281,7 @@ export const DashboardPage: React.FC = () => {
               { icon: Layers, title: '134-Container Frame', detail: 'Aerodynamic Stilt Lift', color: '#818cf8' },
               { icon: Anchor, title: 'Prydz Bay Berthing', detail: 'Vessel Resupply Channel', color: '#2dd4bf' },
             ]}
-            live data={[
+            telemetry={[
               { label: 'Ambient Temp', value: `${bharatiSnap?.environment?.temperature?.toFixed(1) ?? -19.6}°C`, color: '#60a5fa' },
               { label: 'Maritime Wind', value: `${bharatiSnap?.environment?.wind_speed ?? 14} km/h`, color: '#e2e8f0' },
               { label: 'CHP Load', value: `${bharatiSnap?.energy?.generator_load ?? 74} kW`, color: '#f59e0b' },

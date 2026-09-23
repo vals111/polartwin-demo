@@ -1,12 +1,12 @@
 ﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Station, Live dataSnapshot, RiskData } from '../../types';
+import { Station, TelemetrySnapshot, RiskData } from '../../types';
 import { StationHealthGauge } from './StationHealthGauge';
 import { Compass, Thermometer, Wind, Zap, Fuel, ArrowRight } from 'lucide-react';
 
 interface Props {
   station: Station;
-  snapshot?: Live dataSnapshot;
+  snapshot?: TelemetrySnapshot;
   risk?: RiskData;
   isSelected?: boolean;
   onSelect?: () => void;

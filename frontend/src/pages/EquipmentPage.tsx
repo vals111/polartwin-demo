@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import { equipmentApi, scenariosApi } from '../api/client';
 import { EquipmentItem } from '../types';
 import * as echarts from 'echarts';
@@ -220,7 +220,7 @@ export const EquipmentPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   const [equipmentList, setEquipmentList] = useState<any[]>([]);
   const [predictiveMaint, setPredictiveMaint] = useState<any>(null);
@@ -334,7 +334,7 @@ export const EquipmentPage: React.FC = () => {
               <HeartPulse className="w-8 h-8 text-teal-400" /> Equipment Command Digital Twin
             </h1>
             <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
-              {allItems.length} assets · Weibull hazard modeling · Real-time health live data · Predictive maintenance scheduling
+              {allItems.length} assets · Weibull hazard modeling · Real-time health telemetry · Predictive maintenance scheduling
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">

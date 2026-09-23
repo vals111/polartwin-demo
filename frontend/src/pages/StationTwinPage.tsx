@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore, createInitialLive dataHistory } from '../store/live dataStore';
+import { useTelemetryStore, createInitialTelemetryHistory } from '../store/telemetryStore';
 import { useAlertStore } from '../store/alertStore';
 import { StationHealthGauge } from '../components/dashboard/StationHealthGauge';
 import { StationFlowTopology } from '../components/dashboard/StationFlowTopology';
@@ -15,7 +15,7 @@ export const StationTwinPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime, live dataHistory, updateAlertHistory } = useLive dataStore();
+  const { liveSnapshot, liveRisk, lastTickTime, telemetryHistory, updateAlertHistory } = useTelemetryStore();
   const { alerts } = useAlertStore();
 
   const station = stations.find((s) => s.station_id === stationId) || {
@@ -38,10 +38,10 @@ export const StationTwinPage: React.FC = () => {
   }, [stationId, stationAlerts.length, updateAlertHistory]);
 
   const fallbackHistory = useMemo(
-    () => createInitialLive dataHistory(stationId, snapshot, stationAlerts.length),
+    () => createInitialTelemetryHistory(stationId, snapshot, stationAlerts.length),
     [stationId]
   );
-  const history = live dataHistory[stationId] || fallbackHistory;
+  const history = telemetryHistory[stationId] || fallbackHistory;
 
   const statusCards = [
     {

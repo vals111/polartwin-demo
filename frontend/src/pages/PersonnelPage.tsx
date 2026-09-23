@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import { resourcesApi } from '../api/client';
 import {
   Users, Heart, Moon, Sun, AlertTriangle, ShieldCheck,
@@ -68,7 +68,7 @@ const KpiModal: React.FC<{ title: string; onClose: () => void; children: React.R
     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
     <div
       className="relative z-10 glass-panel rounded-2xl border border-polar-border w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
-      onClick={e => e.stopSignal spread()}
+      onClick={e => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider">{title}</h3>
@@ -87,7 +87,7 @@ const RoleDrawer: React.FC<{ group: any; onClose: () => void }> = ({ group, onCl
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative z-10 glass-panel rounded-2xl border border-polar-border w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopSignal spread()}
+        onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -289,7 +289,7 @@ export const PersonnelPage: React.FC = () => {
   const [whatIfResult, setWhatIfResult] = useState<any | null>(null);
   const [whatIfScenario, setWhatIfScenario] = useState<string | null>(null);
 
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -1154,7 +1154,7 @@ export const PersonnelPage: React.FC = () => {
                   </React.Fragment>
                 ))}
               </div>
-              {/* Visual Signal spread Studio appears when any node in this chain is selected */}
+              {/* Visual Propagation Studio appears when any node in this chain is selected */}
               {chain.nodes.some((_, i) => selectedCausal === `${chain.id}-${i}`) && (
                 <div className="p-4 rounded-xl bg-polar-dark/90 border border-cyan-500/30 space-y-3 font-mono">
                   <div className="flex items-center justify-between">

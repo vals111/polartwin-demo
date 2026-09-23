@@ -51,7 +51,7 @@ export const RealTimeAlertFeed: React.FC<RealTimeAlertFeedProps> = ({
           </svg>
         </div>
         <div className="text-xs font-mono text-emerald-400 font-bold">ALL SYSTEMS NOMINAL</div>
-        <div className="text-[10px] text-slate-500 font-mono">No active alerts in the live data stream</div>
+        <div className="text-[10px] text-slate-500 font-mono">No active alerts in the telemetry stream</div>
       </div>
     );
   }

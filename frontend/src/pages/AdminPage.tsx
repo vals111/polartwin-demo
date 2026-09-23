@@ -53,7 +53,7 @@ export const AdminPage: React.FC = () => {
               POLARTWIN Security & Governance Console
             </h1>
             <p className="text-xs text-slate-300 mt-0.5">
-              Manage platform role-based access control (RBAC), view live data tick loops, and configure simulator parameters.
+              Manage platform role-based access control (RBAC), view telemetry tick loops, and configure simulator parameters.
             </p>
           </div>
         </div>

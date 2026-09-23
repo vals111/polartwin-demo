@@ -44,7 +44,7 @@ interface Props {
   showFooterButtons?: boolean;
   causalConduits?: CausalConduitsDef;
   onClick?: () => void;
-  onSeleocean depth probeomain?: (domainId: string) => void;
+  onSelectDomain?: (domainId: string) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   className?: string;
@@ -63,7 +63,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
   showFooterButtons = false,
   causalConduits,
   onClick,
-  onSeleocean depth probeomain,
+  onSelectDomain,
   onMouseEnter,
   onMouseLeave,
   className = '',
@@ -502,7 +502,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
         )}
       </div>
 
-      {/* ── CARD BOTTOM ACCENT ROW (Click Indicator & Micro-Live data) ── */}
+      {/* ── CARD BOTTOM ACCENT ROW (Click Indicator & Micro-Telemetry) ── */}
       <div
         className="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-300 border-t border-white/10"
       >
@@ -538,7 +538,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
                   <button
                     key={d.id}
                     onClick={(e) => {
-                      e.stopSignal spread();
+                      e.stopPropagation();
                       causalConduits.onFocusDomain?.(d);
                     }}
                     className="text-[9px] px-2 py-0.5 rounded cursor-pointer transition-colors"
@@ -569,7 +569,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
                   <button
                     key={d.id}
                     onClick={(e) => {
-                      e.stopSignal spread();
+                      e.stopPropagation();
                       causalConduits.onFocusDomain?.(d);
                     }}
                     className="text-[9px] px-2 py-0.5 rounded cursor-pointer transition-colors"
@@ -583,7 +583,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
                   </button>
                 ))
               ) : (
-                <span className="text-[9px] italic" style={{ color: 'var(--text-muted)' }}>Terminal Live data Sink</span>
+                <span className="text-[9px] italic" style={{ color: 'var(--text-muted)' }}>Terminal Telemetry Sink</span>
               )}
             </div>
           </div>
@@ -598,7 +598,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
         >
           <button
             onClick={(e) => {
-              e.stopSignal spread();
+              e.stopPropagation();
               navigate(`/station/${stationId}/decision?domain=${node.id}`);
             }}
             className="flex items-center gap-1.5 text-[9px] font-mono font-bold px-2.5 py-1 rounded-lg border cursor-pointer transition-all hover:opacity-90"

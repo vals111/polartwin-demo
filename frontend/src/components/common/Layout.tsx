@@ -2,12 +2,12 @@
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { useStationStore } from '../../store/stationStore';
-import { useLive dataStore } from '../../store/live dataStore';
+import { useTelemetryStore } from '../../store/telemetryStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { live dataApi } from '../../api/client';
+import { telemetryApi } from '../../api/client';
 export const Layout: React.FC = () => {
   const { selectedStationId } = useStationStore();
-  const updateLiveWeather = useLive dataStore((s) => s.updateLiveWeather);
+  const updateLiveWeather = useTelemetryStore((s) => s.updateLiveWeather);
 
   // Ensure any previous light mode attributes and storage are cleared
   useEffect(() => {
@@ -28,8 +28,8 @@ export const Layout: React.FC = () => {
     const syncWeather = async () => {
       try {
         const [maitriWeather, bharatiWeather] = await Promise.all([
-          live dataApi.getWeather('maitri'),
-          live dataApi.getWeather('bharati'),
+          telemetryApi.getWeather('maitri'),
+          telemetryApi.getWeather('bharati'),
         ]);
         if (isMounted) {
           if (maitriWeather) updateLiveWeather('maitri', maitriWeather);

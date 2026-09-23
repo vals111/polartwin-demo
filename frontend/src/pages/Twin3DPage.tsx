@@ -1,9 +1,9 @@
 ﻿import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import { StationScene } from '../components/twin3d/StationScene';
 import { OperationalDomainCard } from '../components/dashboard/OperationalDomainCard';
-import { DomainLive dataInspectorModal } from '../components/dashboard/DomainLive dataInspectorModal';
+import { DomainTelemetryInspectorModal } from '../components/dashboard/DomainTelemetryInspectorModal';
 import {
   ALL_DOMAIN_NODES,
   FACILITY_TO_DOMAIN_MAP,
@@ -69,7 +69,7 @@ const DOMAIN_GROUPS: DomainGroup[] = [
   },
   {
     id: 'science_comms',
-    title: 'Live data & Science',
+    title: 'Telemetry & Science',
     icon: Radio,
     color: '#00D4FF',
     facilities: [
@@ -96,7 +96,7 @@ export const Twin3DPage: React.FC = () => {
   const navigate = useNavigate();
   const rawId = id || 'maitri';
 
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [isGridOpen, setIsGridOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -278,7 +278,7 @@ export const Twin3DPage: React.FC = () => {
             onClick={() => {
               navigate(`/station/${rawId}/${activeDomainNode.route}`);
             }}
-            onSeleocean depth probeomain={(domId) => {
+            onSelectDomain={(domId) => {
               setInspectorDomainId(domId);
             }}
             style={{
@@ -289,14 +289,14 @@ export const Twin3DPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Live data Inspector Modal (Exact same as Domains Page) ── */}
+      {/* ── Telemetry Inspector Modal (Exact same as Domains Page) ── */}
       {inspectorDomainId && (
-        <DomainLive dataInspectorModal
+        <DomainTelemetryInspectorModal
           domainId={inspectorDomainId}
           stationId={rawId}
           onClose={() => setInspectorDomainId(null)}
           domainData={allDomainData}
-          onSeleocean depth probeomain={(targetId) => setInspectorDomainId(targetId)}
+          onSelectDomain={(targetId) => setInspectorDomainId(targetId)}
         />
       )}
 
@@ -313,7 +313,7 @@ export const Twin3DPage: React.FC = () => {
                 <span>OPERATIONAL DOMAIN CARDS • {rawId.toUpperCase()} STATION</span>
               </h2>
               <p className="text-xs font-mono text-slate-400 mt-0.5">
-                All 12 live operational cards aligned across power, life support, live data and logistics domains
+                All 12 live operational cards aligned across power, life support, telemetry and logistics domains
               </p>
             </div>
 

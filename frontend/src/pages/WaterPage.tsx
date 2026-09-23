@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import { resourcesApi, scenariosApi } from '../api/client';
 import * as echarts from 'echarts';
 import {
@@ -298,7 +298,7 @@ export const WaterPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
 
   const [waterDetails, setWaterDetails] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'pipeline' | 'forecast' | 'whatif'>('overview');

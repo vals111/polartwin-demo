@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Live dataSnapshot } from '../../types';
+import { TelemetrySnapshot } from '../../types';
 import { X, Activity, ArrowRight, Zap, Droplet, Radio, Thermometer, Sun, Flame, Recycle, Package, Truck, FlaskConical, Users, Building2 } from 'lucide-react';
 import { OperationalDomainCard } from '../dashboard/OperationalDomainCard';
 import {
@@ -13,7 +13,7 @@ import {
 interface Props {
   assetId: string | null;
   onClose: () => void;
-  snapshot?: Live dataSnapshot;
+  snapshot?: TelemetrySnapshot;
   stationId?: string;
   onSelectAsset?: (assetId: string) => void;
 }
@@ -191,7 +191,7 @@ export const AssetInfoPanel: React.FC<Props> = ({
         >
           <span className="text-slate-400 flex items-center gap-1.5">
             <Activity className="w-3 h-3 text-emerald-400" />
-            Live Live data Synced
+            Live Telemetry Synced
           </span>
           <button
             onClick={()=>navigate(`/station/${stationId}/${domainNode.route}`)}

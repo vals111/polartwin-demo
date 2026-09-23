@@ -1,12 +1,12 @@
 ﻿import React from 'react';
-import { Live dataSnapshot } from '../../types';
+import { TelemetrySnapshot } from '../../types';
 import {
   Zap, Droplet, Wrench, Truck, CloudSnow, Radio, Users, Building2
 } from 'lucide-react';
 
 interface Props {
-  snapshot?: Live dataSnapshot;
-  onSeleocean depth probeomain?: (domainKey: string) => void;
+  snapshot?: TelemetrySnapshot;
+  onSelectDomain?: (domainKey: string) => void;
 }
 
 export const DomainSummaryGrid: React.FC<Props> = ({ snapshot }) => {

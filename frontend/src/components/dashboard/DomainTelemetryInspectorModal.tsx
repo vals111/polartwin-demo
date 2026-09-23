@@ -6,7 +6,7 @@ import {
   Zap, CloudSnow, Fuel, Droplet, Wrench, Truck, Users, Radio, Archive, Building2,
   LucideIcon
 } from 'lucide-react';
-import { useLive dataStore } from '../../store/live dataStore';
+import { useTelemetryStore } from '../../store/telemetryStore';
 import { extractLiveDomainData } from '../../utils/domainDataHelper';
 
 export interface DomainConfig {
@@ -79,7 +79,7 @@ export const ALL_INSPECTOR_DOMAINS: DomainConfig[] = [
     route: 'communication',
     color: '#3b82f6',
     accentRgb: '59, 130, 246',
-    shortDesc: 'LEO Polar Satellite Tracking, Data speed QoS & Live data Sync',
+    shortDesc: 'LEO Polar Satellite Tracking, Data speed QoS & Telemetry Sync',
     upstream: ['energy_fuel', 'environment'],
     downstream: []
   },
@@ -121,23 +121,23 @@ export const ALL_INSPECTOR_DOMAINS: DomainConfig[] = [
   }
 ];
 
-export interface DomainLive dataInspectorModalProps {
+export interface DomainTelemetryInspectorModalProps {
   domainId: string | null;
   stationId: string;
   onClose: () => void;
   domainData?: any;
-  onSeleocean depth probeomain?: (domainId: string) => void;
+  onSelectDomain?: (domainId: string) => void;
 }
 
-export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorModalProps> = ({
+export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorModalProps> = ({
   domainId,
   stationId,
   onClose,
   domainData,
-  onSeleocean depth probeomain
+  onSelectDomain
 }) => {
   const navigate = useNavigate();
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
   const isMaitri = stationId !== 'bharati';
 
   // Normalize domain ID (e.g. 'energy' or 'fuel' -> 'energy_fuel')
@@ -153,8 +153,8 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
     return ALL_INSPECTOR_DOMAINS.find((d) => d.id === normalizedId) || null;
   }, [normalizedId]);
 
-  // Live data data source
-  const currentLive data = useMemo(() => {
+  // Telemetry data source
+  const currentTelemetry = useMemo(() => {
     if (!activeDomainConfig) return null;
     if (domainData && domainData[activeDomainConfig.id]) {
       return domainData[activeDomainConfig.id];
@@ -169,13 +169,13 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
   const chartInst = useRef<echarts.ECharts | null>(null);
 
   useEffect(() => {
-    if (!activeDomainConfig || !chartRef.current || !currentLive data) return;
+    if (!activeDomainConfig || !chartRef.current || !currentTelemetry) return;
 
     if (chartInst.current) chartInst.current.dispose();
     const chart = echarts.init(chartRef.current, 'dark');
     chartInst.current = chart;
 
-    const dataPoints = currentLive data.trend || [80, 82, 85, 84, 88, 86];
+    const dataPoints = currentTelemetry.trend || [80, 82, 85, 84, 88, 86];
     const timeLabels = ['04:00', '08:00', '12:00', '16:00', '20:00', 'Now'];
 
     chart.setOption({
@@ -224,7 +224,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
       window.removeEventListener('resize', handleResize);
       chart.dispose();
     };
-  }, [activeDomainConfig, currentLive data]);
+  }, [activeDomainConfig, currentTelemetry]);
 
   if (!domainId || !activeDomainConfig) return null;
 
@@ -239,7 +239,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
       <div
         className="w-full max-w-4xl rounded-3xl p-6 relative max-h-[90vh] overflow-y-auto"
         style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
-        onClick={(e) => e.stopSignal spread()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -271,7 +271,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
                 </span>
               </div>
               <h3 className="text-xl font-extrabold mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                {activeDomainConfig.name} Operational Live data
+                {activeDomainConfig.name} Operational Telemetry
               </h3>
             </div>
           </div>
@@ -287,14 +287,14 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
 
         {/* Modal Content */}
         <div className="space-y-6 mt-6">
-          {/* Live data Curve & Key KPIs */}
+          {/* Telemetry Curve & Key KPIs */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Left: 24-Hour Live data Curve */}
+            {/* Left: 24-Hour Telemetry Curve */}
             <div className="lg:col-span-2 p-4 rounded-2xl" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <TrendingUp className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  24-Hour Trend Live data Curve
+                  24-Hour Trend Telemetry Curve
                 </span>
                 <span
                   className="text-[10px] font-mono px-2 py-0.5 rounded border"
@@ -313,21 +313,21 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
                   Primary Operational State
                 </div>
                 <div className="text-3xl font-black font-mono" style={{ color: 'var(--text-primary)' }}>
-                  {currentLive data?.primaryKpi ?? 'Nominal'}
+                  {currentTelemetry?.primaryKpi ?? 'Nominal'}
                 </div>
                 <div className="text-xs font-mono mt-1" style={{ color: activeDomainConfig.color }}>
-                  {currentLive data?.primaryLabel ?? 'Operational'}
+                  {currentTelemetry?.primaryLabel ?? 'Operational'}
                 </div>
 
                 <div className="mt-4 pt-3 space-y-2 text-xs font-mono" style={{ borderTop: '1px solid var(--border)' }}>
                   <div className="flex justify-between">
                     <span style={{ color: 'var(--text-muted)' }}>Readiness Score:</span>
-                    <span className="font-bold" style={{ color: '#16a34a' }}>{currentLive data?.score ?? 95}%</span>
+                    <span className="font-bold" style={{ color: '#16a34a' }}>{currentTelemetry?.score ?? 95}%</span>
                   </div>
                   <div className="flex justify-between">
                     <span style={{ color: 'var(--text-muted)' }}>Status:</span>
                     <span className="font-bold truncate max-w-[150px]" style={{ color: 'var(--text-primary)' }}>
-                      {currentLive data?.status ?? 'Operational'}
+                      {currentTelemetry?.status ?? 'Operational'}
                     </span>
                   </div>
                 </div>
@@ -381,7 +381,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
                       return (
                         <button
                           key={upId}
-                          onClick={() => onSeleocean depth probeomain ? onSeleocean depth probeomain(upId) : null}
+                          onClick={() => onSelectDomain ? onSelectDomain(upId) : null}
                           className="px-2.5 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
                           style={{ backgroundColor: '#ccfbf1', border: '1px solid #5eead4', color: '#0d9488' }}
                         >
@@ -411,7 +411,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
                       return (
                         <button
                           key={downId}
-                          onClick={() => onSeleocean depth probeomain ? onSeleocean depth probeomain(downId) : null}
+                          onClick={() => onSelectDomain ? onSelectDomain(downId) : null}
                           className="px-2.5 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
                           style={{ backgroundColor: '#fef9c3', border: '1px solid #fde68a', color: '#d97706' }}
                         >
@@ -423,7 +423,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
                   </div>
                 ) : (
                   <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                    Terminal Live data Sink (Feeds Mission Control Oversight)
+                    Terminal Telemetry Sink (Feeds Mission Control Oversight)
                   </span>
                 )}
               </div>
@@ -436,7 +436,7 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
               Antarctic Architectural Implementation • {isMaitri ? 'Maitri Inland Base' : 'Bharati Coastal Base'}
             </span>
             <p className="text-xs font-mono leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              {currentLive data?.architecture ||
+              {currentTelemetry?.architecture ||
                 (isMaitri
                   ? 'Schirmacher Oasis Bedrock Plateau • Polar downslope wind Drafts'
                   : 'Larsemann Hills Coastal Ridge • Marine Gale Squalls')}
@@ -448,4 +448,4 @@ export const DomainLive dataInspectorModal: React.FC<DomainLive dataInspectorMod
   );
 };
 
-export default DomainLive dataInspectorModal;
+export default DomainTelemetryInspectorModal;

@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLive dataStore } from '../store/live dataStore';
-import { live dataApi } from '../api/client';
+import { useTelemetryStore } from '../store/telemetryStore';
+import { telemetryApi } from '../api/client';
 import { WindCompass } from '../components/charts/WindCompass';
 import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
@@ -247,7 +247,7 @@ export const EnvironmentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const stationId = id || 'maitri';
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
   const snapshot = liveSnapshot[stationId];
   const env = snapshot?.environment;
   const isMaitri = stationId === 'maitri';
@@ -261,7 +261,7 @@ export const EnvironmentPage: React.FC = () => {
     let isMounted = true;
     const fetchWeather = async () => {
       try {
-        const data = await live dataApi.getWeather(stationId);
+        const data = await telemetryApi.getWeather(stationId);
         if (isMounted && data) {
           setMetWeather(data);
         }
@@ -348,7 +348,7 @@ export const EnvironmentPage: React.FC = () => {
             </h1>
           </div>
 
-          {/* Top Status Live data Capsules & Navigation */}
+          {/* Top Status Telemetry Capsules & Navigation */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="flex items-center gap-2.5 bg-gradient-to-r from-cyan-950/40 via-polar-darker/80 to-polar-dark/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-xl shadow-sm backdrop-blur-md">
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -417,12 +417,12 @@ export const EnvironmentPage: React.FC = () => {
             />
           </div>
 
-          {/* Primary Wind Live data Card (Information outside compass) */}
+          {/* Primary Wind Telemetry Card (Information outside compass) */}
           <div className="w-full bg-gradient-to-br from-slate-900/95 via-polar-dark to-slate-950/95 p-3 rounded-xl border border-cyan-500/30 shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5 mb-2">
               <span className="text-[9px] font-mono uppercase tracking-widest text-cyan-400 font-bold flex items-center gap-1.5">
                 <Wind className="w-3 h-3 text-cyan-400" />
-                Wind Live data
+                Wind Telemetry
               </span>
               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold">
                 SURFACE VECTOR
@@ -452,7 +452,7 @@ export const EnvironmentPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Gust & Vector Live data Cards */}
+          {/* Gust & Vector Telemetry Cards */}
           <div className="w-full grid grid-cols-2 gap-2 text-xs font-mono">
             <div className="bg-gradient-to-br from-amber-500/10 via-polar-dark/90 to-polar-darker/90 p-2.5 rounded-xl border border-amber-500/25 shadow-sm">
               <div className="flex items-center justify-between text-[9px] text-amber-400/90 uppercase tracking-wider mb-0.5">
@@ -1141,7 +1141,7 @@ export const EnvironmentPage: React.FC = () => {
                       { label: 'Solar Wind', val: `${solarWindSpeed} km/s`, color: '#f59e0b', icon: '☀️', desc: 'ACE satellite measure' },
                       { label: 'Bz Component', val: `${bz} nT`, color: bzColor, icon: '🧭', desc: bz < -5 ? 'Southward — aurora likely' : 'Northward — quiet' },
                       { label: 'F10.7 Flux', val: `${solarFlux} sfu`, color: '#818cf8', icon: '📡', desc: '10.7cm radio flux' },
-                      { label: 'Upper atmosphere', val: upper atmosphereState, color: upper atmosphereState === 'DISTURBED' ? '#f59e0b' : '#10b981', icon: '🌐', desc: 'HF signal spread state' },
+                      { label: 'Upper atmosphere', val: upper atmosphereState, color: upper atmosphereState === 'DISTURBED' ? '#f59e0b' : '#10b981', icon: '🌐', desc: 'HF propagation state' },
                     ].map(s => (
                       <div key={s.label} className="bg-slate-900/60 p-3 rounded-xl border border-polar-border text-center">
                         <div className="text-xl mb-1">{s.icon}</div>
@@ -1159,8 +1159,8 @@ export const EnvironmentPage: React.FC = () => {
                     {kpIndex > 5
                       ? 'BLACKOUT conditions on HF frequencies. Use satellite backup for emergency communications. SATCOM uptime priority.'
                       : kpIndex > 3
-                      ? 'Degraded HF signal spread on polar paths. Some signal dropout expected on 14–21 MHz bands. Satellite link recommended.'
-                      : 'HF signal spread nominal. All frequency bands operational. LEO satellite link unaffected.'}
+                      ? 'Degraded HF propagation on polar paths. Some signal dropout expected on 14–21 MHz bands. Satellite link recommended.'
+                      : 'HF propagation nominal. All frequency bands operational. LEO satellite link unaffected.'}
                   </div>
 
                   {/* Station-specific geo context */}

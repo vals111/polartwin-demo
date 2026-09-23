@@ -1,7 +1,7 @@
 ﻿import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { Live dataSnapshot } from '../../types';
+import { TelemetrySnapshot } from '../../types';
 
 // =============================================================================
 // Domain Color Palette
@@ -1338,7 +1338,7 @@ function hexToRgb(hex:string):string{
 // Props & Main StationScene Component
 // =============================================================================
 interface Props{
-  snapshot?:Live dataSnapshot;
+  snapshot?:TelemetrySnapshot;
   onSelectAsset:(id:string)=>void;
   selectedAsset:string|null;
   stationId:string;

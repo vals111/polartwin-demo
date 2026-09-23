@@ -1,7 +1,7 @@
 ﻿import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
-import { useLive dataStore } from '../../store/live dataStore';
+import { useTelemetryStore } from '../../store/telemetryStore';
 import { useAlertStore } from '../../store/alertStore';
 import {
   Activity, Shield, AlertTriangle, Droplet, Zap, Thermometer,
@@ -18,7 +18,7 @@ export type NodeId =
   | 'gen_set'
   | 'solar_pv'
   | 'battery_bank'
-  | 'power grid_bus'
+  | 'microgrid_bus'
   | 'habitat_heating'
   | 'science_labs'
   | 'waste_incinerator'
@@ -46,14 +46,14 @@ const TOPOLOGY_NODES: NodeDefinition[] = [
   { id: 'battery_bank', name: 'Battery Bank', x: 215, y: 242, w: 145, h: 68, color: '#10b981' },
 
   // Col 3: Central Power grid Power Hub
-  { id: 'power grid_bus', name: 'Power grid Bus', x: 415, y: 112, w: 165, h: 104, color: '#38bdf8' },
+  { id: 'microgrid_bus', name: 'Power grid Bus', x: 415, y: 112, w: 165, h: 104, color: '#38bdf8' },
 
   // Col 4: Consumer Subsystems & Loads
   { id: 'habitat_heating', name: 'Habitat Heating', x: 635, y: 18, w: 145, h: 68, color: '#818cf8' },
   { id: 'science_labs', name: 'Science Labs', x: 635, y: 132, w: 145, h: 68, color: '#a78bfa' },
   { id: 'waste_incinerator', name: 'Waste Incinerator', x: 635, y: 242, w: 145, h: 68, color: '#fb923c' },
 
-  // Col 5: Digital Twin Supervisory Control & Live data Concentrator
+  // Col 5: Digital Twin Supervisory Control & Telemetry Concentrator
   { id: 'scada_monitor', name: 'Automated Control System Monitor', x: 835, y: 132, w: 135, h: 68, color: '#2dd4bf' },
 ];
 
@@ -63,7 +63,7 @@ export const StationFlowTopology: React.FC<{
 }> = ({ stationId: propStationId, onStationSelect }) => {
   const navigate = useNavigate();
   const { selectedStationId, selectStation, stations } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime } = useLive dataStore();
+  const { liveSnapshot, liveRisk, lastTickTime } = useTelemetryStore();
   const { alerts } = useAlertStore();
 
   const currentStationId = propStationId || selectedStationId || 'maitri';
@@ -93,7 +93,7 @@ export const StationFlowTopology: React.FC<{
     }
   };
 
-  // Station Snapshots & Live data
+  // Station Snapshots & Telemetry
   const maitriSnap = liveSnapshot['maitri'];
   const bharatiSnap = liveSnapshot['bharati'];
   const activeSnap = isMaitri ? maitriSnap : bharatiSnap;
@@ -106,7 +106,7 @@ export const StationFlowTopology: React.FC<{
   const bharatiAlerts = alerts['bharati'] || [];
   const activeAlerts = isMaitri ? maitriAlerts : bharatiAlerts;
 
-  // Derived live data metrics with fallback cross-domain defaults
+  // Derived telemetry metrics with fallback cross-domain defaults
   const maitriMetrics = useMemo(() => {
     const env = maitriSnap?.environment;
     const eng = maitriSnap?.energy;
@@ -169,7 +169,7 @@ export const StationFlowTopology: React.FC<{
 
   const activeMetrics = isMaitri ? maitriMetrics : bharatiMetrics;
 
-  // Station Node Specific Live data & Details
+  // Station Node Specific Telemetry & Details
   const getNodeDetails = (nodeId: NodeId, stId: string) => {
     const isM = stId === 'maitri';
     const m = isM ? maitriMetrics : bharatiMetrics;
@@ -183,7 +183,7 @@ export const StationFlowTopology: React.FC<{
           status: (m.waterLevel > 25 ? 'normal' : 'warning') as 'normal' | 'warning' | 'critical',
           health: isM ? 98 : 96,
           statusText: isM ? 'Melt Intake Nominal' : 'Marine Intake Active',
-          live data: [
+          telemetry: [
             { label: 'Reservoir Level', value: `${m.waterLevel.toFixed(1)}%`, unit: 'volume' },
             { label: 'Intake Source Temp', value: isM ? '1.4°C' : '-1.8°C', unit: 'ambient' },
             { label: 'Pumping Velocity', value: isM ? '1.2 m/s' : '1.8 m/s', unit: 'line flow' },
@@ -200,7 +200,7 @@ export const StationFlowTopology: React.FC<{
           impactSummary: isM
             ? 'Lake Zub line feeds all freshwater. If heated conduit freeze occurs, emergency reserves deplete within 18 hours.'
             : 'Quilty Bay feeds seawater purification plant. If intake freezes, station switches to 28,000L internal buffer storage.',
-          impaocean depth probeownstream: ['water_treatment', 'habitat_heating', 'waste_incinerator']
+          impactDownstream: ['water_treatment', 'habitat_heating', 'waste_incinerator']
         };
 
       case 'water_treatment':
@@ -211,7 +211,7 @@ export const StationFlowTopology: React.FC<{
           status: 'normal' as const,
           health: isM ? 95 : 94,
           statusText: isM ? 'Recirculation Active' : 'RO Desal Nominal',
-          live data: [
+          telemetry: [
             { label: 'Conduit Temperature', value: `${m.waterTemp.toFixed(1)}°C`, unit: 'freeze margin' },
             { label: 'Daily Yield', value: `${m.waterDaily.toFixed(0)} L/d`, unit: 'potable' },
             { label: 'Filter Differential', value: isM ? '0.12 bar' : '1.45 bar (RO)', unit: 'head loss' },
@@ -224,7 +224,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Zero freeze hazard under current ambient conditions.',
           recommendedAction: 'Monitor UV ballast lamp hours and filter cartridge differential pressure.',
           impactSummary: 'Treats and conditions raw water. Power disruption halts potable water circulation.',
-          impaocean depth probeownstream: ['habitat_heating']
+          impactDownstream: ['habitat_heating']
         };
 
       case 'fuel_tank':
@@ -235,7 +235,7 @@ export const StationFlowTopology: React.FC<{
           status: (m.fuelPct > 20 ? 'normal' : 'warning') as 'normal' | 'warning',
           health: 99,
           statusText: 'Reserves Secure',
-          live data: [
+          telemetry: [
             { label: 'Usable Bulk Volume', value: `${m.fuelLiters.toLocaleString()} L`, unit: 'AGO Diesel' },
             { label: 'Reserve Percentage', value: `${m.fuelPct.toFixed(1)}%`, unit: 'storage' },
             { label: 'Station Autonomy', value: `${Math.round(m.fuelDays)} Days`, unit: 'safety margin' },
@@ -248,7 +248,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Autonomy comfortably exceeds the 115-day winter resupply window.',
           recommendedAction: 'Perform bi-weekly fuel water-separator drain and tank sediment check.',
           impactSummary: 'Strategic diesel reserve. Supplies primary generators for 100% of station electricity and heating.',
-          impaocean depth probeownstream: ['gen_set', 'power grid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator']
+          impactDownstream: ['gen_set', 'microgrid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator']
         };
 
       case 'gen_set':
@@ -259,7 +259,7 @@ export const StationFlowTopology: React.FC<{
           status: (m.genLoad < 90 ? 'normal' : 'warning') as 'normal' | 'warning',
           health: isM ? 91 : 94,
           statusText: isM ? 'Unit A Lead • Unit B Standby' : 'Automated Load-Sharing',
-          live data: [
+          telemetry: [
             { label: 'Active Gen Output', value: `${m.genLoad.toFixed(1)} kW`, unit: 'electrical' },
             { label: 'Generator Load Factor', value: `${((m.genLoad / (isM ? 100 : 200)) * 100).toFixed(0)}%`, unit: 'rating' },
             { label: 'Grid Frequency', value: isM ? '50.12 Hz' : '50.04 Hz', unit: 'isochronous' },
@@ -272,7 +272,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Load expected to peak at 78 kW during dinner/kitchen galley operations.',
           recommendedAction: isM ? 'Verify automatic transfer switch (ATS) battery starter charge.' : 'Monitor heat exchanger thermal transfer coefficient on Unit 1.',
           impactSummary: 'Primary prime mover. Any trip cascades to Battery Bank buffer and triggers standby generator start.',
-          impaocean depth probeownstream: ['power grid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator']
+          impactDownstream: ['microgrid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator']
         };
 
       case 'solar_pv':
@@ -283,7 +283,7 @@ export const StationFlowTopology: React.FC<{
           status: 'normal' as const,
           health: isM ? 96 : 97,
           statusText: 'Inverting Nominal',
-          live data: [
+          telemetry: [
             { label: 'Instantaneous Solar Yield', value: `${m.solarOutput.toFixed(1)} kW`, unit: 'DC generation' },
             { label: 'Solar Irradiance', value: `${m.solarRad.toFixed(0)} W/m²`, unit: 'insolation' },
             { label: 'Inverter Efficiency', value: isM ? '96.8%' : '97.4%', unit: 'MPPT' },
@@ -296,7 +296,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Peak output available for next 5 hours before polar diurnal dip.',
           recommendedAction: 'Inspect south-facing brackets for wind-vibration looseness.',
           impactSummary: 'Solar PV directly offsets diesel fuel consumption. Drop in solar immediately increases generator load.',
-          impaocean depth probeownstream: ['battery_bank', 'power grid_bus', 'gen_set', 'fuel_tank']
+          impactDownstream: ['battery_bank', 'microgrid_bus', 'gen_set', 'fuel_tank']
         };
 
       case 'battery_bank':
@@ -307,7 +307,7 @@ export const StationFlowTopology: React.FC<{
           status: (m.batteryLevel > 70 ? 'normal' : 'warning') as 'normal' | 'warning',
           health: isM ? 94 : 98,
           statusText: 'Float Charging',
-          live data: [
+          telemetry: [
             { label: 'State of Charge (SOC)', value: `${m.batteryLevel.toFixed(1)}%`, unit: 'stored energy' },
             { label: 'DC Bus Voltage', value: isM ? '54.2 V' : '384.6 V', unit: 'nominal' },
             { label: 'Cell Balance Delta', value: isM ? '0.04 V' : '0.012 V', unit: 'dispersion' },
@@ -315,15 +315,15 @@ export const StationFlowTopology: React.FC<{
           ],
           trend: [91, 92, 92, 93, 92, 92, 92],
           dependencies: ['Solar PV (Charge Source)', 'Power grid Bus (AC Rectifier)', 'Thermal Conditioning Duct'],
-          affectedSystems: ['Power grid Bus (Transient Stability)', 'Critical Automated Control System & Live data', 'Life Support UPS'],
+          affectedSystems: ['Power grid Bus (Transient Stability)', 'Critical Automated Control System & Telemetry', 'Life Support UPS'],
           riskContribution: { score: 1, level: 'NOMINAL', detail: 'Reserve provides 4.2 hours of critical life support' },
           forecast: 'Capacity fully stabilized under float charge.',
           recommendedAction: 'Verify emergency DC lighting disconnect circuit quarterly.',
           impactSummary: 'Provides power grid stabilization and un-interruptible power during generator transitions.',
-          impaocean depth probeownstream: ['power grid_bus', 'scada_monitor']
+          impactDownstream: ['microgrid_bus', 'scada_monitor']
         };
 
-      case 'power grid_bus':
+      case 'microgrid_bus':
         return {
           currentValue: `Load: ${m.genLoad.toFixed(0)} kW`,
           secondaryMetric: isM ? '415V 50Hz (PF: 0.94)' : '415V Smart Synchronized',
@@ -331,7 +331,7 @@ export const StationFlowTopology: React.FC<{
           status: (m.genLoad < 90 ? 'normal' : 'warning') as 'normal' | 'warning',
           health: isM ? 98 : 99,
           statusText: 'Isochronous Stability',
-          live data: [
+          telemetry: [
             { label: 'Total Grid Demand', value: `${m.genLoad.toFixed(1)} kW`, unit: 'active power' },
             { label: 'System Voltage', value: isM ? '414.2 V' : '415.8 V', unit: '3-phase AC' },
             { label: 'Power Factor', value: isM ? '0.94' : '0.96', unit: 'inductive' },
@@ -344,7 +344,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Transient stability margin high. Standby generator available if load exceeds 85 kW.',
           recommendedAction: 'Maintain balanced phase distribution across Galley and Lab breaker panels.',
           impactSummary: 'Central electrical artery. Connects all power generation to life support and science operations.',
-          impaocean depth probeownstream: ['habitat_heating', 'science_labs', 'waste_incinerator', 'scada_monitor']
+          impactDownstream: ['habitat_heating', 'science_labs', 'waste_incinerator', 'scada_monitor']
         };
 
       case 'habitat_heating':
@@ -355,7 +355,7 @@ export const StationFlowTopology: React.FC<{
           status: 'normal' as const,
           health: isM ? 93 : 96,
           statusText: 'Thermal Equilibrium',
-          live data: [
+          telemetry: [
             { label: 'Heating Thermal Demand', value: `${m.heatingLoad.toFixed(1)} kW`, unit: 'thermal/electric' },
             { label: 'Living Quarters Indoor Temp', value: isM ? '20.4°C' : '21.8°C', unit: 'target 21°C' },
             { label: 'Outside Ambient Delta', value: `${Math.abs(m.temp - 21).toFixed(1)}°C`, unit: 'temperature lift' },
@@ -368,7 +368,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Demand will rise +4 kW if night winds gust over 50 km/h.',
           recommendedAction: 'Check differential pressure across HVAC air handler filters.',
           impactSummary: 'Crucial life support. If heating drops below 12 kW, interior structures experience cold-soak.',
-          impaocean depth probeownstream: ['scada_monitor']
+          impactDownstream: ['scada_monitor']
         };
 
       case 'science_labs':
@@ -379,11 +379,11 @@ export const StationFlowTopology: React.FC<{
           status: 'normal' as const,
           health: isM ? 99 : 98,
           statusText: 'All Research Racks Online',
-          live data: [
+          telemetry: [
             { label: 'Lab Power Draw', value: isM ? '17.0 kW' : '26.0 kW', unit: 'regulated AC' },
             { label: 'Dedicated UPS State', value: '100%', unit: 'isolated' },
             { label: 'Instruments Active', value: isM ? '14 Scientific Arrays' : '22 Sensors & Satcom', unit: 'payload' },
-            { label: 'Live data Uplink', value: isM ? 'Ku-Band 256 kbps' : 'Ka/Ku 2 Mbps', unit: 'data speed' },
+            { label: 'Telemetry Uplink', value: isM ? 'Ku-Band 256 kbps' : 'Ka/Ku 2 Mbps', unit: 'data speed' },
           ],
           trend: [16, 17, 17, 17, 18, 17, 17],
           dependencies: ['Power grid Bus (Regulated Feeder)', 'Conditioned Room HVAC', 'Isolated Instrument Ground'],
@@ -392,7 +392,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Continuous data acquisition scheduled through the 24-hour cycle.',
           recommendedAction: 'Confirm seismology accelerometer zero-drift calibration.',
           impactSummary: 'Scientific mission payload. Can be self-operatingly shedding during emergency power conservation.',
-          impaocean depth probeownstream: ['scada_monitor']
+          impactDownstream: ['scada_monitor']
         };
 
       case 'waste_incinerator':
@@ -403,7 +403,7 @@ export const StationFlowTopology: React.FC<{
           status: 'normal' as const,
           health: isM ? 90 : 92,
           statusText: 'Madrid Protocol Compliant',
-          live data: [
+          telemetry: [
             { label: 'Burn Chamber Temperature', value: isM ? '852°C' : '894°C', unit: 'primary burn' },
             { label: 'Electrical Blower/Element', value: isM ? '10.0 kW' : '18.0 kW', unit: 'rotating storm draft' },
             { label: 'Exhaust Scrubber dP', value: isM ? '42 Pa' : '68 Pa', unit: 'fine particles' },
@@ -416,7 +416,7 @@ export const StationFlowTopology: React.FC<{
           forecast: 'Daily solid waste reduction burn cycle completed nominally.',
           recommendedAction: 'Clean flue gas temperature sensor probe before evening run.',
           impactSummary: 'Thermal waste destruction. Intermittent load; shedding has zero impact on life support.',
-          impaocean depth probeownstream: ['scada_monitor']
+          impactDownstream: ['scada_monitor']
         };
 
       case 'scada_monitor':
@@ -427,8 +427,8 @@ export const StationFlowTopology: React.FC<{
           status: 'normal' as const,
           health: 100,
           statusText: '16 Domains Synchronized',
-          live data: [
-            { label: 'Live data Ingestion Rate', value: '1,420 msgs/min', unit: 'MQTT/Modbus' },
+          telemetry: [
+            { label: 'Telemetry Ingestion Rate', value: '1,420 msgs/min', unit: 'MQTT/Modbus' },
             { label: 'Round-Trip Satellite Ping', value: isM ? '680 ms' : '490 ms', unit: 'signal delay' },
             { label: 'Anomaly Inference Engine', value: 'Active (IsolationForest)', unit: 'AI Model' },
             { label: 'Data Freshness', value: m.freshness, unit: 'real-time' },
@@ -437,10 +437,10 @@ export const StationFlowTopology: React.FC<{
           dependencies: ['All Subsystem Modbus RTUs', 'Satellite Dish Radio unit', 'UPS Control Power'],
           affectedSystems: ['NCPOR Mission Operations Centre', 'Self-operating Safe-Mode Failover', 'Historical Data Vault'],
           riskContribution: { score: 1, level: 'NOMINAL', detail: 'Full real-time visibility across all 16 domains' },
-          forecast: 'Live data channel clear; zero packet loss recorded in last 240 ticks.',
+          forecast: 'Telemetry channel clear; zero packet loss recorded in last 240 ticks.',
           recommendedAction: 'Verify watchdog heartbeat counter and database backup replication.',
-          impactSummary: 'Supervisory nervous system. Collects live data from all nodes and drives cross-domain simulation.',
-          impaocean depth probeownstream: []
+          impactSummary: 'Supervisory nervous system. Collects telemetry from all nodes and drives cross-domain simulation.',
+          impactDownstream: []
         };
     }
   };
@@ -452,19 +452,19 @@ export const StationFlowTopology: React.FC<{
   const getDownstreamCascade = (startNode: NodeId): NodeId[] => {
     switch (startNode) {
       case 'solar_pv':
-        return ['solar_pv', 'battery_bank', 'power grid_bus', 'gen_set', 'fuel_tank'];
+        return ['solar_pv', 'battery_bank', 'microgrid_bus', 'gen_set', 'fuel_tank'];
       case 'lake_zub':
         return ['lake_zub', 'water_treatment', 'habitat_heating', 'waste_incinerator'];
       case 'water_treatment':
         return ['water_treatment', 'habitat_heating'];
       case 'fuel_tank':
-        return ['fuel_tank', 'gen_set', 'power grid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator'];
+        return ['fuel_tank', 'gen_set', 'microgrid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator'];
       case 'gen_set':
-        return ['gen_set', 'power grid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator', 'scada_monitor'];
+        return ['gen_set', 'microgrid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator', 'scada_monitor'];
       case 'battery_bank':
-        return ['battery_bank', 'power grid_bus', 'scada_monitor'];
-      case 'power grid_bus':
-        return ['power grid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator', 'scada_monitor'];
+        return ['battery_bank', 'microgrid_bus', 'scada_monitor'];
+      case 'microgrid_bus':
+        return ['microgrid_bus', 'habitat_heating', 'science_labs', 'waste_incinerator', 'scada_monitor'];
       default:
         return [startNode, 'scada_monitor'];
     }
@@ -708,7 +708,7 @@ export const StationFlowTopology: React.FC<{
             stroke="#818cf8" strokeWidth="2.5"
             strokeDasharray="6 3"
             markerEnd="url(#arrow-blue)"
-            opacity={activeHighlightedNodes.length === 0 || activeHighlightedNodes.includes('power grid_bus') ? 0.9 : 0.25}
+            opacity={activeHighlightedNodes.length === 0 || activeHighlightedNodes.includes('microgrid_bus') ? 0.9 : 0.25}
           >
             <animate attributeName="stroke-dashoffset" values="18;0" dur="1.5s" repeatCount="indefinite" />
           </line>
@@ -719,7 +719,7 @@ export const StationFlowTopology: React.FC<{
             stroke="#a78bfa" strokeWidth="2.5"
             strokeDasharray="6 3"
             markerEnd="url(#arrow-purple)"
-            opacity={activeHighlightedNodes.length === 0 || activeHighlightedNodes.includes('power grid_bus') ? 0.9 : 0.25}
+            opacity={activeHighlightedNodes.length === 0 || activeHighlightedNodes.includes('microgrid_bus') ? 0.9 : 0.25}
           >
             <animate attributeName="stroke-dashoffset" values="18;0" dur="1.6s" repeatCount="indefinite" />
           </line>
@@ -730,7 +730,7 @@ export const StationFlowTopology: React.FC<{
             stroke="#fb923c" strokeWidth="2.2"
             strokeDasharray="6 3"
             markerEnd="url(#arrow-amber)"
-            opacity={activeHighlightedNodes.length === 0 || activeHighlightedNodes.includes('power grid_bus') ? 0.85 : 0.25}
+            opacity={activeHighlightedNodes.length === 0 || activeHighlightedNodes.includes('microgrid_bus') ? 0.85 : 0.25}
           >
             <animate attributeName="stroke-dashoffset" values="18;0" dur="1.8s" repeatCount="indefinite" />
           </line>
@@ -970,14 +970,14 @@ export const StationFlowTopology: React.FC<{
 
           {/* Detailed Inspector Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
-            {/* Live data Block */}
+            {/* Telemetry Block */}
             <div className="bg-[#040b17] p-3 rounded-lg border border-slate-800 space-y-2">
               <div className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1.5">
                 <Gauge className="w-3.5 h-3.5 text-cyan-400" />
-                Live Live data Channels
+                Live Telemetry Channels
               </div>
               <div className="space-y-1.5">
-                {activeNodeDetails.live data.map((ch) => (
+                {activeNodeDetails.telemetry.map((ch) => (
                   <div key={ch.label} className="flex items-center justify-between text-[11px] border-b border-slate-900 pb-1">
                     <span className="text-slate-400">{ch.label}:</span>
                     <span className="font-bold text-white">

@@ -1,7 +1,7 @@
 ﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useLive dataStore } from '../store/live dataStore';
+import { useTelemetryStore } from '../store/telemetryStore';
 import * as echarts from 'echarts';
 import {
   Building2, Layers, RefreshCw, Wind, Thermometer,
@@ -58,7 +58,7 @@ export const InfrastructurePage: React.FC = () => {
   const stationId = id || selectedStationId || 'maitri';
   const isMaitri = stationId === 'maitri';
 
-  const { liveSnapshot } = useLive dataStore();
+  const { liveSnapshot } = useTelemetryStore();
   const snapshot = liveSnapshot[stationId];
   const env = snapshot?.environment;
   const infraData = snapshot?.infrastructure;
@@ -68,7 +68,7 @@ export const InfrastructurePage: React.FC = () => {
   const [expandedVehicle, setExpandedVehicle] = useState<string | null>(null);
   const [expandedLab, setExpandedLab] = useState<string | null>(null);
 
-  // Live live data values
+  // Live telemetry values
   const windSpeed = env?.wind_speed ?? (isMaitri ? 32 : 44);
   const ambientTemp = env?.temperature ?? (isMaitri ? -25.2 : -18.4);
   const windStress = Math.min(100, Math.round((windSpeed / 120) * 100 * 10) / 10);
@@ -174,7 +174,7 @@ export const InfrastructurePage: React.FC = () => {
     { id: 'met', name: 'Meteorology & Weather Observatory', icon: '🌡️', color: '#f59e0b', status: 'Active' as const, running: 'Continuous synoptic weather observations every 3 hours for WMO SYNOP, weather balloon probe balloon launch twice daily at 00Z & 12Z', equipment: 'Automatic Weather Station (AWS), RS41 weather balloon probe + balloon launcher, VAISALA weather sensors, Stevenson screen', output: 'SYNOP/TEMP data transmitted to India Meteorological Department & ECMWF', established: '1989' },
     { id: 'seismo', name: 'Geophysics & Seismology Station', icon: '📡', color: '#f97316', status: 'Standby' as const, running: 'Monitoring Antarctic micro-seismic activity and global P/S-wave teleseismic events. Currently in data-only mode (austral winter)', equipment: 'Broadband earthquake sensor (STS-2), MEMS accelerometer array, GPS timing unit, quiet vaulted installation on bedrock', output: 'Data shared with GEOFON global seismic network in real-time', established: '2003' },
   ] : [
-    { id: 'ocean', name: 'Prydz Bay Marine & Oceanography Lab', icon: '🌊', color: '#38bdf8', status: 'Active' as const, running: 'Prydz Bay ocean depth probe profiling (Conductivity-Temperature-Depth), ocean current measurement, sea-ice thickness sonar, krill biomass surveys', equipment: 'SEABIRD SBE19+ ocean depth probe, ADCP current profiler, ROPOS ROV (500m depth), acoustic Doppler sonar, plankton nets', output: 'Southern Ocean circulation data for international CLIVAR program; 5 active research missions', established: '2012' },
+    { id: 'ocean', name: 'Prydz Bay Marine & Oceanography Lab', icon: '🌊', color: '#38bdf8', status: 'Active' as const, running: 'Prydz Bay CTD sensor profiling (water temperature & salinity depth), ocean current measurement, sea-ice thickness sonar, krill biomass surveys', equipment: 'SEABIRD SBE19+ CTD sensor, ADCP current profiler, ROPOS ROV (500m depth), acoustic Doppler sonar, plankton nets', output: 'Southern Ocean circulation data for international CLIVAR program; 5 active research missions', established: '2012' },
     { id: 'cryo', name: 'Cryosphere & Ice Sheet Dynamics Lab', icon: '🧊', color: '#00e5ff', status: 'Active' as const, running: 'Larsemann Hills ice sheet mass balance using GNSS, InSAR satellite correlation, surface melting stake network monitoring across Prydz Bay glacier tributaries', equipment: 'Differential GNSS (mm-level accuracy), surface melting stake array (28 sites), ice thickness radar, drone photogrammetry (DJI M300)', output: 'Antarctic ice mass budget contribution to GRACE-FO satellite data validation', established: '2012' },
     { id: 'atmos', name: 'Weather layer Chemistry & Aerosol Lab', icon: '🌬️', color: '#10b981', status: 'Active' as const, running: 'Southern Ocean aerosol chemistry (sea-salt, DMS, black carbon), total column ozone (ozone meter), NOAA baseline weather layer CO₂/CH₄ monitoring', equipment: 'AERONET sun photometer, ozone ozone meter, DMA particle sizer, GC-FID trace gas analyzer, FTIR spectrum analyzer', output: 'India contribution to WMO GAW network; 3 published papers in last 12 months', established: '2012' },
     { id: 'bio', name: 'Biology, Ecology & Krill Lab', icon: '🦠', color: '#a855f7', status: 'Active' as const, running: 'Antarctic krill (Euphausia superba) breeding cycle study, coastal penguin colony monitoring via remote cameras, micro-plastic contamination analysis in fish tissue', equipment: 'Dissecting microscope, DNA sequencer (MinION portable), cold room (−30°C), GF/C filtration for microplastics, Nikon camera trap network', output: 'Krill biomass estimates fed to CCAMLR international fisheries management body', established: '2013' },
@@ -198,7 +198,7 @@ export const InfrastructurePage: React.FC = () => {
     garage: { name: 'Integrated Vehicle & Cargo Apron Garage', size: '1,200 m²', capacity: '8 vehicles + helicopter apron', heating: 'CHP waste-heat floor heating, 15°C interior' },
     vehicles: [
       { id: 'heli', name: 'HAL Dhruv ALH / Ka-32 Helicopter Slot', type: 'Helicopter Landing & Servicing Pad', icon: '🚁', status: 'Standby' as const, health: 100, hours: 0, detail: 'Dedicated 20×20m helipad deck on station roof with tie-down anchors for HAL Dhruv Advanced Light Helicopter and Kamov Ka-32 cargo helicopter. Helipad lighting, fuel tank, and hover-boarding crane for cargo sling operations. Current season: awaiting November arrival of rotary wing assets.', color: '#38bdf8' },
-      { id: 'zodiac', name: 'Zodiac Milpro FC470 RIB × 3', type: 'Rigid Inflatable Boats (Marine)', icon: '🚤', status: 'Active' as const, health: 97, hours: 245, detail: '3 × RHIB (Rigid Hull Inflatable Boats) for Prydz Bay coastal marine science, ocean depth probe deployment, krill trawl, and fast transfer to NCPOR research vessel MV SCI. Outfitted with 60HP Yamaha outboards, GPS chart plotter, dry suit storage, and ROV deployment frames.', color: '#38bdf8' },
+      { id: 'zodiac', name: 'Zodiac Milpro FC470 RIB × 3', type: 'Rigid Inflatable Boats (Marine)', icon: '🚤', status: 'Active' as const, health: 97, hours: 245, detail: '3 × RHIB (Rigid Hull Inflatable Boats) for Prydz Bay coastal marine science, sensor deployment, krill trawl, and fast transfer to NCPOR research vessel MV SCI. Outfitted with 60HP Yamaha outboards, GPS chart plotter, dry suit storage, and ROV deployment frames.', color: '#38bdf8' },
       { id: 'pb1', name: 'PistenBully 600 Polar (Heavy)', type: 'Heavy Tracked Snow Machine', icon: '🚛', status: 'Nominal' as const, health: 97, hours: 1240, detail: 'Larsemann Hills terrain management, cargo movement from helipad to station, and peninsula traverse. Air-conditioned pressurized cab with 6-person capacity. Equipped with blade for snow clearance on helipad deck approach.', color: '#06b6d4' },
       { id: 'kassb', name: 'Kassbohrer All-Terrain Vehicle', type: 'Cargo Transport', icon: '🚜', status: 'Nominal' as const, health: 93, hours: 890, detail: 'Amphibious terrain vehicle used for movement of scientific equipment and cargo containers between coastal mooring area, fuel drum storage, and main station. 10-tonne payload capacity.', color: '#06b6d4' },
       { id: 'atv', name: 'Polaris Sportsman 1000 ATV × 2', type: 'All-Terrain Vehicles', icon: '🏍️', status: 'Nominal' as const, health: 99, hours: 180, detail: 'Two ATVs for rapid field access across rocky Larsemann Hills terrain. Extended-range fuel tanks (90 km range). Used for penguin colony monitoring, geological survey access, and emergency response.', color: '#10b981' },
@@ -318,7 +318,7 @@ export const InfrastructurePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Modules */}
             <div className="lg:col-span-2 space-y-4">
-              <SectionHeader icon={<Building2 className="w-5 h-5" />} title="Station Building Modules Live data" subtitle="Click any module for full technical specification" color="#06b6d4" />
+              <SectionHeader icon={<Building2 className="w-5 h-5" />} title="Station Building Modules Telemetry" subtitle="Click any module for full technical specification" color="#06b6d4" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(isMaitri ? [
                   { id: 'a', name: 'Main Living Block (A & B Wings)', integrity: infraData?.modules?.[0]?.integrity ?? 94.0, temp: infraData?.modules?.[0]?.temp_c ?? 19.4, status: 'Nominal' as const, r: 38, pressure: 1012, inspected: '2 days ago' },
@@ -360,7 +360,7 @@ export const InfrastructurePage: React.FC = () => {
             {/* Wind Stress Chart */}
             <div className="glass-panel p-5 rounded-xl border border-polar-border flex flex-col">
               <h3 className="text-xs font-mono uppercase font-bold text-white tracking-wider flex items-center gap-2 mb-3">
-                <Activity className="w-4 h-4 text-cyan-400" /> Wind Stress Live data (24h)
+                <Activity className="w-4 h-4 text-cyan-400" /> Wind Stress Telemetry (24h)
               </h3>
               <div ref={chartRef} className="w-full flex-1" style={{ minHeight: 200 }} />
               <div className="mt-3 pt-3 border-t border-polar-border/40 space-y-1.5 text-[10px] font-mono text-slate-400">
