@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TelemetrySnapshot, RiskData } from '../../types';
+import { Live dataSnapshot, RiskData } from '../../types';
 import { useStationStore } from '../../store/stationStore';
-import { useTelemetryStore } from '../../store/telemetryStore';
+import { useLive dataStore } from '../../store/live dataStore';
 import { useAlertStore } from '../../store/alertStore';
 import { SparklineChart } from './SparklineChart';
 import {
@@ -15,7 +15,7 @@ import {
 export type CausalCardId = 'env' | 'energy' | 'gen' | 'fuel' | 'logistics' | 'risk';
 
 interface Props {
-  snapshot?: TelemetrySnapshot;
+  snapshot?: Live dataSnapshot;
   risk?: RiskData;
   stationId?: string;
 }
@@ -101,7 +101,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
 }) => {
   const navigate = useNavigate();
   const { selectedStationId, selectStation } = useStationStore();
-  const { liveSnapshot, liveRisk, lastTickTime } = useTelemetryStore();
+  const { liveSnapshot, liveRisk, lastTickTime } = useLive dataStore();
   const { alerts } = useAlertStore();
 
   const currentStationId = propStationId || selectedStationId || 'maitri';
@@ -118,7 +118,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
     navigate(`/station/${stId}`);
   };
 
-  // Telemetry for both stations
+  // Live data for both stations
   const maitriSnap = liveSnapshot['maitri'] || propSnapshot;
   const bharatiSnap = liveSnapshot['bharati'] || propSnapshot;
   const activeSnap = isMaitri ? maitriSnap : bharatiSnap;
@@ -222,7 +222,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
       logisticsStatus: 'Harbor Channel Monitored',
       upcomingVessel: 'MV Vasiliy Golovnin',
       seaIceDelayRisk: 'Moderate (Larsemann Hills Fast Ice)',
-      requiredSupplies: 'ISO Tank Re-cert + SWRO Replacement Membranes',
+      requiredSupplies: 'ISO Tank Re-cert + Seawater Filter Plant Replacement Membranes',
 
       riskScore: bharatiRisk?.score ?? 14,
       riskLevel: bharatiRisk?.level ?? 'LOW',
@@ -239,13 +239,13 @@ export const CausalGraphViewer: React.FC<Props> = ({
         return {
           upstream: [] as CausalCardId[],
           downstream: ['energy', 'gen', 'logistics', 'risk'] as CausalCardId[],
-          summary: 'Ambient temperature, katabatic winds, and solar radiation directly drive heating loads and resupply accessibility.'
+          summary: 'Ambient temperature, polar downslope winds, and solar radiation directly drive heating loads and resupply accessibility.'
         };
       case 'energy':
         return {
           upstream: ['env'] as CausalCardId[],
           downstream: ['gen', 'risk'] as CausalCardId[],
-          summary: 'Aggregated base, HVAC, and lab demands dictate the net electrical generation target for the microgrid.'
+          summary: 'Aggregated base, HVAC, and lab demands dictate the net electrical generation target for the power grid.'
         };
       case 'gen':
         return {
@@ -285,24 +285,24 @@ export const CausalGraphViewer: React.FC<Props> = ({
       case 'env':
         return {
           currentSummary: isM
-            ? `Inland Antarctic plateau climate: -25.4°C ambient with 34.2 km/h katabatic winds and 195 W/m² solar irradiance.`
+            ? `Inland Antarctic plateau climate: -25.4°C ambient with 34.2 km/h polar downslope winds and 195 W/m² solar irradiance.`
             : `Maritime polar coastal climate: -16.2°C ambient with 28.5 km/h coastal winds and 245 W/m² solar irradiance.`,
           keyMetrics: [
             { label: 'Ambient Temperature', value: `${d.temp.toFixed(1)}°C`, sub: 'Target indoor: 21°C' },
             { label: 'Wind Velocity', value: `${d.wind.toFixed(0)} km/h`, sub: `Gusts to ${d.gust.toFixed(0)} km/h` },
-            { label: 'Solar Irradiance', value: `${d.solarRad.toFixed(0)} W/m²`, sub: 'Bifacial insolation' },
-            { label: 'Atmospheric Pressure', value: `${d.pressure.toFixed(0)} hPa`, sub: 'Barometric tendency: Stable' },
+            { label: 'Solar Irradiance', value: `${d.solarRad.toFixed(0)} W/m²`, sub: 'Double-sided insolation' },
+            { label: 'Weather layer Pressure', value: `${d.pressure.toFixed(0)} hPa`, sub: 'Air pressure tendency: Stable' },
             { label: 'Relative Humidity', value: `${d.humidity.toFixed(0)}%`, sub: 'Ice crystallization point' },
-            { label: 'Weather Severity', value: `${(d.severity * 100).toFixed(0)}%`, sub: isM ? 'Moderate Katabatic' : 'Mild Coastal' },
+            { label: 'Weather Severity', value: `${(d.severity * 100).toFixed(0)}%`, sub: isM ? 'Moderate Polar downslope wind' : 'Mild Coastal' },
           ],
           trend: [ -23, -24, -25, -25.4, -25.2, -25.6, -25.4 ],
           whyExplanation: isM
-            ? `Katabatic air currents spilling from the Polar Plateau across the Schirmacher Oasis create steady freezing conditions (-25.4°C). Every 1°C ambient drop increases habitat heating demand by approximately 1.35 kW.`
-            : `Coastal Larsemann Hills geography moderates ambient cold (-16.2°C) via maritime thermal mass, but brings humid salt-fog and variable coastal storm fronts that affect photovoltaic generation.`,
-          upstreamDrivers: ['Antarctic Polar Vortex Circulation', 'Schirmacher Moraine Topography', 'Diurnal Polar Sun Elevation'],
+            ? `Polar downslope wind air currents spilling from the Polar Plateau across the Schirmacher Oasis create steady freezing conditions (-25.4°C). Every 1°C ambient drop increases habitat heating demand by approximately 1.35 kW.`
+            : `Coastal Larsemann Hills geography moderates ambient cold (-16.2°C) via maritime thermal mass, but brings humid salt-fog and variable coastal storm fronts that affect solar panel generation.`,
+          upstreamDrivers: ['Antarctic Polar Spinning air mass Circulation', 'Schirmacher Moraine Topography', 'Diurnal Polar Sun Elevation'],
           downstreamConsequences: [
             `Forces ${d.heatingLoad.toFixed(0)} kW of Habitat Heating draw across thermal loops`,
-            `Supplies ${d.solarOutput.toFixed(0)} kW of supplemental Solar PV power to microgrid`,
+            `Supplies ${d.solarOutput.toFixed(0)} kW of supplemental Solar PV power to power grid`,
             `Dictates trace-heating requirement for overland water conduits`,
             `Governs air/tractor traverse logistics weather windows`
           ],
@@ -328,7 +328,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
           trend: [ 81, 83, 85, 84, 85, 86, 85 ],
           whyExplanation: isM
             ? `Demand is dominated by the 46.4°C thermal lift required between exterior (-25.4°C) and interior (21°C) temperatures, consuming 32.0 kW. Science and galley base operations contribute the remaining 53.0 kW.`
-            : `Bharati operates higher baseload (45 kW) due to containerized modular architecture, earth-station tracking antenna motors (18 kW), and dual reverse-osmosis desalination pump heaters.`,
+            : `Bharati operates higher baseload (45 kW) due to containerized modular architecture, earth-station tracking aerial motors (18 kW), and dual reverse-osmosis seawater purification pump heaters.`,
           upstreamDrivers: ['Environment (Exterior Cold Lift)', 'Crew Activity & Kitchen Meal Prep Cycles', 'Science Array Radar Transmissions'],
           downstreamConsequences: [
             `Directly sizes dispatch setpoint on Generator (${d.genLoad.toFixed(0)} kW load)`,
@@ -357,15 +357,15 @@ export const CausalGraphViewer: React.FC<Props> = ({
           trend: [ 64, 66, 68, 67, 68, 69, 68 ],
           whyExplanation: isM
             ? `Generator output equals Total Demand (85.0 kW) minus Solar PV output (22.0 kW) + charging overhead = 68.0 kW. Single-unit running preserves fuel while Unit B automated transfer switch stands ready.`
-            : `Bharati's microgrid synchronizer splits 84.0 kW load across two CHP units (42 kW each) to optimize engine thermal efficiency and harvest 64 kWt of jacket water heat directly into the living module hydronic radiators.`,
+            : `Bharati's power grid synchronizer splits 84.0 kW load across two CHP units (42 kW each) to optimize engine thermal efficiency and harvest 64 kWt of jacket water heat directly into the living module hydronic radiators.`,
           upstreamDrivers: ['Energy Demand (Net Load Request)', 'Solar PV Contribution (Offset)', 'Generator Controller Governor'],
           downstreamConsequences: [
             `Burns ${d.fuelBurnRate.toFixed(2)} L/hr of Arctic Gas Oil from storage`,
-            `Supplies 415V 3-phase power to central Microgrid Bus`,
+            `Supplies 415V 3-phase power to central Power grid Bus`,
             `Provides exhaust and jacket thermal cogeneration for station heat`
           ],
-          forecast: 'Genset will continue at 65–75 kW throughout polar daylight window.',
-          riskContribution: { score: isM ? 5 : 2, level: isM ? 'MODERATE' : 'LOW', detail: isM ? 'Single active generator without hot redundancy' : 'N+1 automated CHP array' },
+          forecast: 'Diesel generator will continue at 65–75 kW throughout polar daylight window.',
+          riskContribution: { score: isM ? 5 : 2, level: isM ? 'MODERATE' : 'LOW', detail: isM ? 'Single active generator without hot backup systems' : 'N+1 automated CHP array' },
           recommendedAction: isM ? 'Verify battery starter voltage on standby Unit B (minimum 25.4V).' : 'Inspect heat exchanger differential pressure on CHP unit 1.',
           cardDisplayValue: `${d.genLoad.toFixed(0)} kW Generator`
         };
@@ -414,7 +414,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
           ],
           trend: [ 120, 119, 118, 117, 116, 115 ],
           whyExplanation: isM
-            ? `Maitri relies on overland convoy traverse from the coastal ice shelf (India Bay, 80 km distant). Fuel autonomy of 338 days provides complete isolation tolerance even if extreme sea-ice prevents ship docking for an entire season.`
+            ? `Maitri relies on overland supply run traverse from the coastal ice shelf (India Bay, 80 km distant). Fuel autonomy of 338 days provides complete isolation tolerance even if extreme sea-ice prevents ship docking for an entire season.`
             : `Bharati features a natural coastal harbor approach at Larsemann Hills. Direct ship-to-shore fuel hose pumping allows rapid replenishment, and its 300kL ISO capacity provides over 1.4 years of standalone autonomy.`,
           upstreamDrivers: ['Fuel Reserve Depletion Rate', 'Antarctic Fast-Ice Extent', 'Vessel Charter Itinerary'],
           downstreamConsequences: [
@@ -432,20 +432,20 @@ export const CausalGraphViewer: React.FC<Props> = ({
         return {
           currentSummary: isM
             ? `Composite Station Risk is LOW (18/100 pts). Primary factor is overland Lake Zub water line freeze hazard.`
-            : `Composite Station Risk is LOW (14/100 pts). High resilience due to triple CHP redundancy and extensive fuel farm.`,
+            : `Composite Station Risk is LOW (14/100 pts). High resilience due to triple CHP backup systems and extensive fuel farm.`,
           keyMetrics: [
             { label: 'Composite Risk Score', value: `${d.riskScore} / 100`, sub: `${d.riskLevel} Hazard Severity` },
             { label: 'Primary Risk Driver', value: isM ? 'Overland Pipe Freeze (6 pts)' : 'Marine Intake Icing (5 pts)', sub: 'Domain contribution' },
-            { label: 'Generator Redundancy', value: isM ? 'Single Unit Active (5 pts)' : 'N+1 Redundant (2 pts)', sub: 'Power risk factor' },
+            { label: 'Generator Backup systems', value: isM ? 'Single Unit Active (5 pts)' : 'N+1 Backup (2 pts)', sub: 'Power risk factor' },
             { label: 'Fuel Autonomy Margin', value: 'Zero Risk (1 pt)', sub: `> ${Math.round(d.daysRemaining)} days autonomy` },
-            { label: 'Weather Hazard Impact', value: isM ? 'Katabatic Chill (4 pts)' : 'Maritime Winds (3 pts)', sub: 'Environmental score' },
+            { label: 'Weather Hazard Impact', value: isM ? 'Polar downslope wind Chill (4 pts)' : 'Maritime Winds (3 pts)', sub: 'Environmental score' },
             { label: 'Active Station Alerts', value: `${activeAlerts.length} Active`, sub: activeAlerts.length === 0 ? 'All nominal' : 'Advisories present' },
           ],
           trend: [ 17, 18, 18, 19, 18, 18, 18 ],
           whyExplanation: isM
-            ? `Maitri's composite score (18 pts) is calculated from weighted cross-domain factors: Water Conduit Freeze Hazard (6 pts), Single-generator Run without hot standby (5 pts), and Katabatic Wind Chill (4 pts). No safety-critical thresholds are breached.`
-            : `Bharati's composite score (14 pts) reflects lower mechanical vulnerability thanks to modular 3×100kVA CHP redundancy, dual SWRO trains, and 525-day fuel autonomy. The 14 points originate primarily from Quilty Bay marine intake tidal exposure.`,
-          upstreamDrivers: ['Environment (Katabatic Freeze)', 'Power (Single Unit Running)', 'Logistics (Ice Shelf Distance)'],
+            ? `Maitri's composite score (18 pts) is calculated from weighted cross-domain factors: Water Conduit Freeze Hazard (6 pts), Single-generator Run without hot standby (5 pts), and Polar downslope wind Wind Chill (4 pts). No safety-critical thresholds are breached.`
+            : `Bharati's composite score (14 pts) reflects lower mechanical vulnerability thanks to modular 3×100kVA CHP backup systems, dual Seawater Filter Plant trains, and 525-day fuel autonomy. The 14 points originate primarily from Quilty Bay marine intake tidal exposure.`,
+          upstreamDrivers: ['Environment (Polar downslope wind Freeze)', 'Power (Single Unit Running)', 'Logistics (Ice Shelf Distance)'],
           downstreamConsequences: [
             `Triggers automated safe-mode guidelines if score breaches 40 pts (MEDIUM)`,
             `Informs Mission Operations Centre (NCPOR Goa) daily operational readiness status`,
@@ -486,14 +486,14 @@ export const CausalGraphViewer: React.FC<Props> = ({
         <div>
           <div className="flex items-center gap-2.5">
             <h3 className="text-base font-bold text-white tracking-wide flex items-center gap-2 font-mono">
-              <span>Cross-Domain Causal Propagation Graph</span>
+              <span>Cross-Domain Causal Flow Graph</span>
             </h3>
             <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded font-mono border border-cyan-500/30 font-semibold">
               Flagship Twin Architecture
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Every simulation tick models real-time physics and causal propagation across all domains — parameters are tightly coupled, never isolated.
+            Every simulation tick models real-time physics and causal flow across all domains — parameters are tightly coupled, never isolated.
           </p>
         </div>
 
@@ -833,7 +833,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
             <div className="bg-[#030914] p-3.5 rounded-xl border border-slate-800 space-y-2.5">
               <div className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
                 <GitCommit className="w-3.5 h-3.5 text-purple-400" />
-                <span>Causal Propagation Flow</span>
+                <span>Causal Flow Flow</span>
               </div>
 
               {/* Upstream */}
@@ -978,7 +978,7 @@ export const CausalGraphViewer: React.FC<Props> = ({
             <span className="text-slate-300 text-[11px]">
               {selectedCardId === 'env' && 'Maitri is under significantly greater thermal stress (-25.4°C vs -16.2°C) requiring continuous high-output heating.'}
               {selectedCardId === 'energy' && 'Bharati carries higher overall electrical demand (110 kW vs 85 kW) driven by earth station satcom and seawater RO pumps.'}
-              {selectedCardId === 'gen' && 'Bharati benefits from N+1 triple-CHP redundancy; Maitri relies on a single active unit with automated switchover to warm standby.'}
+              {selectedCardId === 'gen' && 'Bharati benefits from N+1 triple-CHP backup systems; Maitri relies on a single active unit with automated switchover to warm standby.'}
               {selectedCardId === 'fuel' && 'Bharati possesses higher autonomy (525 days vs 338 days) with its 300kL containerized bulk farm.'}
               {selectedCardId === 'logistics' && 'Maitri requires an 80km overland snow traverse from India Bay; Bharati has direct coastal harbor access.'}
               {selectedCardId === 'risk' && 'Both stations remain safely within NOMINAL / LOW risk thresholds (< 20 pts).'}

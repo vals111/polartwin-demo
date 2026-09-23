@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { recommendationsApi } from '../api/client';
 import { RecommendationItem } from '../types';
@@ -54,7 +54,7 @@ export const RecommendationsPage: React.FC = () => {
             {stationId} Operator Decision Support & Mitigations
           </h1>
           <p className="text-xs text-slate-300 mt-1 max-w-3xl">
-            Ranked, actionable recommendations derived from multi-domain telemetry and physics-based models. 
+            Ranked, actionable recommendations derived from multi-domain live data and physics-based models. 
             Each recommendation provides a comprehensive causal justification before action is dispatched.
           </p>
         </div>
@@ -104,7 +104,7 @@ export const RecommendationsPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopSignal spread();
                         handleExecute(index);
                       }}
                       disabled={isDone}

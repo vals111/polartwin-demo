@@ -1,6 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TelemetrySnapshot } from '../../types';
+import { Live dataSnapshot } from '../../types';
 import { X, Activity, ArrowRight, Zap, Droplet, Radio, Thermometer, Sun, Flame, Recycle, Package, Truck, FlaskConical, Users, Building2 } from 'lucide-react';
 import { OperationalDomainCard } from '../dashboard/OperationalDomainCard';
 import {
@@ -13,7 +13,7 @@ import {
 interface Props {
   assetId: string | null;
   onClose: () => void;
-  snapshot?: TelemetrySnapshot;
+  snapshot?: Live dataSnapshot;
   stationId?: string;
   onSelectAsset?: (assetId: string) => void;
 }
@@ -21,11 +21,11 @@ interface Props {
 const FACILITY_LABELS: Record<string, string> = {
   main_station:    'Main Station Operations Complex',
   power_house:     'Power House & Diesel Generators',
-  solar_array:     'Photovoltaic Solar PV Array',
+  solar_array:     'Solar panel Solar PV Array',
   fuel_depot:      'AGO Polar Diesel Fuel Tank Farm',
-  water_facility:  'Potable Water & RO Desalination',
+  water_facility:  'Potable Water & RO Seawater purification',
   waste_management:'Waste Processing & Incinerator',
-  research_lab:    'Atmospheric & Scientific Research Lab',
+  research_lab:    'Weather layer & Scientific Research Lab',
   communication:   'Satellite Radome & Comms Tower',
   personnel_area:  'Expedition Living Quarters & Habitat',
   storage:         'Heavy Logistics & Spares Warehouse',
@@ -104,11 +104,17 @@ export const AssetInfoPanel: React.FC<Props> = ({
         {/* FACILITY IMAGE BANNER */}
         <div className="relative w-full h-[148px] overflow-hidden flex-shrink-0">
           <img
-            src="/station_banner.jpg"
+            src={`/domains/${assetId}.jpg`}
             alt={facilityTitle}
             className="w-full h-full object-cover"
             style={{ objectPosition: vis.bgPos }}
             draggable={false}
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.src.endsWith('/station_banner.jpg')) {
+                target.src = '/station_banner.jpg';
+              }
+            }}
           />
           <div
             className="absolute inset-0"
@@ -185,7 +191,7 @@ export const AssetInfoPanel: React.FC<Props> = ({
         >
           <span className="text-slate-400 flex items-center gap-1.5">
             <Activity className="w-3 h-3 text-emerald-400" />
-            Live Telemetry Synced
+            Live Live data Synced
           </span>
           <button
             onClick={()=>navigate(`/station/${stationId}/${domainNode.route}`)}

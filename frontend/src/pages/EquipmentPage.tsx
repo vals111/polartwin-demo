@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useLive dataStore } from '../store/live dataStore';
 import { equipmentApi, scenariosApi } from '../api/client';
 import { EquipmentItem } from '../types';
 import * as echarts from 'echarts';
@@ -220,7 +220,7 @@ export const EquipmentPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useTelemetryStore();
+  const { liveSnapshot } = useLive dataStore();
 
   const [equipmentList, setEquipmentList] = useState<any[]>([]);
   const [predictiveMaint, setPredictiveMaint] = useState<any>(null);
@@ -266,11 +266,11 @@ export const EquipmentPage: React.FC = () => {
     { id: 'gen_m02', name: 'Kirloskar 62.5 kVA Gen #2', type: 'power', health_score: 89.2, health_trend: [92, 91.5, 90.8, 90.1, 89.6, 89.2], operating_hours: 7890, status: 'operational', load_pct: 54, vibration_mm_s: 2.8, temp_c: 80.1, failure_risk_pct: 7.8, rul_days: 88, weibull_beta: 2.4, weibull_eta: 12000, maintenance_status: 'DUE_SOON', next_service_days: 28 },
     { id: 'pump_m01', name: 'Lake Water Extraction Pump P-1', type: 'utility', health_score: 87.8, health_trend: [91, 90.2, 89.5, 88.9, 88.2, 87.8], operating_hours: 6120, status: 'operational', load_pct: 42, vibration_mm_s: 3.2, temp_c: 45, failure_risk_pct: 8.4, rul_days: 74, weibull_beta: 2.1, weibull_eta: 9000, maintenance_status: 'DUE_SOON', next_service_days: 21 },
     { id: 'hvac_m01', name: 'Station HVAC Heating Unit A', type: 'hvac', health_score: 91.1, health_trend: [93, 92.5, 92, 91.8, 91.4, 91.1], operating_hours: 12040, status: 'operational', load_pct: 78, vibration_mm_s: 1.8, temp_c: 55, failure_risk_pct: 4.1, rul_days: 150, weibull_beta: 2.2, weibull_eta: 18000, maintenance_status: 'NOMINAL', next_service_days: 45 },
-    { id: 'sci_m01', name: 'Atmospheric LIDAR System', type: 'science', health_score: 97.2, health_trend: [97.5, 97.4, 97.3, 97.3, 97.2, 97.2], operating_hours: 3240, status: 'operational', load_pct: 35, vibration_mm_s: 0.5, temp_c: 22, failure_risk_pct: 1.2, rul_days: 280, weibull_beta: 3.0, weibull_eta: 20000, maintenance_status: 'NOMINAL', next_service_days: 90 },
+    { id: 'sci_m01', name: 'Weather layer LIDAR System', type: 'science', health_score: 97.2, health_trend: [97.5, 97.4, 97.3, 97.3, 97.2, 97.2], operating_hours: 3240, status: 'operational', load_pct: 35, vibration_mm_s: 0.5, temp_c: 22, failure_risk_pct: 1.2, rul_days: 280, weibull_beta: 3.0, weibull_eta: 20000, maintenance_status: 'NOMINAL', next_service_days: 90 },
   ] : [
     { id: 'gen_b01', name: 'Volvo Penta 100 kVA Gen #1', type: 'power', health_score: 96.8, health_trend: [97.2, 97.1, 97, 96.9, 96.9, 96.8], operating_hours: 5640, status: 'operational', load_pct: 72, vibration_mm_s: 1.9, temp_c: 78.2, failure_risk_pct: 2.1, rul_days: 180, weibull_beta: 2.6, weibull_eta: 14000, maintenance_status: 'NOMINAL', next_service_days: 30 },
     { id: 'chp_b01', name: 'Combined Heat & Power Unit #1', type: 'power', health_score: 93.4, health_trend: [94.5, 94.2, 93.9, 93.7, 93.5, 93.4], operating_hours: 6840, status: 'operational', load_pct: 85, vibration_mm_s: 2.2, temp_c: 91, failure_risk_pct: 4.6, rul_days: 140, weibull_beta: 2.3, weibull_eta: 13000, maintenance_status: 'NOMINAL', next_service_days: 21 },
-    { id: 'ro_b01', name: 'Seawater RO Desalination Plant', type: 'utility', health_score: 91.2, health_trend: [93, 92.6, 92, 91.8, 91.5, 91.2], operating_hours: 4820, status: 'operational', load_pct: 60, vibration_mm_s: 2.6, temp_c: 38, failure_risk_pct: 5.2, rul_days: 110, weibull_beta: 2.1, weibull_eta: 10000, maintenance_status: 'DUE_SOON', next_service_days: 18 },
+    { id: 'ro_b01', name: 'Seawater RO Seawater purification Plant', type: 'utility', health_score: 91.2, health_trend: [93, 92.6, 92, 91.8, 91.5, 91.2], operating_hours: 4820, status: 'operational', load_pct: 60, vibration_mm_s: 2.6, temp_c: 38, failure_risk_pct: 5.2, rul_days: 110, weibull_beta: 2.1, weibull_eta: 10000, maintenance_status: 'DUE_SOON', next_service_days: 18 },
     { id: 'hvac_b01', name: 'Bharati Heating Loop Unit A', type: 'hvac', health_score: 94.6, health_trend: [95.2, 95, 94.9, 94.8, 94.7, 94.6], operating_hours: 9200, status: 'operational', load_pct: 65, vibration_mm_s: 1.6, temp_c: 48, failure_risk_pct: 3.8, rul_days: 160, weibull_beta: 2.2, weibull_eta: 16000, maintenance_status: 'NOMINAL', next_service_days: 50 },
     { id: 'radar_b01', name: 'Ice Radar & Satellite VSAT', type: 'comms', health_score: 98.1, health_trend: [98.5, 98.4, 98.3, 98.2, 98.1, 98.1], operating_hours: 2100, status: 'operational', load_pct: 28, vibration_mm_s: 0.3, temp_c: 18, failure_risk_pct: 0.9, rul_days: 350, weibull_beta: 3.5, weibull_eta: 25000, maintenance_status: 'NOMINAL', next_service_days: 120 },
   ];
@@ -334,7 +334,7 @@ export const EquipmentPage: React.FC = () => {
               <HeartPulse className="w-8 h-8 text-teal-400" /> Equipment Command Digital Twin
             </h1>
             <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
-              {allItems.length} assets · Weibull hazard modeling · Real-time health telemetry · Predictive maintenance scheduling
+              {allItems.length} assets · Weibull hazard modeling · Real-time health live data · Predictive maintenance scheduling
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">

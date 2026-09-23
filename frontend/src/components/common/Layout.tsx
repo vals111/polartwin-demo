@@ -1,14 +1,23 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { useStationStore } from '../../store/stationStore';
-import { useTelemetryStore } from '../../store/telemetryStore';
+import { useLive dataStore } from '../../store/live dataStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { telemetryApi } from '../../api/client';
-
+import { live dataApi } from '../../api/client';
 export const Layout: React.FC = () => {
   const { selectedStationId } = useStationStore();
-  const updateLiveWeather = useTelemetryStore((s) => s.updateLiveWeather);
+  const updateLiveWeather = useLive dataStore((s) => s.updateLiveWeather);
+
+  // Ensure any previous light mode attributes and storage are cleared
+  useEffect(() => {
+    document.documentElement.removeAttribute('data-theme');
+    try {
+      localStorage.removeItem('polartwin-theme');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Maintain active WebSocket connection to the currently selected station
   useWebSocket(selectedStationId);
@@ -19,8 +28,8 @@ export const Layout: React.FC = () => {
     const syncWeather = async () => {
       try {
         const [maitriWeather, bharatiWeather] = await Promise.all([
-          telemetryApi.getWeather('maitri'),
-          telemetryApi.getWeather('bharati'),
+          live dataApi.getWeather('maitri'),
+          live dataApi.getWeather('bharati'),
         ]);
         if (isMounted) {
           if (maitriWeather) updateLiveWeather('maitri', maitriWeather);
@@ -43,10 +52,16 @@ export const Layout: React.FC = () => {
   }, [updateLiveWeather]);
 
   return (
-    <div className="h-screen w-screen bg-[#040812] text-slate-100 flex flex-col font-ui overflow-hidden">
+    <div
+      className="h-screen w-screen text-[var(--text-primary)] flex flex-col font-ui overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-base)' }}
+    >
       <Navbar />
       <div className="flex-1 flex min-h-0 overflow-hidden relative">
-        <main className="flex-1 w-full overflow-y-auto bg-gradient-to-b from-[#060c18] via-[#040812] to-[#020509] p-6 relative">
+        <main
+          className="flex-1 w-full overflow-y-auto p-6 relative"
+          style={{ backgroundColor: 'var(--bg-base)' }}
+        >
           <Outlet />
         </main>
       </div>

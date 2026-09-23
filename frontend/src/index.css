@@ -1,72 +1,142 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════
+   POLARTWIN – CSS DESIGN SYSTEM (Dark Polar Theme)
+   Permanent high-contrast Antarctic digital twin dark UI
+═══════════════════════════════════════════════════════════════════ */
+
 :root {
   color-scheme: dark;
+
+  --bg-base:        #030a12;
+  --bg-surface:     #071322;
+  --bg-elevated:    #0d2340;
+  --bg-card:        rgba(13, 35, 64, 0.75);
+
+  --border:         rgba(30, 58, 95, 0.8);
+  --border-strong:  rgba(30, 58, 95, 1);
+
+  --text-primary:   #f0f6ff;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+
+  --accent:         #06b6d4;
+  --accent-soft:    rgba(6, 182, 212, 0.12);
+  --accent-blue:    #2563eb;
+  --accent-teal:    #06b6d4;
+  --accent-indigo:  #60a5fa;
+
+  --status-green:   #10b981;
+  --status-amber:   #f59e0b;
+  --status-red:     #ef4444;
+  --status-green-bg: rgba(16, 185, 129, 0.12);
+  --status-amber-bg: rgba(245, 158, 11, 0.12);
+  --status-red-bg:   rgba(239, 68, 68, 0.12);
+
+  --navbar-bg:      rgba(7, 14, 26, 0.95);
+  --navbar-border:  rgba(30, 40, 70, 0.6);
+
+  --shadow-sm:      0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:      0 8px 32px rgba(0,0,0,0.5);
+
+  --glass-bg:       rgba(13, 35, 64, 0.7);
+  --glass-border:   rgba(30, 58, 95, 0.8);
+  --glass-blur:     12px;
+}
+
+/* ── Base Styles ──────────────────────────────────────────────── */
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #030a12;
-  color: #e2e8f0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Hide scrollbars globally while preserving full scrolling functionality */
+/* ── Hide scrollbars ──────────────────────────────────────────── */
 * {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
 ::-webkit-scrollbar {
-  display: none;             /* Chrome, Safari and Opera */
+  display: none;
   width: 0px;
   height: 0px;
   background: transparent;
 }
 
-/* Glassmorphic panels */
+/* ── Glass / Panel utility classes ───────────────────────────── */
 .glass-panel {
-  background: rgba(13, 35, 64, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(30, 58, 95, 0.8);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
 }
 
 .glass-panel-glow {
-  background: rgba(13, 35, 64, 0.85);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(0, 229, 255, 0.5);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow-md);
 }
 
-/* Telemetry number styling */
+/* ── Surface card utility ─────────────────────────────────────── */
+.surface-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.surface-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* ── Polar CSS custom properties (Tailwind compat layer) ───────── */
+:root {
+  --polar-dark:   var(--bg-surface);
+  --polar-darker: var(--bg-base);
+  --polar-navy:   var(--bg-elevated);
+  --polar-border: var(--border);
+  --accent-maitri: var(--accent-teal);
+  --accent-bharati: var(--accent-indigo);
+}
+
+/* ── Telemetry / data font ────────────────────────────────────── */
 .font-mono-data {
   font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* Pulse animation for live indicators */
+/* ── Live pulse animation ─────────────────────────────────────── */
 @keyframes polar-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.1); }
+  50%       { opacity: 0.5; transform: scale(1.1); }
 }
-
 .live-pulse {
   animation: polar-pulse 2s infinite ease-in-out;
 }
 
-/* Fade-in animation for alert feed items */
+/* ── Fade-in animation ────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fadeIn {
   animation: fadeIn 0.25s ease-out forwards;
 }
 
-/* Hidden scrollbar utility */
+/* ── Hidden scrollbar utility ─────────────────────────────────── */
 .styled-scroll {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -77,35 +147,47 @@ body {
   height: 0px;
 }
 
-/* Font override for readable body text in cards */
+/* ── Readable UI font ─────────────────────────────────────────── */
 .font-ui {
   font-family: 'Inter', system-ui, sans-serif;
   letter-spacing: 0.01em;
   line-height: 1.6;
 }
 
-/* Shimmer animation for loading states */
+/* ── Shimmer loading animation ────────────────────────────────── */
 @keyframes shimmer {
-  0% { background-position: -400px 0; }
+  0%   { background-position: -400px 0; }
   100% { background-position: 400px 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* HL row for selected items in tables */
+/* ── Table row highlight ──────────────────────────────────────── */
 tr.selected-row {
-  background: rgba(6, 182, 212, 0.05);
+  background: var(--accent-soft);
 }
 
-/* Polar color palette helpers */
-:root {
-  --polar-dark: #071322;
-  --polar-darker: #030a12;
-  --polar-navy: #0d2340;
-  --polar-border: rgba(30, 58, 95, 0.8);
-  --accent-maitri: #06b6d4;
-  --accent-bharati: #60a5fa;
+/* ── Polar Tailwind helpers ───────────────────────────────────── */
+.bg-polar-dark    { background-color: var(--bg-surface); }
+.bg-polar-darker  { background-color: var(--bg-base); }
+.bg-polar-navy    { background-color: var(--bg-elevated); }
+.border-polar-border { border-color: var(--border); }
+.text-polar-ice   { color: var(--text-primary); }
+
+/* ── Theme transition for all elements ────────────────────────── */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* disable transitions on SVG path data changes (avoids chart jitter) */
+svg *, canvas * {
+  transition: none !important;
 }

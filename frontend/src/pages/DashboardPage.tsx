@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore, createInitialTelemetryHistory } from '../store/telemetryStore';
+import { useLive dataStore, createInitialLive dataHistory } from '../store/live dataStore';
 import { useAlertStore } from '../store/alertStore';
-import { telemetryApi } from '../api/client';
+import { live dataApi } from '../api/client';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Compass, ArrowRight, Thermometer, Wind, Zap, Droplet,
@@ -26,7 +26,7 @@ const StationCard: React.FC<{
   locDesc: string;
   desc: string;
   systems: Array<{ icon: React.ComponentType<any>; title: string; detail: string; color: string }>;
-  telemetry: Array<{ label: string; value: string; color: string }>;
+  live data: Array<{ label: string; value: string; color: string }>;
   riskLevel: string;
   riskScore: number;
   alertCount: number;
@@ -38,7 +38,7 @@ const StationCard: React.FC<{
   onLaunch: () => void;
 }> = ({
   stationId, name, subtitle, founded, locationType, coords, locDesc, desc,
-  systems, telemetry, riskLevel, riskScore, alertCount,
+  systems, live data, riskLevel, riskScore, alertCount,
   accentColor, borderColor, shadowColor, genHistory, fuelHistory, onLaunch,
 }) => {
   return (
@@ -116,9 +116,9 @@ const StationCard: React.FC<{
           </div>
         </div>
 
-        {/* Live telemetry readout */}
+        {/* Live live data readout */}
         <div className="grid grid-cols-2 gap-2">
-          {telemetry.map((t) => (
+          {live data.map((t) => (
             <div
               key={t.label}
               className="rounded-xl p-2.5 text-center border"
@@ -181,7 +181,7 @@ const StationCard: React.FC<{
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { selectStation, loadStations } = useStationStore();
-  const { liveSnapshot, liveRisk, updateLiveWeather, telemetryHistory } = useTelemetryStore();
+  const { liveSnapshot, liveRisk, updateLiveWeather, live dataHistory } = useLive dataStore();
   const { alerts, loadAlerts } = useAlertStore();
   const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
@@ -191,11 +191,11 @@ export const DashboardPage: React.FC = () => {
     loadAlerts('bharati');
 
     // Instantly fetch live weather for both stations on dashboard mount
-    telemetryApi.getWeather('maitri')
+    live dataApi.getWeather('maitri')
       .then((data) => data && updateLiveWeather('maitri', data))
       .catch((err) => console.warn('Maitri initial weather load error:', err));
 
-    telemetryApi.getWeather('bharati')
+    live dataApi.getWeather('bharati')
       .then((data) => data && updateLiveWeather('bharati', data))
       .catch((err) => console.warn('Bharati initial weather load error:', err));
   }, [loadStations, loadAlerts, updateLiveWeather]);
@@ -215,8 +215,8 @@ export const DashboardPage: React.FC = () => {
   const bharatiSnap = liveSnapshot['bharati'];
   const bharatiRisk = liveRisk['bharati'];
 
-  const maitriHistory = telemetryHistory['maitri'] || createInitialTelemetryHistory('maitri', maitriSnap);
-  const bharatiHistory = telemetryHistory['bharati'] || createInitialTelemetryHistory('bharati', bharatiSnap);
+  const maitriHistory = live dataHistory['maitri'] || createInitialLive dataHistory('maitri', maitriSnap);
+  const bharatiHistory = live dataHistory['bharati'] || createInitialLive dataHistory('bharati', bharatiSnap);
 
   return (
     <div className="space-y-0 max-w-7xl mx-auto">
@@ -242,16 +242,16 @@ export const DashboardPage: React.FC = () => {
             locationType="Inland Research Base"
             coords="70°45′57″S 11°44′09″E"
             locDesc="Schirmacher Oasis · 130m · ~100km Inland"
-            desc="Situated on rocky ice-free terrain surrounded by the Antarctic ice sheet. Features the heated freshwater pipeline from Priyadarshini (Zub) Lake, high-temperature waste incinerators, and overland tracked convoys navigating blue ice moraines."
+            desc="Situated on rocky ice-free terrain surrounded by the Antarctic ice sheet. Features the heated freshwater pipeline from Priyadarshini (Zub) Lake, high-temperature waste incinerators, and overland tracked supply runs navigating blue ice moraines."
             systems={[
               { icon: Droplet, title: 'Lake Zub Pipeline', detail: 'Trace-Heated Overland', color: '#06b6d4' },
               { icon: Flame, title: 'Waste Incinerator', detail: 'High-Temp Zero-Discharge', color: '#f59e0b' },
-              { icon: Zap, title: '2×100 kVA Microgrid', detail: 'Diesel + Heat Recovery', color: '#fbbf24' },
+              { icon: Zap, title: '2×100 kVA Power grid', detail: 'Diesel + Heat Recovery', color: '#fbbf24' },
               { icon: PlaneTakeoff, title: 'Blue Ice Runway', detail: 'DROMLAN Aviation', color: '#818cf8' },
             ]}
-            telemetry={[
+            live data={[
               { label: 'Ambient Temp', value: `${maitriSnap?.environment?.temperature?.toFixed(1) ?? -22.4}°C`, color: '#06b6d4' },
-              { label: 'Katabatic Wind', value: `${maitriSnap?.environment?.wind_speed ?? 28} km/h`, color: '#e2e8f0' },
+              { label: 'Polar downslope wind Wind', value: `${maitriSnap?.environment?.wind_speed ?? 28} km/h`, color: '#e2e8f0' },
               { label: 'Generator Load', value: `${maitriSnap?.energy?.generator_load ?? 68} kW`, color: '#f59e0b' },
               { label: 'Fuel Autonomy', value: `${maitriSnap?.fuel?.days_remaining ?? 19}d`, color: '#10b981' },
             ]}
@@ -274,14 +274,14 @@ export const DashboardPage: React.FC = () => {
             locationType="Coastal Marine Base"
             coords="69°24′28″S 76°11′14″E"
             locDesc="Larsemann Hills · Prydz Bay Promontory"
-            desc="State-of-the-art modular container station raised on aerodynamic hydraulic stilts between Thala Fjord and Quilty Bay. Features seawater RO desalination, automated CHP co-generation, and marine resupply logistics."
+            desc="State-of-the-art modular container station raised on aerodynamic fluid-powered stilts between Thala Fjord and Quilty Bay. Features seawater RO seawater purification, automated CHP co-generation, and marine resupply logistics."
             systems={[
-              { icon: Waves, title: 'Quilty Bay RO Desal', detail: 'Seawater Desalination', color: '#60a5fa' },
+              { icon: Waves, title: 'Quilty Bay RO Desal', detail: 'Seawater Seawater purification', color: '#60a5fa' },
               { icon: Cpu, title: '3×100 kVA Auto CHP', detail: 'Co-Generation Thermal', color: '#10b981' },
               { icon: Layers, title: '134-Container Frame', detail: 'Aerodynamic Stilt Lift', color: '#818cf8' },
               { icon: Anchor, title: 'Prydz Bay Berthing', detail: 'Vessel Resupply Channel', color: '#2dd4bf' },
             ]}
-            telemetry={[
+            live data={[
               { label: 'Ambient Temp', value: `${bharatiSnap?.environment?.temperature?.toFixed(1) ?? -19.6}°C`, color: '#60a5fa' },
               { label: 'Maritime Wind', value: `${bharatiSnap?.environment?.wind_speed ?? 14} km/h`, color: '#e2e8f0' },
               { label: 'CHP Load', value: `${bharatiSnap?.energy?.generator_load ?? 74} kW`, color: '#f59e0b' },

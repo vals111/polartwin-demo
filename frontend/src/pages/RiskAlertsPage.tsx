@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useLive dataStore } from '../store/live dataStore';
 import { useAlertStore } from '../store/alertStore';
 import { alertsApi } from '../api/client';
 import { RadarRiskChart } from '../components/charts/RadarRiskChart';
@@ -99,7 +99,7 @@ export const RiskAlertsPage: React.FC = () => {
   const stationId = id || 'maitri';
   const isMaitri = stationId === 'maitri';
 
-  const { liveRisk } = useTelemetryStore();
+  const { liveRisk } = useLive dataStore();
   const { alerts, loadAlerts } = useAlertStore();
   const [severityFilter, setSeverityFilter] = useState<string>('ALL');
   const [showAll, setShowAll] = useState(false);
@@ -165,7 +165,7 @@ export const RiskAlertsPage: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 text-xs font-mono text-cyan-400 uppercase tracking-wider mb-1">
               <Shield className="w-4 h-4" />
-              <span>Security Operations Center — Risk Surveillance &amp; Telemetry Alerting</span>
+              <span>Security Operations Center — Risk Surveillance &amp; Live data Alerting</span>
             </div>
             <h1 className="text-2xl font-black text-white capitalize">
               {stationId} Station Risk Dashboard
@@ -279,7 +279,7 @@ export const RiskAlertsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
             <h3 className="text-xs font-bold font-mono tracking-wider text-white uppercase">
-              Live Telemetry Alert Stream ({filteredAlerts.length} active)
+              Live Live data Alert Stream ({filteredAlerts.length} active)
             </h3>
           </div>
 

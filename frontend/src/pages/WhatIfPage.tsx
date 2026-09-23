@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useScenarioStore } from '../store/scenarioStore';
 import { scenariosApi } from '../api/client';
@@ -239,7 +239,7 @@ export const WhatIfPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="mt-4 text-[10px] font-mono text-slate-500">
-                    Calculated via Multi-Domain Constraint Propagation Engine
+                    Calculated via Multi-Domain Constraint Signal spread Engine
                   </div>
                 </div>
               </div>
@@ -256,7 +256,7 @@ export const WhatIfPage: React.FC = () => {
                   Stochastic Monte Carlo Uncertainty Engine
                 </h3>
                 <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-                  Simulates 100+ stochastic futures with random katabatic wind gusts, generator trip probabilities, 
+                  Simulates 100+ stochastic futures with random polar downslope wind gusts, generator trip probabilities, 
                   and pack-ice logistics delays. Computes P10, P50, and P90 percentile confidence envelopes.
                 </p>
               </div>

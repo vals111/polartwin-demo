@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useLive dataStore } from '../store/live dataStore';
 import { resourcesApi, scenariosApi } from '../api/client';
 import * as echarts from 'echarts';
 import {
@@ -127,7 +127,7 @@ const WaterFlowPipeline: React.FC<{
         {[
           { icon: <Waves className="w-5 h-5" />, label: isMaitri ? 'Zub Lake' : 'Quilty Bay', color: '#38bdf8', status: 'SOURCE' },
           { icon: <ArrowRight className="w-4 h-4" />, label: `${flowRate} L/min`, color: '#64748b', status: '' },
-          { icon: <Filter className="w-5 h-5" />, label: isMaitri ? 'UV Filter' : 'SWRO Plant', color: '#818cf8', status: treatStatus },
+          { icon: <Filter className="w-5 h-5" />, label: isMaitri ? 'UV Filter' : 'Seawater Filter Plant Plant', color: '#818cf8', status: treatStatus },
           { icon: <ArrowRight className="w-4 h-4" />, label: 'treated', color: '#64748b', status: '' },
           { icon: <Droplet className="w-5 h-5" />, label: 'Storage', color: '#38bdf8', status: 'TANK' },
           { icon: <ArrowRight className="w-4 h-4" />, label: 'distributed', color: '#64748b', status: '' },
@@ -298,7 +298,7 @@ export const WaterPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useTelemetryStore();
+  const { liveSnapshot } = useLive dataStore();
 
   const [waterDetails, setWaterDetails] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'pipeline' | 'forecast' | 'whatif'>('overview');
@@ -347,7 +347,7 @@ export const WaterPage: React.FC = () => {
     domestic_habitat_l_day: isMaitri ? 350 : 380,
   };
 
-  const treatmentProcess = isMaitri ? 'Multimedia Filtration + UV' : 'High-Pressure SWRO + Remineralisation';
+  const treatmentProcess = isMaitri ? 'Multimedia Filtration + UV' : 'High-Pressure Seawater Filter Plant + Remineralisation';
   const freezeColor = freezeRisk === 'High' ? '#ef4444' : freezeRisk === 'Medium' ? '#f59e0b' : '#10b981';
   const netColor = netDaily >= 0 ? '#10b981' : '#ef4444';
 
@@ -387,7 +387,7 @@ export const WaterPage: React.FC = () => {
               <Droplet className="w-8 h-8 text-sky-400" /> Water Command Digital Twin
             </h1>
             <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
-              {isMaitri ? 'Zub Lake sub-glacial intake → UV filtration → pressurized habitat distribution' : 'Quilty Bay seawater SWRO → remineralisation → coastal station loop'}
+              {isMaitri ? 'Zub Lake sub-glacial intake → UV filtration → pressurized habitat distribution' : 'Quilty Bay seawater Seawater Filter Plant → remineralisation → coastal station loop'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
@@ -466,7 +466,7 @@ export const WaterPage: React.FC = () => {
           <div className="glass-panel p-5 rounded-2xl border border-polar-border shadow-xl space-y-4">
             <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Subsystem Status</div>
             {[
-              { label: 'Water Source', val: isMaitri ? 'Zub Lake' : 'Quilty Bay SWRO', color: '#38bdf8', ok: true },
+              { label: 'Water Source', val: isMaitri ? 'Zub Lake' : 'Quilty Bay Seawater Filter Plant', color: '#38bdf8', ok: true },
               { label: 'Intake Pump', val: 'RUNNING — Healthy', color: '#10b981', ok: true },
               { label: 'Treatment', val: treatmentProcess, color: '#818cf8', ok: true },
               { label: 'TDS', val: `${isMaitri ? '18' : '42'} ppm`, color: '#06b6d4', ok: true },
@@ -520,7 +520,7 @@ export const WaterPage: React.FC = () => {
             />
             <div className="space-y-2 pt-3 border-t border-polar-border/40">
               {[
-                { label: isMaitri ? 'Intake Source' : 'RO Plant Status', val: isMaitri ? 'Priyadarshini Sub-Glacial Pump' : 'SWRO Booster — NOMINAL', color: '#38bdf8' },
+                { label: isMaitri ? 'Intake Source' : 'RO Plant Status', val: isMaitri ? 'Priyadarshini Sub-Glacial Pump' : 'Seawater Filter Plant Booster — NOMINAL', color: '#38bdf8' },
                 { label: 'Filtration', val: treatmentProcess, color: '#818cf8' },
                 { label: 'Distribution Pressure', val: `${isMaitri ? '2.4' : '3.1'} bar`, color: '#06b6d4' },
                 { label: 'Pipe Material', val: isMaitri ? 'Foam-Insulated HDPE 110mm' : 'SS316L Insulated 140mm', color: '#94a3b8' },

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AlertItem } from '../../types';
 import { AlertTriangle, ShieldCheck, X } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export const GlobalAlertBanner: React.FC<Props> = ({ alerts }) => {
       <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-xl p-3 px-4 flex items-center justify-between text-xs text-emerald-300">
         <div className="flex items-center space-x-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          <span>Autonomous Twin Status: All life-support, fuel margins, and power loops operating normally.</span>
+          <span>Self-operating Twin Status: All life-support, fuel margins, and power loops operating normally.</span>
         </div>
         <span className="font-mono text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">NOMINAL</span>
       </div>

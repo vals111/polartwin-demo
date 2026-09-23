@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
-import { telemetryApi, scenariosApi } from '../api/client';
+import { useLive dataStore } from '../store/live dataStore';
+import { live dataApi, scenariosApi } from '../api/client';
 import * as echarts from 'echarts';
 import {
   Truck, Ship, Anchor, AlertTriangle, ShieldCheck,
   Clock, ArrowRight, RefreshCw, Layers,
   Compass, MapPin, Wind, CheckCircle2, Activity,
   X, Gauge, Fuel, Package, Play, Sparkles,
-  AlertOctagon, ArrowUpRight, ChevronRight, Brain
+  AlertOctagon, ArrowUpRight, ChevronRight, Brain, ArrowLeft
 } from 'lucide-react';
 
 // ── Journey Progress Arc ────────────────────────────────────────────────────
@@ -225,7 +225,7 @@ export const LogisticsPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useTelemetryStore();
+  const { liveSnapshot } = useLive dataStore();
 
   const [localLogistics, setLocalLogistics] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'voyage' | 'assets' | 'cargo' | 'risk'>('voyage');
@@ -243,7 +243,7 @@ export const LogisticsPage: React.FC = () => {
     let mounted = true;
     const load = async () => {
       try {
-        const data = await telemetryApi.getLogistics(stationId);
+        const data = await live dataApi.getLogistics(stationId);
         if (mounted && data) setLocalLogistics(data);
       } catch {}
     };
@@ -276,9 +276,9 @@ export const LogisticsPage: React.FC = () => {
   const routeWaypoints = log?.route_waypoints ?? (isMaitri ? [
     { name: 'Cape Town Harbor', status: 'PASSED', distance_km: 0, weather: 'Clear / 18°C', delay_days: 0, risk: 'NOMINAL' },
     { name: 'Southern Ocean Gales', status: 'PASSED', distance_km: 2400, weather: 'Sea State 6 / 45 km/h Wind', delay_days: 1.0, risk: 'MODERATE' },
-    { name: 'Princess Astrid Ice Edge', status: 'ACTIVE', distance_km: 4100, weather: 'Katabatic 35 km/h / Pack Ice', delay_days: 2.5, risk: 'ELEVATED' },
+    { name: 'Princess Astrid Ice Edge', status: 'ACTIVE', distance_km: 4100, weather: 'Polar downslope wind 35 km/h / Pack Ice', delay_days: 2.5, risk: 'ELEVATED' },
     { name: 'Ice Shelf Barrier Mooring', status: 'UPCOMING', distance_km: 4350, weather: '-22°C / Snow Drift', delay_days: 0, risk: 'HIGH' },
-    { name: '100km Overland Convoy', status: 'UPCOMING', distance_km: 4450, weather: 'Crevasse / Whiteout Risk', delay_days: 0, risk: 'CRITICAL' },
+    { name: '100km Overland Supply run', status: 'UPCOMING', distance_km: 4450, weather: 'Crevasse / Whiteout Risk', delay_days: 0, risk: 'CRITICAL' },
   ] : [
     { name: 'Cape Town Harbor', status: 'PASSED', distance_km: 0, weather: 'Clear / 19°C', delay_days: 0, risk: 'NOMINAL' },
     { name: 'Roaring Forties / Fifties', status: 'PASSED', distance_km: 2600, weather: 'Sea State 5 / 38 km/h', delay_days: 0.5, risk: 'MODERATE' },
@@ -288,7 +288,7 @@ export const LogisticsPage: React.FC = () => {
   ]);
 
   const assets = log?.assets ?? (isMaitri ? [
-    { id: 'fleet-1', name: 'PistenBully 300 Polar Convoy', type: 'Heavy Tracked Snow Tractor', count: '3 Units', status: 'READY', readiness_pct: 94, capacity: '45 MT', assignment: '100km Overland Ice-Shelf Resupply', weather_suitability: 'EXCELLENT' },
+    { id: 'fleet-1', name: 'PistenBully 300 Polar Supply run', type: 'Heavy Tracked Snow Tractor', count: '3 Units', status: 'READY', readiness_pct: 94, capacity: '45 MT', assignment: '100km Overland Ice-Shelf Resupply', weather_suitability: 'EXCELLENT' },
     { id: 'fleet-2', name: 'Kamov Ka-32 Helix', type: 'Heavy Lift Rotorcraft', count: '1 Unit', status: 'STANDBY', readiness_pct: 91, capacity: '5,000 kg sling', assignment: 'Airlift / Crew Rotation', weather_suitability: 'MODERATE' },
     { id: 'fleet-3', name: 'Heavy Polar Sled Train', type: 'HDPE Ice Sleds', count: '6 Sleds', status: 'READY', readiness_pct: 98, capacity: '60 MT', assignment: 'Bulk Fuel & Generator Transfer', weather_suitability: 'EXCELLENT' },
   ] : [
@@ -324,65 +324,92 @@ export const LogisticsPage: React.FC = () => {
     finally { setWhatIfLoading(false); }
   };
 
+  // Reusable theme-aware panel style
+  const panelStyle: React.CSSProperties = {
+    backgroundColor: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    boxShadow: 'var(--shadow-md)',
+  };
+  const btnStyle: React.CSSProperties = {
+    backgroundColor: 'var(--bg-elevated)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-secondary)',
+  };
+
   return (
     <div className="space-y-5 max-w-7xl mx-auto pb-12">
 
       {/* ── Header ── */}
-      <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 opacity-5 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 60% 40%, #06b6d4 0%, transparent 60%)' }} />
-        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="p-5 rounded-2xl" style={panelStyle}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5">
+              <span
+                className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded font-bold flex items-center gap-1.5"
+                style={{ backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}
+              >
                 <Truck className="w-3 h-3" /> Logistics, Resupply & Route Intelligence
               </span>
-              <span className="text-[10px] font-mono text-slate-300 bg-polar-dark px-2 py-0.5 rounded border border-polar-border">
+              <span
+                className="text-[10px] font-mono px-2 py-0.5 rounded"
+                style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+              >
                 {station.name}
               </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-bold"
-                style={{ borderColor: `${riskLevelColor}44`, background: `${riskLevelColor}11`, color: riskLevelColor }}>
+              <span
+                className="text-[10px] font-mono px-2 py-0.5 rounded border font-bold"
+                style={{ borderColor: `${riskLevelColor}55`, background: `${riskLevelColor}14`, color: riskLevelColor }}
+              >
                 RISK: {riskLevel}
               </span>
             </div>
-            <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
-              <Ship className="w-8 h-8 text-cyan-400" /> Logistics Command Digital Twin
+            <h1 className="text-2xl lg:text-3xl font-extrabold flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
+              <Ship className="w-8 h-8" style={{ color: '#2563eb' }} /> Logistics Command Digital Twin
             </h1>
-            <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
+            <p className="text-xs font-mono mt-2 max-w-2xl leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               {vesselName} · {isMaitri ? 'Cape Town → Princess Astrid → Schirmacher Oasis Overland' : 'Cape Town → Prydz Bay → Quilty Bay Direct'} · {totalVoyageDays}-day mission
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
+            <button onClick={() => navigate(-1)}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer group"
+              style={btnStyle}
+              title="Navigate Back">
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" style={{ color: '#2563eb' }} /> Back
+            </button>
             <button onClick={() => navigate(`/station/${stationId}/domains`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all cursor-pointer">
-              <Layers className="w-4 h-4 text-cyan-400" /> All Domains
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer"
+              style={btnStyle}>
+              <Layers className="w-4 h-4" style={{ color: '#2563eb' }} /> All Domains
             </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=logistics`)}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow-md">
-              <Brain className="w-4 h-4 text-purple-400" /> Decision Intel
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer"
+              style={{ backgroundColor: '#f5f3ff', border: '1px solid #ddd6fe', color: '#7c3aed' }}>
+              <Brain className="w-4 h-4" /> Decision Intel
             </button>
             <button onClick={() => navigate(isMaitri ? '/station/bharati/logistics' : '/station/maitri/logistics')}
-              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-2 transition-all cursor-pointer">
-              <RefreshCw className="w-4 h-4" /> Switch Station
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer"
+              style={btnStyle}>
+              <RefreshCw className="w-4 h-4" style={{ color: '#2563eb' }} /> Switch Station
             </button>
           </div>
         </div>
 
         {/* KPI Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-polar-border/50">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
           {[
-            { label: 'Voyage Progress', val: `${voyageProgress}%`, sub: `Day ${voyageDay} of ${totalVoyageDays}`, color: '#06b6d4', icon: <Compass className="w-4 h-4" /> },
-            { label: 'Effective ETA', val: `${effectiveEta.toFixed(0)} Days`, sub: `+${weatherDelay}d weather delay`, color: '#f59e0b', icon: <Clock className="w-4 h-4" /> },
+            { label: 'Voyage Progress', val: `${voyageProgress}%`, sub: `Day ${voyageDay} of ${totalVoyageDays}`, color: '#2563eb', icon: <Compass className="w-4 h-4" /> },
+            { label: 'Effective ETA', val: `${effectiveEta.toFixed(0)} Days`, sub: `+${weatherDelay}d weather delay`, color: '#d97706', icon: <Clock className="w-4 h-4" /> },
             { label: 'Logistics Risk', val: `${logisticsRisk.toFixed(1)} pts`, sub: `Level: ${riskLevel}`, color: riskLevelColor, icon: <AlertTriangle className="w-4 h-4" /> },
-            { label: 'ETA Confidence', val: confidence, sub: `Vessel: ${vesselName.split(' ')[0]} ${vesselName.split(' ')[1] || ''}`, color: confidence === 'High' ? '#10b981' : confidence === 'Medium' ? '#f59e0b' : '#ef4444', icon: <ShieldCheck className="w-4 h-4" /> },
+            { label: 'ETA Confidence', val: confidence, sub: `Vessel: ${vesselName.split(' ')[0]} ${vesselName.split(' ')[1] || ''}`, color: confidence === 'High' ? '#16a34a' : confidence === 'Medium' ? '#d97706' : '#dc2626', icon: <ShieldCheck className="w-4 h-4" /> },
           ].map((kpi) => (
-            <div key={kpi.label} className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border hover:border-white/20 transition-all">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
+            <div key={kpi.label} className="p-3 rounded-xl transition-all" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center justify-between text-[10px] font-mono mb-1" style={{ color: 'var(--text-muted)' }}>
                 <span className="uppercase">{kpi.label}</span>
                 <span style={{ color: kpi.color }}>{kpi.icon}</span>
               </div>
               <div className="text-lg font-black font-mono" style={{ color: kpi.color }}>{kpi.val}</div>
-              <div className="text-[10px] font-mono text-slate-500 mt-0.5">{kpi.sub}</div>
+              <div className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>{kpi.sub}</div>
             </div>
           ))}
         </div>
@@ -392,9 +419,11 @@ export const LogisticsPage: React.FC = () => {
       <div className="flex gap-2 flex-wrap">
         {(['voyage', 'assets', 'cargo', 'risk'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer ${activeTab === tab
-              ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-300'
-              : 'bg-polar-dark/60 border-polar-border text-slate-400 hover:text-white hover:border-white/20'}`}>
+            className="px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer"
+            style={activeTab === tab
+              ? { backgroundColor: '#eff6ff', borderColor: '#93c5fd', color: '#2563eb' }
+              : { backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-muted)' }
+            }>
             {tab === 'voyage' ? '🚢 Voyage Status' : tab === 'assets' ? '🚛 Transport Assets' : tab === 'cargo' ? '📦 Cargo Manifest' : '⚡ Risk & What-If'}
           </button>
         ))}
@@ -404,8 +433,8 @@ export const LogisticsPage: React.FC = () => {
       {activeTab === 'voyage' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Voyage arc */}
-          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl flex flex-col items-center gap-4">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold self-start w-full">
+          <div className="p-6 rounded-2xl flex flex-col items-center gap-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold self-start w-full" style={{ color: '#2563eb' }}>
               Voyage Progress — {isMaitri ? 'Antarctic Resupply Expedition' : 'Bharati Marine Mission'}
             </div>
             <VoyageProgressArc
@@ -414,14 +443,14 @@ export const LogisticsPage: React.FC = () => {
             />
             <div className="w-full space-y-2 text-xs font-mono">
               {[
-                { label: 'Vessel', val: vesselName, color: '#06b6d4' },
-                { label: 'Ice Class', val: isMaitri ? 'Arc5 / Polar Class 4' : 'Arc4 / Polar Class 5', color: '#94a3b8' },
-                { label: 'Departure', val: 'Cape Town', color: '#10b981' },
-                { label: 'Destination', val: isMaitri ? 'Princess Astrid Coast' : 'Quilty Bay, Bharati', color: '#f59e0b' },
-                { label: 'Planned Window', val: isMaitri ? 'Nov 2026 – Jan 2027' : 'Dec 2026 – Feb 2027', color: '#94a3b8' },
+                { label: 'Vessel', val: vesselName, color: '#2563eb' },
+                { label: 'Ice Class', val: isMaitri ? 'Arc5 / Polar Class 4' : 'Arc4 / Polar Class 5', color: 'var(--text-secondary)' },
+                { label: 'Departure', val: 'Cape Town', color: '#16a34a' },
+                { label: 'Destination', val: isMaitri ? 'Princess Astrid Coast' : 'Quilty Bay, Bharati', color: '#d97706' },
+                { label: 'Planned Window', val: isMaitri ? 'Nov 2026 – Jan 2027' : 'Dec 2026 – Feb 2027', color: 'var(--text-secondary)' },
               ].map(r => (
-                <div key={r.label} className="flex justify-between items-center border-b border-polar-border/30 pb-1.5">
-                  <span className="text-slate-400">{r.label}</span>
+                <div key={r.label} className="flex justify-between items-center pb-1.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>{r.label}</span>
                   <span className="font-bold" style={{ color: r.color }}>{r.val}</span>
                 </div>
               ))}
@@ -429,8 +458,8 @@ export const LogisticsPage: React.FC = () => {
           </div>
 
           {/* Route timeline */}
-          <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4">
+          <div className="lg:col-span-2 p-6 rounded-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold mb-4" style={{ color: 'var(--text-muted)' }}>
               Route Waypoints — Real-Time Progress & Delay Tracking
             </div>
             <RouteTimeline waypoints={routeWaypoints} />
@@ -442,7 +471,7 @@ export const LogisticsPage: React.FC = () => {
       {activeTab === 'assets' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-3">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold glass-panel px-4 py-3 rounded-2xl border border-polar-border">
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold px-4 py-3 rounded-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
               {isMaitri ? 'Maitri Overland Resupply Fleet' : 'Bharati Coastal Discharge Fleet'}
             </div>
             {assets.map((asset: any) => (
@@ -454,32 +483,31 @@ export const LogisticsPage: React.FC = () => {
             ))}
           </div>
           {/* Asset detail */}
-          <div className="glass-panel p-5 rounded-2xl border border-polar-border shadow-xl">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4">Asset Intelligence</div>
+          <div className="p-5 rounded-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold mb-4" style={{ color: 'var(--text-muted)' }}>Asset Intelligence</div>
             {selectedAsset && (
               <div className="space-y-3">
-                <div className="text-sm font-bold text-white">{selectedAsset.name}</div>
-                <div className="text-[10px] font-mono text-slate-500">{selectedAsset.type}</div>
+                <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{selectedAsset.name}</div>
+                <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>{selectedAsset.type}</div>
                 {/* Readiness gauge */}
                 <div className="relative flex justify-center my-2">
                   <svg width={120} height={70} viewBox="0 0 120 70">
-                    <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={10} strokeLinecap="round" />
-                    <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#10b981" strokeWidth={10} strokeLinecap="round"
-                      strokeDasharray={`${Math.PI * 50 * (selectedAsset.readiness_pct / 100)} ${Math.PI * 50}`}
-                      style={{  }} />
-                    <text x="60" y="55" textAnchor="middle" fill="white" fontSize="16" fontWeight="900" fontFamily="monospace">{selectedAsset.readiness_pct}%</text>
-                    <text x="60" y="68" textAnchor="middle" fill="#10b981" fontSize="8" fontFamily="monospace">READINESS</text>
+                    <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="var(--border)" strokeWidth={10} strokeLinecap="round" />
+                    <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#16a34a" strokeWidth={10} strokeLinecap="round"
+                      strokeDasharray={`${Math.PI * 50 * (selectedAsset.readiness_pct / 100)} ${Math.PI * 50}`} />
+                    <text x="60" y="55" textAnchor="middle" fill="var(--text-primary)" fontSize="16" fontWeight="900" fontFamily="monospace">{selectedAsset.readiness_pct}%</text>
+                    <text x="60" y="68" textAnchor="middle" fill="#16a34a" fontSize="8" fontFamily="monospace">READINESS</text>
                   </svg>
                 </div>
                 {[
-                  { label: 'Status', val: selectedAsset.status, color: selectedAsset.status === 'READY' ? '#10b981' : '#f59e0b' },
-                  { label: 'Capacity', val: selectedAsset.capacity, color: '#06b6d4' },
-                  { label: 'Assignment', val: selectedAsset.assignment, color: '#94a3b8' },
-                  { label: 'Weather Fit', val: selectedAsset.weather_suitability, color: selectedAsset.weather_suitability === 'EXCELLENT' ? '#10b981' : '#f59e0b' },
-                  { label: 'Count', val: selectedAsset.count, color: '#64748b' },
+                  { label: 'Status', val: selectedAsset.status, color: selectedAsset.status === 'READY' ? '#16a34a' : '#d97706' },
+                  { label: 'Capacity', val: selectedAsset.capacity, color: '#2563eb' },
+                  { label: 'Assignment', val: selectedAsset.assignment, color: 'var(--text-secondary)' },
+                  { label: 'Weather Fit', val: selectedAsset.weather_suitability, color: selectedAsset.weather_suitability === 'EXCELLENT' ? '#16a34a' : '#d97706' },
+                  { label: 'Count', val: selectedAsset.count, color: 'var(--text-muted)' },
                 ].map(r => (
-                  <div key={r.label} className="flex justify-between items-start text-xs font-mono border-b border-polar-border/30 pb-1.5 gap-2">
-                    <span className="text-slate-400 shrink-0">{r.label}</span>
+                  <div key={r.label} className="flex justify-between items-start text-xs font-mono pb-1.5 gap-2" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--text-muted)' }} className="shrink-0">{r.label}</span>
                     <span className="font-bold text-right" style={{ color: r.color }}>{r.val}</span>
                   </div>
                 ))}
@@ -492,45 +520,44 @@ export const LogisticsPage: React.FC = () => {
       {/* ── Cargo Tab ── */}
       {activeTab === 'cargo' && (
         <div className="space-y-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold glass-panel px-4 py-3 rounded-2xl border border-polar-border">
+          <div className="text-[10px] font-mono uppercase tracking-wider font-bold px-4 py-3 rounded-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             Resupply Cargo Manifest — Critical Dependency Analysis
           </div>
           {cargoManifest.map((cargo: any) => {
             const risk = cargo.shortage_risk;
-            const rc = risk === 'HIGH' ? '#ef4444' : risk === 'MEDIUM' ? '#f59e0b' : '#10b981';
+            const rc = risk === 'HIGH' ? '#dc2626' : risk === 'MEDIUM' ? '#d97706' : '#16a34a';
             const urgency = Math.max(0, Math.min(100, 100 - (cargo.reserve_days / cargo.required_by_days) * 100));
             return (
-              <div key={cargo.id} className="glass-panel p-5 rounded-2xl border border-polar-border shadow-xl">
+              <div key={cargo.id} className="p-5 rounded-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                   <div>
-                    <div className="text-sm font-bold text-white">{cargo.name}</div>
-                    <div className="text-[10px] font-mono text-slate-500 mt-0.5">{cargo.category} · {cargo.dependent_domain}</div>
+                    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{cargo.name}</div>
+                    <div className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>{cargo.category} · {cargo.dependent_domain}</div>
                   </div>
                   <span className="text-[10px] font-mono px-2.5 py-1 rounded border font-bold shrink-0"
-                    style={{ borderColor: `${rc}44`, background: `${rc}11`, color: rc }}>
+                    style={{ borderColor: `${rc}55`, background: `${rc}12`, color: rc }}>
                     {risk} RISK
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div className="text-center">
-                    <div className="text-[9px] font-mono text-slate-500 uppercase">Required By</div>
-                    <div className="text-base font-black font-mono text-white">{cargo.required_by_days}d</div>
+                    <div className="text-[9px] font-mono uppercase" style={{ color: 'var(--text-muted)' }}>Required By</div>
+                    <div className="text-base font-black font-mono" style={{ color: 'var(--text-primary)' }}>{cargo.required_by_days}d</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-[9px] font-mono text-slate-500 uppercase">Reserve Buffer</div>
+                    <div className="text-[9px] font-mono uppercase" style={{ color: 'var(--text-muted)' }}>Reserve Buffer</div>
                     <div className="text-base font-black font-mono" style={{ color: rc }}>{cargo.reserve_days}d</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-[9px] font-mono text-slate-500 uppercase">ETA</div>
-                    <div className="text-base font-black font-mono text-cyan-300">{Math.round(effectiveEta)}d</div>
+                    <div className="text-[9px] font-mono uppercase" style={{ color: 'var(--text-muted)' }}>ETA</div>
+                    <div className="text-base font-black font-mono" style={{ color: '#2563eb' }}>{Math.round(effectiveEta)}d</div>
                   </div>
                 </div>
-                {/* Urgency bar */}
-                <div className="h-2.5 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
+                <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                   <div className="h-full rounded-full transition-all duration-1000"
                     style={{ width: `${urgency}%`, background: `linear-gradient(to right, ${rc}88, ${rc})` }} />
                 </div>
-                <div className="text-[9px] font-mono text-slate-500 mt-1 text-right">Urgency: {urgency.toFixed(0)}%</div>
+                <div className="text-[9px] font-mono mt-1 text-right" style={{ color: 'var(--text-muted)' }}>Urgency: {urgency.toFixed(0)}%</div>
               </div>
             );
           })}
@@ -541,18 +568,18 @@ export const LogisticsPage: React.FC = () => {
       {activeTab === 'risk' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Risk Radar */}
-          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-1">Logistics Risk Factor Radar</div>
+          <div className="p-6 rounded-2xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold mb-1" style={{ color: 'var(--text-muted)' }}>Logistics Risk Factor Radar</div>
             <RiskRadarChart riskFactors={riskFactors} />
             <div className="space-y-2 mt-2">
               {Object.entries(riskFactors).map(([key, val]: [string, any]) => (
                 <div key={key} className="space-y-0.5">
                   <div className="flex justify-between text-[10px] font-mono">
-                    <span className="text-slate-400 capitalize">{key.replace(/_/g, ' ')}</span>
-                    <span className="font-bold text-cyan-300">{val}</span>
+                    <span className="capitalize" style={{ color: 'var(--text-muted)' }}>{key.replace(/_/g, ' ')}</span>
+                    <span className="font-bold" style={{ color: '#2563eb' }}>{val}</span>
                   </div>
-                  <div className="h-1.5 bg-polar-darker rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${(val / 60) * 100}%`, background: 'linear-gradient(to right, #06b6d488, #06b6d4)' }} />
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${(val / 60) * 100}%`, background: 'linear-gradient(to right, #93c5fd, #2563eb)' }} />
                   </div>
                 </div>
               ))}
@@ -560,50 +587,52 @@ export const LogisticsPage: React.FC = () => {
           </div>
 
           {/* What-If */}
-          <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-4">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-bold flex items-center gap-2">
+          <div className="p-6 rounded-2xl space-y-4" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold flex items-center gap-2" style={{ color: '#2563eb' }}>
               <Sparkles className="w-4 h-4" /> Resupply Delay Simulator
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-xs font-mono text-slate-400 mb-2">Delay Duration: <strong className="text-amber-300">{delayDays} days</strong></div>
+                <div className="text-xs font-mono mb-2" style={{ color: 'var(--text-muted)' }}>Delay Duration: <strong style={{ color: '#d97706' }}>{delayDays} days</strong></div>
                 <input type="range" min={5} max={90} value={delayDays} onChange={e => setDelayDays(+e.target.value)}
-                  className="w-full accent-amber-400 cursor-pointer" />
-                <div className="flex justify-between text-[9px] font-mono text-slate-500 mt-0.5">
+                  className="w-full accent-blue-500 cursor-pointer" />
+                <div className="flex justify-between text-[9px] font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   <span>5d</span><span>30d critical</span><span>90d max</span>
                 </div>
               </div>
               <button onClick={handleWhatIf} disabled={whatIfLoading}
-                className="w-full py-3 rounded-xl text-sm font-mono font-bold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50">
+                className="w-full py-3 rounded-xl text-sm font-mono font-bold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb' }}>
                 {whatIfLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 {whatIfLoading ? 'Simulating...' : 'Run Impact Analysis'}
               </button>
             </div>
             {whatIfResult && (
-              <div className="space-y-3 pt-3 border-t border-polar-border/40">
-                <div className="text-xs font-mono font-bold text-amber-300">{whatIfResult.scenario_name}</div>
+              <div className="space-y-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="text-xs font-mono font-bold" style={{ color: '#d97706' }}>{whatIfResult.scenario_name}</div>
                 {whatIfResult.impact && (
                   <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/30">
-                      <div className="text-[9px] font-mono text-slate-400">Fuel Days Lost</div>
-                      <div className="text-sm font-black font-mono text-rose-400 mt-1">−{whatIfResult.impact.fuel_days_lost}d</div>
+                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#fef2f2', border: '1px solid #fca5a5' }}>
+                      <div className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>Fuel Days Lost</div>
+                      <div className="text-sm font-black font-mono mt-1" style={{ color: '#dc2626' }}>−{whatIfResult.impact.fuel_days_lost}d</div>
                     </div>
-                    <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                      <div className="text-[9px] font-mono text-slate-400">Risk Delta</div>
-                      <div className="text-sm font-black font-mono text-amber-400 mt-1">+{whatIfResult.impact.risk_score_delta?.toFixed(1)}pts</div>
+                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
+                      <div className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>Risk Delta</div>
+                      <div className="text-sm font-black font-mono mt-1" style={{ color: '#d97706' }}>+{whatIfResult.impact.risk_score_delta?.toFixed(1)}pts</div>
                     </div>
-                    <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-                      <div className="text-[9px] font-mono text-slate-400">Runway Left</div>
-                      <div className="text-sm font-black font-mono text-emerald-400 mt-1">{whatIfResult.impact.runway_remaining}d</div>
+                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac' }}>
+                      <div className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>Runway Left</div>
+                      <div className="text-sm font-black font-mono mt-1" style={{ color: '#16a34a' }}>{whatIfResult.impact.runway_remaining}d</div>
                     </div>
                   </div>
                 )}
-                <div className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border">
-                  <div className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 mb-1.5 font-bold">Recommended Action</div>
-                  <p className="text-[10px] font-mono text-slate-300 leading-relaxed">{whatIfResult.recommended_action}</p>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                  <div className="text-[9px] font-mono uppercase tracking-wider font-bold mb-1.5" style={{ color: '#16a34a' }}>Recommended Action</div>
+                  <p className="text-[10px] font-mono leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{whatIfResult.recommended_action}</p>
                 </div>
                 <button onClick={() => setWhatIfResult(null)}
-                  className="w-full py-2 rounded-xl text-xs font-mono text-slate-400 border border-polar-border hover:border-white/20 hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                  className="w-full py-2 rounded-xl text-xs font-mono border flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                  style={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
                   <X className="w-3.5 h-3.5" /> Clear
                 </button>
               </div>

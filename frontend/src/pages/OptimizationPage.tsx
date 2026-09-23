@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { optimizationApi } from '../api/client';
 import { EChartsLine } from '../components/charts/EChartsLine';
@@ -180,7 +180,7 @@ export const OptimizationPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 uppercase tracking-wider mb-1">
               <Cpu className="w-4 h-4" />
-              <span>RL-Based Operational Optimization — Deep Q-Learning Microgrid Agent</span>
+              <span>RL-Based Operational Optimization — Deep Q-Learning Power grid Agent</span>
             </div>
             <h1 className="text-2xl font-black text-white capitalize">
               {stationId} RL Dispatch Console

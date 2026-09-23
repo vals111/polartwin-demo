@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useLive dataStore } from '../store/live dataStore';
 import { resourcesApi } from '../api/client';
 import {
   CommunicationDigitalTwin, CommunicationAsset,
@@ -113,7 +113,7 @@ const LinkPerformanceChart: React.FC<{ hist: any[] }> = ({ hist }) => {
         textStyle: { color: '#e2e8f0', fontFamily: 'monospace', fontSize: 10 },
       },
       legend: {
-        data: ['Bandwidth', 'Latency', 'Packet Loss'],
+        data: ['Data speed', 'Signal delay', 'Packet Loss'],
         textStyle: { color: '#94a3b8', fontSize: 10, fontFamily: 'monospace' },
         top: 0, right: 10,
       },
@@ -129,12 +129,12 @@ const LinkPerformanceChart: React.FC<{ hist: any[] }> = ({ hist }) => {
       ],
       series: [
         {
-          name: 'Bandwidth', type: 'line', data: hist.map(h => h.bandwidth_mbps),
+          name: 'Data speed', type: 'line', data: hist.map(h => h.data speed_mbps),
           smooth: true, showSymbol: false, lineStyle: { width: 2.5, color: '#38bdf8' },
           areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(56,189,248,0.3)' }, { offset: 1, color: 'rgba(56,189,248,0.02)' }]) },
         },
         {
-          name: 'Latency', type: 'line', yAxisIndex: 1, data: hist.map(h => h.latency_ms),
+          name: 'Signal delay', type: 'line', yAxisIndex: 1, data: hist.map(h => h.signal delay_ms),
           smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#34d399', type: 'dashed' },
         },
         {
@@ -237,7 +237,7 @@ const SatelliteTopologyViz: React.FC<{
       {/* Metrics on the beam */}
       <rect x={100} y={68} width={60} height={38} rx={6} fill="rgba(5,10,25,0.9)" stroke="rgba(56,189,248,0.3)" strokeWidth={1} />
       <text x={130} y={80} textAnchor="middle" fill={bwColor} fontSize={8} fontFamily="monospace" fontWeight="bold">{bwMbps} Mbps</text>
-      <text x={130} y={92} textAnchor="middle" fill="#94a3b8" fontSize={7} fontFamily="monospace">{latMs}ms latency</text>
+      <text x={130} y={92} textAnchor="middle" fill="#94a3b8" fontSize={7} fontFamily="monospace">{latMs}ms signal delay</text>
       <text x={130} y={102} textAnchor="middle" fill={lossP > 1 ? '#ef4444' : '#10b981'} fontSize={7} fontFamily="monospace">{lossP}% loss</text>
 
       {/* Sync state badge */}
@@ -278,7 +278,7 @@ const DomainFreshChip: React.FC<{ dom: any; stationId: string }> = ({ dom, stati
 const Modal: React.FC<{ title: string; onClose: () => void; children: React.ReactNode }> = ({ title, onClose, children }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-    <div className="relative z-10 glass-panel rounded-2xl border border-polar-border w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="relative z-10 glass-panel rounded-2xl border border-polar-border w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopSignal spread()}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider">{title}</h3>
         <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
@@ -296,7 +296,7 @@ export const CommunicationPage: React.FC = () => {
   const isMaitri = stationId === 'maitri';
 
   const { stations } = useStationStore();
-  const { liveSnapshot } = useTelemetryStore();
+  const { liveSnapshot } = useLive dataStore();
 
   const [commData, setCommData] = useState<CommunicationDigitalTwin | null>(null);
   const [loading, setLoading] = useState(true);
@@ -346,12 +346,12 @@ export const CommunicationPage: React.FC = () => {
   const comm = commData;
   const syncState = comm?.sync_state ?? 'SYNCHRONIZED';
   const syncColor = syncState === 'SYNCHRONIZED' ? '#10b981' : syncState === 'DEGRADED' ? '#f59e0b' : '#ef4444';
-  const bwMbps = comm?.bandwidth_mbps ?? (isMaitri ? 118.5 : 157.2);
-  const latMs = comm?.latency_ms ?? (isMaitri ? 78 : 62);
+  const bwMbps = comm?.data speed_mbps ?? (isMaitri ? 118.5 : 157.2);
+  const latMs = comm?.signal delay_ms ?? (isMaitri ? 78 : 62);
   const lossP = comm?.packet_loss_pct ?? (isMaitri ? 0.05 : 0.02);
-  const freshSec = comm?.telemetry_freshness_sec ?? 1.4;
-  const bwCapacity = comm?.bandwidth_capacity_mbps ?? (isMaitri ? 120 : 160);
-  const utilPct = comm?.bandwidth_utilization_pct ?? Math.round((bwMbps / bwCapacity) * 100);
+  const freshSec = comm?.live data_freshness_sec ?? 1.4;
+  const bwCapacity = comm?.data speed_capacity_mbps ?? (isMaitri ? 120 : 160);
+  const utilPct = comm?.data speed_utilization_pct ?? Math.round((bwMbps / bwCapacity) * 100);
   const dataConfidence = comm?.data_confidence_pct ?? 99.4;
   const riskScore = comm?.communication_risk?.overall_risk_score ?? 2.0;
   const riskLevel = riskScore > 30 ? 'HIGH' : riskScore > 10 ? 'MEDIUM' : 'LOW';
@@ -359,13 +359,13 @@ export const CommunicationPage: React.FC = () => {
 
   const mockHist = comm?.history ?? Array.from({ length: 20 }, (_, i) => ({
     t_minus_sec: (20 - i) * 30,
-    bandwidth_mbps: bwMbps + (Math.random() - 0.5) * 10,
-    latency_ms: latMs + (Math.random() - 0.5) * 8,
+    data speed_mbps: bwMbps + (Math.random() - 0.5) * 10,
+    signal delay_ms: latMs + (Math.random() - 0.5) * 8,
     packet_loss_pct: Math.max(0, lossP + (Math.random() - 0.5) * 0.1),
   }));
 
   const FLOW_STAGES = [
-    { id: 1, title: 'Station Sensors', desc: '1,420 SCADA Points', status: 'NORMAL' },
+    { id: 1, title: 'Station Sensors', desc: '1,420 Automated Control System Points', status: 'NORMAL' },
     { id: 2, title: 'Edge Bus', desc: 'Real-time Broker', status: 'STREAMING' },
     { id: 3, title: 'Radome Uplink', desc: isMaitri ? '2.4m Dish' : 'Dual 3.0m', status: 'STREAMING' },
     { id: 4, title: 'LEO Satellite', desc: 'INSAT-4 / SES', status: 'STREAMING' },
@@ -375,9 +375,9 @@ export const CommunicationPage: React.FC = () => {
 
   const WHAT_IF_PRESETS = [
     { id: 'primary_link_failure', title: '📡 Primary Link Failure', desc: 'LEO dish lock loss + backup failover', icon: CloudLightning, params: {} },
-    { id: 'bandwidth_reduction', title: '📉 Bandwidth Throttle −65%', desc: 'Transponder orbital contention', icon: TrendingDown, params: { reduction_pct: 65 } },
+    { id: 'data speed_reduction', title: '📉 Data speed Throttle −65%', desc: 'Transponder orbital contention', icon: TrendingDown, params: { reduction_pct: 65 } },
     { id: 'high_packet_loss', title: '🌩️ Auroral Packet Loss 6.8%', desc: 'Solar flare ionospheric storm', icon: AlertTriangle, params: { packet_loss_pct: 6.8 } },
-    { id: 'high_latency', title: '⏱️ Multi-Hop Relay 520ms', desc: 'Inter-satellite routing delay', icon: Clock, params: { latency_ms: 520 } },
+    { id: 'high_signal delay', title: '⏱️ Multi-Hop Relay 520ms', desc: 'Inter-satellite routing delay', icon: Clock, params: { signal delay_ms: 520 } },
     { id: 'backup_activation', title: '🔄 Backup Link Drill', desc: 'Inmarsat/Iridium switchover test', icon: Shield, params: {} },
   ];
 
@@ -417,7 +417,7 @@ export const CommunicationPage: React.FC = () => {
               <Signal className="w-8 h-8 text-sky-400" /> Communications Command Digital Twin
             </h1>
             <p className="text-xs font-mono text-slate-400 mt-2 max-w-2xl leading-relaxed">
-              {station.name} → INSAT-4 LEO Constellation → NCAOR Goa Ground Gateway · Real-time telemetry synchronization
+              {station.name} → INSAT-4 LEO Constellation → NCAOR Goa Ground Gateway · Real-time live data synchronization
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
@@ -445,8 +445,8 @@ export const CommunicationPage: React.FC = () => {
         {/* KPI Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-polar-border/50">
           {[
-            { label: 'Link Bandwidth', val: `${bwMbps} Mbps`, sub: `${utilPct}% of ${bwCapacity} Mbps capacity`, color: '#38bdf8', icon: <Wifi className="w-4 h-4" />, modal: 'bandwidth' },
-            { label: 'Ping Latency', val: `${latMs} ms`, sub: `Jitter: ±${comm?.latency_jitter_ms ?? 3}ms · ${comm?.latency_trend ?? 'STABLE'}`, color: '#10b981', icon: <Activity className="w-4 h-4" />, modal: 'latency' },
+            { label: 'Link Data speed', val: `${bwMbps} Mbps`, sub: `${utilPct}% of ${bwCapacity} Mbps capacity`, color: '#38bdf8', icon: <Wifi className="w-4 h-4" />, modal: 'data speed' },
+            { label: 'Ping Signal delay', val: `${latMs} ms`, sub: `Jitter: ±${comm?.signal delay_jitter_ms ?? 3}ms · ${comm?.signal delay_trend ?? 'STABLE'}`, color: '#10b981', icon: <Activity className="w-4 h-4" />, modal: 'signal delay' },
             { label: 'Packet Loss', val: `${lossP}%`, sub: `${comm?.packets_dropped ?? 422} dropped · ${comm?.packet_loss_status ?? 'OPTIMAL'}`, color: lossP < 0.5 ? '#10b981' : '#f59e0b', icon: <Signal className="w-4 h-4" />, modal: 'packet_loss' },
             { label: 'Twin Freshness', val: `${freshSec}s`, sub: `Confidence: ${dataConfidence}% · 16 domains synced`, color: '#818cf8', icon: <Clock className="w-4 h-4" />, modal: 'freshness' },
           ].map((kpi) => (
@@ -580,7 +580,7 @@ export const CommunicationPage: React.FC = () => {
                 <Radio className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold text-white">Stage {selectedFlowNode}: {FLOW_STAGES[selectedFlowNode - 1].title} — </span>
-                  <span>Real-time sensor telemetry processing at this stage with automated CRC validation and QoS priority tagging.</span>
+                  <span>Real-time sensor live data processing at this stage with automated CRC validation and QoS priority tagging.</span>
                 </div>
               </div>
             )}
@@ -590,7 +590,7 @@ export const CommunicationPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
               <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3 flex items-center gap-2">
-                <BarChart2 className="w-4 h-4" /> Link Performance History (Last 20 Telemetry Ticks)
+                <BarChart2 className="w-4 h-4" /> Link Performance History (Last 20 Live data Ticks)
               </div>
               <LinkPerformanceChart hist={mockHist} />
             </div>
@@ -600,7 +600,7 @@ export const CommunicationPage: React.FC = () => {
               </div>
               <QoSStackedBar
                 tiers={comm?.qos_tiers ?? [
-                  { id: '1', short_name: 'Tier 1 — SCADA/Safety', description: 'Life support, microgrid, emergency', current_mbps: 32, allocation_pct: 35 },
+                  { id: '1', short_name: 'Tier 1 — Automated Control System/Safety', description: 'Life support, power grid, emergency', current_mbps: 32, allocation_pct: 35 },
                   { id: '2', short_name: 'Tier 2 — Science', description: 'Earth obs, research data', current_mbps: 48, allocation_pct: 45 },
                   { id: '3', short_name: 'Tier 3 — Crew Welfare', description: 'VoIP, video, personal comms', current_mbps: 22, allocation_pct: 20 },
                 ]}
@@ -608,7 +608,7 @@ export const CommunicationPage: React.FC = () => {
               />
               <div className="pt-3 border-t border-polar-border/40 space-y-2 text-xs font-mono">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Total Active Bandwidth</span>
+                  <span className="text-slate-400">Total Active Data speed</span>
                   <span className="font-bold text-sky-300">{bwMbps} Mbps</span>
                 </div>
                 <div className="flex justify-between">
@@ -622,7 +622,7 @@ export const CommunicationPage: React.FC = () => {
           {/* Domain freshness matrix */}
           <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl space-y-4">
             <div className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-bold flex items-center gap-2">
-              <Clock className="w-4 h-4" /> 16-Domain Telemetry Freshness Matrix — Click to Inspect
+              <Clock className="w-4 h-4" /> 16-Domain Live data Freshness Matrix — Click to Inspect
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {(comm?.domains_freshness ?? []).map((dom: any) => (
@@ -746,10 +746,10 @@ export const CommunicationPage: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-polar-border/20">
                         {[
-                          { label: 'Bandwidth', base: `${whatIfResult.baseline.bandwidth_mbps} Mbps`, proj: `${whatIfResult.projected.bandwidth_mbps} Mbps`, delta: `${whatIfResult.delta.bandwidth_delta_mbps} Mbps`, bad: true },
-                          { label: 'Latency', base: `${whatIfResult.baseline.latency_ms} ms`, proj: `${whatIfResult.projected.latency_ms} ms`, delta: `+${whatIfResult.delta.latency_delta_ms} ms`, bad: true },
+                          { label: 'Data speed', base: `${whatIfResult.baseline.data speed_mbps} Mbps`, proj: `${whatIfResult.projected.data speed_mbps} Mbps`, delta: `${whatIfResult.delta.data speed_delta_mbps} Mbps`, bad: true },
+                          { label: 'Signal delay', base: `${whatIfResult.baseline.signal delay_ms} ms`, proj: `${whatIfResult.projected.signal delay_ms} ms`, delta: `+${whatIfResult.delta.signal delay_delta_ms} ms`, bad: true },
                           { label: 'Packet Loss', base: `${whatIfResult.baseline.packet_loss_pct}%`, proj: `${whatIfResult.projected.packet_loss_pct}%`, delta: `+${whatIfResult.delta.packet_loss_delta_pct}%`, bad: true },
-                          { label: 'Freshness', base: `${whatIfResult.baseline.telemetry_freshness_sec}s`, proj: `${whatIfResult.projected.telemetry_freshness_sec}s`, delta: `+${whatIfResult.delta.freshness_delta_sec}s`, bad: true },
+                          { label: 'Freshness', base: `${whatIfResult.baseline.live data_freshness_sec}s`, proj: `${whatIfResult.projected.live data_freshness_sec}s`, delta: `+${whatIfResult.delta.freshness_delta_sec}s`, bad: true },
                         ].map(r => (
                           <tr key={r.label}>
                             <td className="py-2 pr-3 text-slate-400">{r.label}</td>
@@ -788,15 +788,15 @@ export const CommunicationPage: React.FC = () => {
       )}
 
       {/* ── KPI Drilldown Modals ── */}
-      {activeModal === 'bandwidth' && (
-        <Modal title="Link Bandwidth & Throughput Breakdown" onClose={() => setActiveModal(null)}>
+      {activeModal === 'data speed' && (
+        <Modal title="Link Data speed & Throughput Breakdown" onClose={() => setActiveModal(null)}>
           <div className="space-y-3 text-xs font-mono text-slate-300">
             {[
               { l: 'Total Capacity', v: `${bwCapacity} Mbps`, c: '#94a3b8' },
               { l: 'Active Throughput', v: `${bwMbps} Mbps`, c: '#38bdf8' },
               { l: 'Channel Utilization', v: `${utilPct}%`, c: '#10b981' },
               { l: 'Available Headroom', v: `${(bwCapacity - bwMbps).toFixed(1)} Mbps`, c: '#06b6d4' },
-              { l: 'Tier 1 (Safety/SCADA)', v: '35% — 32 Mbps', c: '#10b981' },
+              { l: 'Tier 1 (Safety/Automated Control System)', v: '35% — 32 Mbps', c: '#10b981' },
               { l: 'Tier 2 (Science)', v: '45% — 48 Mbps', c: '#06b6d4' },
               { l: 'Tier 3 (Crew)', v: '20% — 22 Mbps', c: '#64748b' },
             ].map(r => (
@@ -808,15 +808,15 @@ export const CommunicationPage: React.FC = () => {
           </div>
         </Modal>
       )}
-      {activeModal === 'latency' && (
-        <Modal title="Round-Trip Ping Latency & Jitter Profile" onClose={() => setActiveModal(null)}>
+      {activeModal === 'signal delay' && (
+        <Modal title="Round-Trip Ping Signal delay & Jitter Profile" onClose={() => setActiveModal(null)}>
           <div className="space-y-3 text-xs font-mono text-slate-300">
             {[
-              { l: 'Current Latency', v: `${latMs} ms`, c: '#10b981' },
-              { l: '24-Hour Average', v: `${comm?.latency_avg_ms ?? 76} ms`, c: '#94a3b8' },
-              { l: 'Peak Observed', v: `${comm?.latency_peak_ms ?? 94} ms`, c: '#f59e0b' },
-              { l: 'Jitter', v: `±${comm?.latency_jitter_ms ?? 3} ms`, c: '#06b6d4' },
-              { l: 'Trend', v: comm?.latency_trend ?? 'STABLE', c: '#10b981' },
+              { l: 'Current Signal delay', v: `${latMs} ms`, c: '#10b981' },
+              { l: '24-Hour Average', v: `${comm?.signal delay_avg_ms ?? 76} ms`, c: '#94a3b8' },
+              { l: 'Peak Observed', v: `${comm?.signal delay_peak_ms ?? 94} ms`, c: '#f59e0b' },
+              { l: 'Jitter', v: `±${comm?.signal delay_jitter_ms ?? 3} ms`, c: '#06b6d4' },
+              { l: 'Trend', v: comm?.signal delay_trend ?? 'STABLE', c: '#10b981' },
             ].map(r => (
               <div key={r.l} className="flex justify-between border-b border-polar-border/30 pb-2">
                 <span className="text-slate-400">{r.l}</span>
@@ -845,7 +845,7 @@ export const CommunicationPage: React.FC = () => {
         </Modal>
       )}
       {activeModal === 'freshness' && (
-        <Modal title="Digital Twin Telemetry Stream Health" onClose={() => setActiveModal(null)}>
+        <Modal title="Digital Twin Live data Stream Health" onClose={() => setActiveModal(null)}>
           <div className="space-y-3 text-xs font-mono text-slate-300">
             {[
               { l: 'Current Freshness', v: `${freshSec}s`, c: '#818cf8' },

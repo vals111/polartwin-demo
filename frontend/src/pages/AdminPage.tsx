@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { adminApi } from '../api/client';
 import { ShieldAlert, Users, Cpu, Play, RefreshCw, CheckCircle2, Settings, Key } from 'lucide-react';
 
@@ -53,7 +53,7 @@ export const AdminPage: React.FC = () => {
               POLARTWIN Security & Governance Console
             </h1>
             <p className="text-xs text-slate-300 mt-0.5">
-              Manage platform role-based access control (RBAC), view telemetry tick loops, and configure simulator parameters.
+              Manage platform role-based access control (RBAC), view live data tick loops, and configure simulator parameters.
             </p>
           </div>
         </div>
@@ -110,7 +110,7 @@ export const AdminPage: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Cpu className="w-4 h-4 text-cyan-400" />
                 <h3 className="text-sm font-bold text-white uppercase font-mono">
-                  Autonomous Simulation Engine
+                  Self-operating Simulation Engine
                 </h3>
               </div>
               <span className="text-[10px] font-mono text-emerald-400 flex items-center space-x-1">
@@ -121,7 +121,7 @@ export const AdminPage: React.FC = () => {
 
             <div className="space-y-2 text-xs font-mono text-slate-300">
               <div className="flex justify-between p-2.5 rounded-lg bg-polar-dark/60 border border-polar-border">
-                <span className="text-slate-400">Autonomous Interval:</span>
+                <span className="text-slate-400">Self-operating Interval:</span>
                 <span className="font-bold text-white">4 Seconds per Tick</span>
               </div>
               <div className="flex justify-between p-2.5 rounded-lg bg-polar-dark/60 border border-polar-border">

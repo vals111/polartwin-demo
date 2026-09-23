@@ -1,23 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as d3 from 'd3';
 
 interface PolarEChartsProps {
-  telemetryHistory: any[];
+  live dataHistory: any[];
   stationName: string;
 }
 
-export const PolarEChartsAnalytics: React.FC<PolarEChartsProps> = ({ telemetryHistory, stationName }) => {
+export const PolarEChartsAnalytics: React.FC<PolarEChartsProps> = ({ live dataHistory, stationName }) => {
   const d3ContainerRef = useRef<SVGSVGElement | null>(null);
 
-  // 1. Apache ECharts Option: Multi-Domain Dual-Axis Synchronous Telemetry
-  const times = telemetryHistory.map((h) =>
+  // 1. Apache ECharts Option: Multi-Domain Dual-Axis Synchronous Live data
+  const times = live dataHistory.map((h) =>
     new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   );
-  const actualLoads = telemetryHistory.map((h) => h.generator_load_actual);
-  const predictedLoads = telemetryHistory.map((h) => h.generator_load_predicted);
-  const fuelBurns = telemetryHistory.map((h) => h.fuel_burn_actual);
-  const solarGen = telemetryHistory.map((h) => h.solar_generation);
+  const actualLoads = live dataHistory.map((h) => h.generator_load_actual);
+  const predictedLoads = live dataHistory.map((h) => h.generator_load_predicted);
+  const fuelBurns = live dataHistory.map((h) => h.fuel_burn_actual);
+  const solarGen = live dataHistory.map((h) => h.solar_generation);
 
   const echartsOption = {
     backgroundColor: 'transparent',
@@ -189,12 +189,12 @@ export const PolarEChartsAnalytics: React.FC<PolarEChartsProps> = ({ telemetryHi
 
   return (
     <div className="space-y-6">
-      {/* Apache ECharts 2D Telemetry Chart */}
+      {/* Apache ECharts 2D Live data Chart */}
       <div className="glass-panel p-5 rounded-2xl border border-polar-border">
         <div className="flex items-center justify-between pb-3 border-b border-polar-border/60 mb-2">
           <div>
             <h3 className="text-xs font-bold font-mono tracking-wider text-cyan-400 uppercase">
-              Apache ECharts — High-Fidelity Multi-Metric Telemetry Stream
+              Apache ECharts — High-Fidelity Multi-Metric Live data Stream
             </h3>
             <p className="text-[11px] text-slate-400 font-mono">
               Synchronous Dual-Axis ECharts rendering actual load, predicted demand, solar, and diesel consumption
@@ -215,7 +215,7 @@ export const PolarEChartsAnalytics: React.FC<PolarEChartsProps> = ({ telemetryHi
               D3.js Force-Directed Interactive Causal Topology
             </h3>
             <p className="text-[11px] text-slate-400 font-mono">
-              Draggable D3 physics graph simulating continuous constraint propagation across domains
+              Draggable D3 physics graph simulating continuous constraint signal spread across domains
             </p>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40">

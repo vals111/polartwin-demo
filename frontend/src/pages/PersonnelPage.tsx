@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
-import { useTelemetryStore } from '../store/telemetryStore';
+import { useLive dataStore } from '../store/live dataStore';
 import { resourcesApi } from '../api/client';
 import {
   Users, Heart, Moon, Sun, AlertTriangle, ShieldCheck,
@@ -68,7 +68,7 @@ const KpiModal: React.FC<{ title: string; onClose: () => void; children: React.R
     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
     <div
       className="relative z-10 glass-panel rounded-2xl border border-polar-border w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
-      onClick={e => e.stopPropagation()}
+      onClick={e => e.stopSignal spread()}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider">{title}</h3>
@@ -87,7 +87,7 @@ const RoleDrawer: React.FC<{ group: any; onClose: () => void }> = ({ group, onCl
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative z-10 glass-panel rounded-2xl border border-polar-border w-full max-w-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
+        onClick={e => e.stopSignal spread()}
       >
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
@@ -289,7 +289,7 @@ export const PersonnelPage: React.FC = () => {
   const [whatIfResult, setWhatIfResult] = useState<any | null>(null);
   const [whatIfScenario, setWhatIfScenario] = useState<string | null>(null);
 
-  const { liveSnapshot } = useTelemetryStore();
+  const { liveSnapshot } = useLive dataStore();
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -418,7 +418,7 @@ export const PersonnelPage: React.FC = () => {
         { label: 'Energy Load', value: `${pers?.role_groups?.[0]?.energy_contribution_kw?.toFixed(1) ?? '--'} kW`, color: 'yellow' },
         { label: 'Fuel Burn ↑', value: 'Generator Load', color: 'orange' },
       ],
-      explanation: `${pers?.role_groups?.[0]?.count ?? '--'} research scientists running ${pers?.role_groups?.[0]?.active_projects ?? '--'} active projects require ${pers?.role_groups?.[0]?.equipment_required ?? '--'} laboratory systems. Each active experiment draws additional power — collectively adding ${pers?.role_groups?.[0]?.energy_contribution_kw?.toFixed(1) ?? '--'} kW to the microgrid load, directly increasing generator runtime and fuel consumption.`,
+      explanation: `${pers?.role_groups?.[0]?.count ?? '--'} research scientists running ${pers?.role_groups?.[0]?.active_projects ?? '--'} active projects require ${pers?.role_groups?.[0]?.equipment_required ?? '--'} laboratory systems. Each active experiment draws additional power — collectively adding ${pers?.role_groups?.[0]?.energy_contribution_kw?.toFixed(1) ?? '--'} kW to the power grid load, directly increasing generator runtime and fuel consumption.`,
     },
     {
       id: 'environment_chain',
@@ -1049,7 +1049,7 @@ export const PersonnelPage: React.FC = () => {
             {[
               { label: 'Medical Officer', value: ls.medical_officer_available ? 'AVAILABLE' : 'UNAVAILABLE', good: ls.medical_officer_available },
               { label: 'Medical Facility', value: ls.medical_facility_status, good: ls.medical_facility_status === 'OPERATIONAL' },
-              { label: 'Telemedicine', value: `${ls.telemedicine_link} — ${ls.telemedicine_partner}`, good: ls.telemedicine_link === 'CONNECTED' },
+              { label: 'Remote doctor service', value: `${ls.remote doctor service_link} — ${ls.remote doctor service_partner}`, good: ls.remote doctor service_link === 'CONNECTED' },
               { label: 'Emergency Response', value: ls.emergency_response_readiness, good: ls.emergency_response_readiness === 'READY' },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-center py-1.5 border-b border-polar-border/30 text-xs font-mono">
@@ -1129,11 +1129,11 @@ export const PersonnelPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Cross-Domain Causal Propagation ────────────────────────────────────── */}
+      {/* ── Cross-Domain Causal Flow ────────────────────────────────────── */}
       <div className="glass-panel p-6 rounded-2xl border border-polar-border space-y-5">
         <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
           <ArrowRight className="w-4 h-4 text-cyan-400" />
-          Cross-Domain Causal Propagation
+          Cross-Domain Causal Flow
         </h3>
 
         <div className="space-y-4">
@@ -1154,7 +1154,7 @@ export const PersonnelPage: React.FC = () => {
                   </React.Fragment>
                 ))}
               </div>
-              {/* Visual Propagation Studio appears when any node in this chain is selected */}
+              {/* Visual Signal spread Studio appears when any node in this chain is selected */}
               {chain.nodes.some((_, i) => selectedCausal === `${chain.id}-${i}`) && (
                 <div className="p-4 rounded-xl bg-polar-dark/90 border border-cyan-500/30 space-y-3 font-mono">
                   <div className="flex items-center justify-between">

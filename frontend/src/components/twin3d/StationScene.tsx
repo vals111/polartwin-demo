@@ -1,7 +1,7 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { TelemetrySnapshot } from '../../types';
+import { Live dataSnapshot } from '../../types';
 
 // =============================================================================
 // Domain Color Palette
@@ -436,7 +436,7 @@ function buildCommsTower(sc=1):THREE.Group{
   const g=new THREE.Group();
   const SH=0.8;
 
-  // Equipment transceiver shelter - Polar Azure Cyan
+  // Equipment radio unit shelter - Polar Azure Cyan
   const hut=new THREE.Mesh(new THREE.BoxGeometry(3.6*sc,2.4*sc,3.0*sc),MAIN_WING);
   hut.position.set(0,(SH+1.2)*sc,0); hut.castShadow=true; g.add(hut);
   addWindows(g,1,1,0.6,0.6,0,(SH+1.3)*sc,0,1.5*sc,sc,1.6);
@@ -460,7 +460,7 @@ function buildCommsTower(sc=1):THREE.Group{
     ring.position.set(0,y1+TH/7,0); g.add(ring);
   }
 
-  // Large Parabolic Satellite Dish Antenna with Feed Horn
+  // Large Parabolic Satellite Dish Aerial with Feed Horn
   const dishRadius=1.5*sc;
   const dish=new THREE.Mesh(
     new THREE.SphereGeometry(dishRadius,20,10,0,Math.PI*2,0,Math.PI/3),
@@ -560,7 +560,7 @@ function buildWarehouse(sc=1):THREE.Group{
 }
 
 // =============================================================================
-// 8. Solar Array (4 Banks of 6 Photovoltaic Panels with Galvanized A-Frames)
+// 8. Solar Array (4 Banks of 6 Solar panel Panels with Galvanized A-Frames)
 // =============================================================================
 function buildSolarArray(sc=1):THREE.Group{
   const g=new THREE.Group();
@@ -602,7 +602,7 @@ function buildSolarArray(sc=1):THREE.Group{
 }
 
 // =============================================================================
-// 9. Water Facility (RO Desalination & Accumulator Tank Unit)
+// 9. Water Facility (RO Seawater purification & Accumulator Tank Unit)
 // =============================================================================
 function buildSmallFacility(colorHex:number,sc=1):THREE.Group{
   const g=new THREE.Group(); const SH=0.7;
@@ -657,7 +657,7 @@ function buildMetTower(sc=1):THREE.Group{
     brace.position.set(0,y1+TH/7,0); g.add(brace);
   }
 
-  // Crossarms with Anemometers & Wind Vanes
+  // Crossarms with Wind speed sensors & Wind Vanes
   for(const y of [TH*0.4,TH*0.7,TH]){
     const boom=new THREE.Mesh(new THREE.CylinderGeometry(0.02*sc,0.02*sc,1.6*sc,6),STAINLESS);
     boom.rotation.z=Math.PI/2; boom.position.set(0.6*sc,y,0); g.add(boom);
@@ -684,7 +684,7 @@ function createPolarSky():THREE.Mesh{
   // Crisp Natural Polar Daylight Gradient
   grad.addColorStop(0.0, '#1e4b8a');  // Deep polar zenith blue
   grad.addColorStop(0.35,'#3b82f6');  // Vivid daylight azure
-  grad.addColorStop(0.68,'#60a5fa');  // Polar atmospheric blue
+  grad.addColorStop(0.68,'#60a5fa');  // Polar weather layer blue
   grad.addColorStop(0.88,'#93c5fd');  // Soft pale ice blue
   grad.addColorStop(1.0, '#dbeafe');  // Sunlit horizon ice haze
   ctx.fillStyle=grad; ctx.fillRect(0,0,128,512);
@@ -711,7 +711,7 @@ function createSastrugiTexture():THREE.CanvasTexture{
   for(let y=0;y<512;y++){
     for(let x=0;x<512;x++){
       const u=x/512; const v=y/512;
-      // Directional prevailing katabatic wind wave angle (~32 degrees)
+      // Directional prevailing polar downslope wind wave angle (~32 degrees)
       const windAxis=u*0.85+v*0.52;
       const crossAxis=-u*0.52+v*0.85;
       // Primary sharp sastrugi wave crest with asymmetric windward/leeward lip
@@ -1338,7 +1338,7 @@ function hexToRgb(hex:string):string{
 // Props & Main StationScene Component
 // =============================================================================
 interface Props{
-  snapshot?:TelemetrySnapshot;
+  snapshot?:Live dataSnapshot;
   onSelectAsset:(id:string)=>void;
   selectedAsset:string|null;
   stationId:string;
@@ -1408,7 +1408,7 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     rendRef.current=renderer;
 
     const scene=new THREE.Scene(); sceneRef.current=scene;
-    // Soft atmospheric daylight polar fog (gentle depth for mountains; station campus is crisp and sharp)
+    // Soft weather layer daylight polar fog (gentle depth for mountains; station campus is crisp and sharp)
     scene.fog=new THREE.FogExp2(0xcfe4f7,0.0009);
     scene.background=new THREE.Color(0xbfe0f7);
 
@@ -1456,7 +1456,7 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     const fillLight=new THREE.DirectionalLight(0x93c5fd,0.40);
     fillLight.position.set(-60,30,-45); scene.add(fillLight);
 
-    // 4. Ground snow bounce light (natural polar albedo)
+    // 4. Ground snow bounce light (natural polar surface reflectivity)
     const snowBounce=new THREE.DirectionalLight(0xe8f4fd,0.32);
     snowBounce.position.set(0,-1,0); scene.add(snowBounce);
 
@@ -1709,10 +1709,13 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
       renderer.setSize(el.clientWidth,el.clientHeight);
     };
     window.addEventListener('resize',onResize);
+    const ro = new ResizeObserver(() => onResize());
+    ro.observe(el);
 
     return()=>{
       cancelAnimationFrame(frameRef.current);
       window.removeEventListener('resize',onResize);
+      ro.disconnect();
       dom.removeEventListener('mousedown',onMouseDown);
       dom.removeEventListener('mouseup',onMouseUp);
       dom.removeEventListener('touchstart',onTouchStart);
