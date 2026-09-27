@@ -1987,19 +1987,16 @@ export const EnergyFuelPage: React.FC = () => {
           <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-polar-border/60">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
                   <Cpu className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="text-base font-extrabold text-white tracking-wide">Microgrid Generation Asset Matrix</div>
-                  <div className="text-xs font-mono text-slate-300 font-medium mt-0.5">
-                    Real-time status, governor load dispatch, and phase synchronization telemetry
-                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Total Online Capacity:</span>
-                <span className="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-400/50 text-emerald-300 font-mono font-black text-sm shadow-sm">
+                <span className="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-sm">
                   {(isMaitri ? 80 + 30 : 160 + 65)} kW
                 </span>
               </div>
@@ -2009,45 +2006,37 @@ export const EnergyFuelPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
               {/* Asset 1: Lead Genset */}
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-polar-darker/95 to-slate-900/90 border-2 border-emerald-500/50 shadow-lg shadow-emerald-950/30 hover:border-emerald-400 transition-all flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-emerald-500/20">
+                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-slate-800/80">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                      <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         <Zap className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="text-base font-extrabold text-white">
                           {isMaitri ? 'Genset #1 (Kirloskar 80kVA)' : 'CHP Unit #1 (Scania 160kW)'}
                         </div>
-                        <div className="text-xs font-mono text-emerald-400 font-bold mt-0.5">
+                        <div className="text-xs font-mono text-slate-400 font-medium mt-0.5">
                           Lead Prime Mover • Continuous Base Load
                         </div>
                       </div>
                     </div>
-                    <span className="px-3 py-1 rounded-xl text-xs font-mono font-black bg-emerald-500/25 text-emerald-300 border border-emerald-400/60 shadow-[0_0_8px_rgba(52,211,153,0.3)] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
                       ONLINE
                     </span>
                   </div>
 
-                  {/* 2x2 Telemetry Metric Grid */}
-                  <div className="grid grid-cols-2 gap-3 my-3">
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Electrical Output</div>
+                  {/* 2 Telemetry Metric Cards */}
+                  <div className="grid grid-cols-2 gap-3.5 my-3.5">
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Electrical Output</div>
                       <div className="text-xl font-mono font-black text-emerald-400 mt-1">{genLoad} kW</div>
                     </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Engine Speed</div>
-                      <div className="text-xl font-mono font-black text-white mt-1">1,500 RPM</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Coolant Temp</div>
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Coolant Temp</div>
                       <div className="text-xl font-mono font-black text-cyan-300 mt-1">86.2°C</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Oil Pressure</div>
-                      <div className="text-xl font-mono font-black text-amber-300 mt-1">4.6 bar</div>
                     </div>
                   </div>
                 </div>
@@ -2055,12 +2044,12 @@ export const EnergyFuelPage: React.FC = () => {
                 {/* Capacity Level Bar */}
                 <div className="mt-2 pt-3 border-t border-slate-800/80">
                   <div className="flex justify-between items-center text-xs font-mono mb-1.5 font-bold">
-                    <span className="text-slate-300">Governor Dispatch Load</span>
-                    <span className="text-emerald-400 font-extrabold">{Math.round((genLoad / (isMaitri ? 80 : 160)) * 100)}% of Rated</span>
+                    <span className="text-slate-400">Governor Dispatch Load</span>
+                    <span className="text-emerald-400 font-bold">{Math.round((genLoad / (isMaitri ? 80 : 160)) * 100)}% of Rated</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-emerald-500/30">
+                  <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
                     <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700"
+                      className="h-full bg-emerald-500 rounded-full transition-all duration-700"
                       style={{ width: `${Math.min(100, Math.round((genLoad / (isMaitri ? 80 : 160)) * 100))}%` }}
                     />
                   </div>
@@ -2068,45 +2057,37 @@ export const EnergyFuelPage: React.FC = () => {
               </div>
 
               {/* Asset 2: Secondary / Hot Standby Genset */}
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-950/40 via-polar-darker/95 to-slate-900/90 border-2 border-amber-500/50 shadow-lg shadow-amber-950/30 hover:border-amber-400 transition-all flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-amber-500/20">
+                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-slate-800/80">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
                         <Flame className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="text-base font-extrabold text-white">
                           {isMaitri ? 'Genset #2 (Kirloskar 80kVA)' : 'CHP Unit #2 (Scania 160kW)'}
                         </div>
-                        <div className="text-xs font-mono text-amber-400 font-bold mt-0.5">
+                        <div className="text-xs font-mono text-slate-400 font-medium mt-0.5">
                           Auto-Start Standby • Fast Sync Ready
                         </div>
                       </div>
                     </div>
-                    <span className="px-3 py-1 rounded-xl text-xs font-mono font-black bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-[0_0_8px_rgba(251,191,36,0.3)] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
                       HOT STANDBY
                     </span>
                   </div>
 
-                  {/* 2x2 Telemetry Metric Grid */}
-                  <div className="grid grid-cols-2 gap-3 my-3">
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Crank Status</div>
+                  {/* 2 Telemetry Metric Cards */}
+                  <div className="grid grid-cols-2 gap-3.5 my-3.5">
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Crank Status</div>
                       <div className="text-xl font-mono font-black text-amber-300 mt-1">Auto-Ready</div>
                     </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Block Pre-Heater</div>
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Block Pre-Heater</div>
                       <div className="text-xl font-mono font-black text-emerald-400 mt-1">46.0°C Active</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Starter Battery</div>
-                      <div className="text-xl font-mono font-black text-white mt-1">27.4 V Nominal</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Sync Time to Lock</div>
-                      <div className="text-xl font-mono font-black text-cyan-300 mt-1">12s Synchronizer</div>
                     </div>
                   </div>
                 </div>
@@ -2114,54 +2095,46 @@ export const EnergyFuelPage: React.FC = () => {
                 {/* Standby Readiness Bar */}
                 <div className="mt-2 pt-3 border-t border-slate-800/80">
                   <div className="flex justify-between items-center text-xs font-mono mb-1.5 font-bold">
-                    <span className="text-slate-300">Standby Lube &amp; Jacket Heater</span>
-                    <span className="text-amber-400 font-extrabold">100% Primed for Crank</span>
+                    <span className="text-slate-400">Standby Lube &amp; Jacket Heater</span>
+                    <span className="text-amber-400 font-bold">100% Primed for Crank</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-amber-500/30">
-                    <div className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full w-full" />
+                  <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
+                    <div className="h-full bg-amber-500/80 rounded-full w-full" />
                   </div>
                 </div>
               </div>
 
               {/* Asset 3: Solar PV Farm */}
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-yellow-950/40 via-polar-darker/95 to-slate-900/90 border-2 border-yellow-500/50 shadow-lg shadow-yellow-950/30 hover:border-yellow-400 transition-all flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-yellow-500/20">
+                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-slate-800/80">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-yellow-500/20 text-yellow-400 border border-yellow-500/40">
+                      <div className="p-2 rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
                         <Sun className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="text-base font-extrabold text-white">
                           {isMaitri ? 'Rooftop PV Array (30kW)' : 'Bifacial Solar Farm (65kW)'}
                         </div>
-                        <div className="text-xs font-mono text-yellow-400 font-bold mt-0.5">
+                        <div className="text-xs font-mono text-slate-400 font-medium mt-0.5">
                           Renewable Peak Shaving • Clean Inverter Bus
                         </div>
                       </div>
                     </div>
-                    <span className="px-3 py-1 rounded-xl text-xs font-mono font-black bg-yellow-500/25 text-yellow-300 border border-yellow-400/60 shadow-[0_0_8px_rgba(234,179,8,0.3)] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-yellow-400" />
                       GENERATING
                     </span>
                   </div>
 
-                  {/* 2x2 Telemetry Metric Grid */}
-                  <div className="grid grid-cols-2 gap-3 my-3">
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Active Output</div>
+                  {/* 2 Telemetry Metric Cards */}
+                  <div className="grid grid-cols-2 gap-3.5 my-3.5">
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Active Output</div>
                       <div className="text-xl font-mono font-black text-yellow-400 mt-1">{solarOut} kW</div>
                     </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Inverter Strings</div>
-                      <div className="text-xl font-mono font-black text-emerald-400 mt-1">4 / 4 Active</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">MPPT Efficiency</div>
-                      <div className="text-xl font-mono font-black text-white mt-1">98.2%</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Fuel Saved</div>
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Fuel Saved</div>
                       <div className="text-xl font-mono font-black text-emerald-300 mt-1">+{(solarOut * 0.26).toFixed(1)} L/h</div>
                     </div>
                   </div>
@@ -2170,12 +2143,12 @@ export const EnergyFuelPage: React.FC = () => {
                 {/* Solar Output Progress Bar */}
                 <div className="mt-2 pt-3 border-t border-slate-800/80">
                   <div className="flex justify-between items-center text-xs font-mono mb-1.5 font-bold">
-                    <span className="text-slate-300">Array Capacity Utilization</span>
-                    <span className="text-yellow-400 font-extrabold">{Math.round((solarOut / (isMaitri ? 30 : 65)) * 100)}% Online</span>
+                    <span className="text-slate-400">Array Capacity Utilization</span>
+                    <span className="text-yellow-400 font-bold">{Math.round((solarOut / (isMaitri ? 30 : 65)) * 100)}% Online</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-yellow-500/30">
+                  <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
                     <div
-                      className="h-full bg-gradient-to-r from-yellow-500 to-amber-400 rounded-full transition-all duration-700"
+                      className="h-full bg-yellow-500 rounded-full transition-all duration-700"
                       style={{ width: `${Math.min(100, Math.round((solarOut / (isMaitri ? 30 : 65)) * 100))}%` }}
                     />
                   </div>
@@ -2183,45 +2156,37 @@ export const EnergyFuelPage: React.FC = () => {
               </div>
 
               {/* Asset 4: BESS Battery Inverter */}
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-polar-darker/95 to-slate-900/90 border-2 border-cyan-500/50 shadow-lg shadow-cyan-950/30 hover:border-cyan-400 transition-all flex flex-col justify-between">
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-cyan-500/20">
+                  <div className="flex justify-between items-start mb-3 pb-3 border-b border-slate-800/80">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">
+                      <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                         <BatteryCharging className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="text-base font-extrabold text-white">
                           {isMaitri ? '100 kWh BESS Bank' : '200 kWh LiFePO4 BESS'}
                         </div>
-                        <div className="text-xs font-mono text-cyan-400 font-bold mt-0.5">
+                        <div className="text-xs font-mono text-slate-400 font-medium mt-0.5">
                           Grid Stabilization • Seamless Frequency Response
                         </div>
                       </div>
                     </div>
-                    <span className="px-3 py-1 rounded-xl text-xs font-mono font-black bg-cyan-500/25 text-cyan-300 border border-cyan-400/60 shadow-[0_0_8px_rgba(6,182,212,0.3)] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400" />
                       STANDBY FLOAT
                     </span>
                   </div>
 
-                  {/* 2x2 Telemetry Metric Grid */}
-                  <div className="grid grid-cols-2 gap-3 my-3">
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">State of Charge</div>
+                  {/* 2 Telemetry Metric Cards */}
+                  <div className="grid grid-cols-2 gap-3.5 my-3.5">
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">State of Charge</div>
                       <div className="text-xl font-mono font-black text-cyan-300 mt-1">{batteryPct.toFixed(1)}%</div>
                     </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Bus Support</div>
-                      <div className="text-base font-mono font-black text-white mt-1">Voltage Conditioning</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Transfer Time</div>
-                      <div className="text-base font-mono font-black text-emerald-400 mt-1">&lt; 8 ms (Seamless)</div>
-                    </div>
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-700/60">
-                      <div className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">Black Start</div>
-                      <div className="text-xl font-mono font-black text-emerald-300 mt-1">CERTIFIED</div>
+                    <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80">
+                      <div className="text-xs font-mono text-slate-400 font-bold uppercase tracking-wider">Transfer Time</div>
+                      <div className="text-xl font-mono font-black text-emerald-400 mt-1">&lt; 8 ms</div>
                     </div>
                   </div>
                 </div>
@@ -2229,12 +2194,12 @@ export const EnergyFuelPage: React.FC = () => {
                 {/* BESS State of Charge Progress Bar */}
                 <div className="mt-2 pt-3 border-t border-slate-800/80">
                   <div className="flex justify-between items-center text-xs font-mono mb-1.5 font-bold">
-                    <span className="text-slate-300">BESS Storage Level</span>
-                    <span className="text-cyan-300 font-extrabold">{batteryPct.toFixed(1)}% SOC</span>
+                    <span className="text-slate-400">BESS Storage Level</span>
+                    <span className="text-cyan-300 font-bold">{batteryPct.toFixed(1)}% SOC</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-cyan-500/30">
+                  <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
                     <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full transition-all duration-700"
+                      className="h-full bg-cyan-500 rounded-full transition-all duration-700"
                       style={{ width: `${Math.max(5, Math.min(100, batteryPct))}%` }}
                     />
                   </div>
@@ -2519,90 +2484,78 @@ export const EnergyFuelPage: React.FC = () => {
 
             {/* ── Section C: Fuel Pipeline & Transfer Network Architecture ── */}
             <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
-              {/* Header with live operational status */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-polar-border/60">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
-                    <Activity className="w-5 h-5" />
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-polar-border/60">
+                <div>
+                  <div className="text-base font-bold text-white">
+                    Fuel Pipeline &amp; Transfer Network Architecture
                   </div>
-                  <div>
-                    <div className="text-base font-bold text-white flex items-center gap-2">
-                      Fuel Pipeline & Transfer Network Architecture
-                      <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        ALL 4 STAGES ACTIVE
-                      </span>
-                    </div>
-                    <div className="text-xs font-mono text-slate-200 mt-0.5">
-                      {isMaitri ? '' : 'Bharati Station · SCADA Automated Control System Valve Manifold & Pre-Heater Loop'}
-                    </div>
+                  <div className="text-xs font-mono text-slate-400 mt-0.5">
+                    {isMaitri ? 'Maitri Station · Insulated DN80 bulk supply → pump skid → day tank → generators' : 'Bharati Station · SCADA Valve Manifold & CHP Pre-Heater Distribution Loop'}
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-polar-darker/90 border border-slate-700 text-slate-200 font-semibold flex items-center gap-2">
-                    <span className="text-amber-400">⚡</span> Continuous Feed: <strong className="text-amber-300 font-mono">{burnRate.toFixed(1)} L/hr</strong>
+                  <span className="text-[11px] font-mono px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 font-semibold flex items-center gap-2">
+                    <span className="text-amber-400">⚡</span> Live Feed: <strong className="text-amber-300 font-mono ml-1">{burnRate.toFixed(1)} L/hr</strong>
                   </span>
                 </div>
               </div>
 
-              {/* 4-Stage Connected Process Pipeline Architecture */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 relative">
+              {/* 4 Connected Stages — Clean Process Grid (No glow, no image box, no gap) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 {pipelineStages.map((stage) => (
                   <div
                     key={stage.step}
-                    className="flex flex-col justify-between p-4.5 rounded-2xl bg-polar-darker/90 border border-slate-700/80 hover:border-slate-500 transition-all duration-300 shadow-xl relative group overflow-hidden"
-                    style={{ borderTopColor: stage.statusColor, borderTopWidth: 3 }}
+                    className="flex flex-col justify-between p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all duration-200"
+                    style={{ borderTop: `3px solid ${stage.statusColor}` }}
                   >
-                    {/* Top bar with stage number & live pulsing status badge */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-                        STAGE {stage.step}
-                      </span>
+                    {/* Stage & Status Header */}
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="text-[10px] font-mono font-bold px-2 py-0.5 rounded"
+                          style={{ backgroundColor: `${stage.statusColor}15`, color: stage.statusColor, border: `1px solid ${stage.statusColor}30` }}
+                        >
+                          STAGE {stage.step}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 font-semibold">
+                          {stage.code}
+                        </span>
+                      </div>
                       <span
-                        className="text-[9px] font-mono px-2 py-0.5 rounded-md font-extrabold tracking-wide uppercase flex items-center gap-1.5"
+                        className="text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wide flex items-center gap-1.5"
                         style={{
-                          backgroundColor: `${stage.statusColor}20`,
+                          backgroundColor: `${stage.statusColor}15`,
                           color: stage.statusColor,
-                          border: `1px solid ${stage.statusColor}50`
+                          border: `1px solid ${stage.statusColor}30`,
                         }}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: stage.statusColor }} />
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stage.statusColor }} />
                         {stage.badge}
                       </span>
                     </div>
 
-                    {/* Equipment Identity - Crisp & Unclipped */}
-                    <div className="flex items-start gap-3 mb-2.5">
-                      <span className="text-2xl p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex-shrink-0 shadow-inner">
-                        {stage.icon}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-black text-white leading-tight">{stage.name}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-mono font-bold text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-950/40 border border-cyan-800/40">
-                            {stage.code}
-                          </span>
-                          <span className="text-[10px] font-mono text-amber-300/90 font-medium truncate">
-                            {stage.type}
-                          </span>
-                        </div>
+                    {/* Equipment Name & Subtitle — Clean Text (No image/icon box) */}
+                    <div className="mb-2.5">
+                      <div className="text-sm font-bold text-white leading-snug">{stage.name}</div>
+                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                        {stage.type}
                       </div>
                     </div>
 
-                    {/* Hero Metric & Tag Pills (High conveying, minimum clutter) */}
-                    <div className="my-2.5 p-3 rounded-xl bg-slate-900/70 border border-slate-800/90 relative">
-                      <div className="text-[10px] font-mono text-slate-300 uppercase tracking-wider font-bold">
+                    {/* Hero Metric Box */}
+                    <div className="mb-2.5 p-3 rounded-lg bg-slate-950/80 border border-slate-800/80">
+                      <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
                         {stage.heroLabel}
                       </div>
-                      <div className="text-2xl font-black font-mono tracking-tight mt-0.5" style={{ color: stage.statusColor }}>
+                      <div className="text-xl font-bold font-mono tracking-tight mt-0.5" style={{ color: stage.statusColor }}>
                         {stage.heroValue}
                       </div>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
+                      <div className="flex flex-wrap gap-1 mt-2">
                         {stage.tags.map((tag, tIdx) => (
                           <span
                             key={tIdx}
-                            className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-200 border border-slate-700/80 font-semibold"
+                            className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/60"
                           >
                             {tag}
                           </span>
@@ -2610,29 +2563,50 @@ export const EnergyFuelPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Telemetry Row - Temp & Pressure */}
-                    <div className="grid grid-cols-2 gap-2 pt-1 text-xs font-mono">
-                      <div className="bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800/90">
-                        <div className="text-[10px] text-slate-300 uppercase font-bold tracking-tight">Temperature</div>
-                        <div className="text-xs font-black text-white">{stage.temp}</div>
+                    {/* Telemetry Row */}
+                    <div className="grid grid-cols-2 gap-2 mb-2.5 text-xs font-mono">
+                      <div className="bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                        <div className="text-[9px] text-slate-400 uppercase font-semibold">Temperature</div>
+                        <div className="text-xs font-bold text-white mt-0.5">{stage.temp}</div>
                       </div>
-                      <div className="bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800/90">
-                        <div className="text-[10px] text-slate-300 uppercase font-bold tracking-tight">Pressure / Flow</div>
-                        <div className="text-xs font-black text-amber-300">{stage.pressure}</div>
+                      <div className="bg-slate-950/60 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                        <div className="text-[9px] text-slate-400 uppercase font-semibold">Pressure / Flow</div>
+                        <div className="text-xs font-bold text-amber-300 mt-0.5">{stage.pressure}</div>
                       </div>
                     </div>
 
-                    {/* Conduit & Feed rate footer */}
-                    <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] font-mono text-slate-300">
-                      <span className="flex items-center gap-1.5 text-slate-300">
-                        <span className="text-cyan-400 font-bold">⟶</span> {stage.conduit}
+                    {/* Conduit & Feed Rate Footer */}
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span className="flex items-center gap-1.5 truncate">
+                        <span style={{ color: stage.statusColor }}>⟶</span> {stage.conduit}
                       </span>
-                      <span className="font-bold text-amber-300 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
+                      <span
+                        className="font-bold px-2 py-0.5 rounded flex-shrink-0"
+                        style={{ color: stage.statusColor, backgroundColor: `${stage.statusColor}12`, border: `1px solid ${stage.statusColor}25` }}
+                      >
                         {stage.flowRate}
                       </span>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Process Sequence Bar (Clean, no glow) */}
+              <div className="mt-4 pt-3 border-t border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {pipelineStages.map((stage, idx) => (
+                    <span key={stage.step} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.statusColor }} />
+                      <span className="text-slate-300 font-semibold">{stage.step}. {stage.name.split(' ').slice(0, 2).join(' ')}</span>
+                      {idx < pipelineStages.length - 1 && (
+                        <span className="text-slate-600 font-bold ml-1">⟶</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-400">
+                  <span className="text-emerald-400">●</span> Continuous automated transfer loop
+                </div>
               </div>
             </div>
 
@@ -2716,32 +2690,6 @@ export const EnergyFuelPage: React.FC = () => {
           { name: 'Misc & Standby', kw: Math.round(electricOut * 0.04), pct: 4, icon: '⚙️', color: '#64748b', subItems: ['Battery energy storage charging topping', 'BMS & Automated Control System control systems', 'Unallocated base load'] },
         ];
 
-        // Heat generation data (CHP-specific for Bharati, boiler-only for Maitri)
-        const heatSources = isMaitri ? [
-          { name: 'Diesel Boiler #1 (Space Heat)', output: 45, color: '#f97316', icon: '🔥', dest: 'Living block radiators' },
-          { name: 'Diesel Boiler #2 (Water Heat)', output: 28, color: '#f59e0b', icon: '🔥', dest: 'Hot water DHW circuit' },
-          { name: 'Generator Jacket Water Heat', output: 18, color: '#818cf8', icon: '♻️', dest: 'Workshop heating (partial recovery)' },
-          { name: 'Exhaust Gas Heat (Partial)', output: 8, color: '#64748b', icon: '💨', dest: 'Vented — partial muffler recovery' },
-        ] : [
-          { name: 'CHP #1 Jacket Water Recovery', output: 112, color: '#f59e0b', icon: '♻️', dest: 'Habitat under-floor heating loop' },
-          { name: 'CHP #2 Jacket Water Recovery', output: 108, color: '#f97316', icon: '♻️', dest: 'Seawater Filter Plant pre-heat + DHW circuit' },
-          { name: 'CHP Exhaust Gas Heat Exchanger', output: 64, color: '#a855f7', icon: '♻️', dest: 'Fresh air pre-conditioning HRV' },
-          { name: 'Auxiliary Diesel Boiler', output: 35, color: '#818cf8', icon: '🔥', dest: 'Supplemental room heating (winter peak)' },
-        ];
-
-        const totalHeat = heatSources.reduce((a, h) => a + h.output, 0);
-
-        const thermalZones = isMaitri ? [
-          { zone: 'Living Block', heat: '28 kWth', method: 'Forced-Air Duct', color: '#818cf8', icon: '🏠', temp: '+21°C' },
-          { zone: 'Laboratories', heat: '12 kWth', method: 'Baseboard Radiators', color: '#06b6d4', icon: '🔬', temp: '+19°C' },
-          { zone: 'Workshop / Garage', heat: '18 kWth', method: 'Jacket Waste Heat', color: '#10b981', icon: '🔧', temp: '+14°C' },
-          { zone: 'Domestic Hot Water', heat: '28 kWth', method: 'Boiler #2 DHW Loop', color: '#f59e0b', icon: '🚿', temp: '+65°C' },
-        ] : [
-          { zone: 'Habitat Under-Floor', heat: '112 kWth', method: 'CHP Jacket Water Loop', color: '#f59e0b', icon: '♨️', temp: '+22°C' },
-          { zone: 'Seawater RO Pre-heat', heat: '54 kWth', method: 'CHP Water + Plate HEX', color: '#38bdf8', icon: '💧', temp: '+15°C' },
-          { zone: 'Fresh Air (HRV)', heat: '64 kWth', method: 'Exhaust Heat Exchanger', color: '#a855f7', icon: '🍃', temp: '+18°C' },
-          { zone: 'Peak Winter Top-up', heat: '35 kWth', method: 'Aux Boiler Hydronic Loop', color: '#f97316', icon: '❄️', temp: '+20°C' },
-        ];
 
         return (
           <div className="space-y-6">
@@ -3039,117 +2987,6 @@ export const EnergyFuelPage: React.FC = () => {
               />
             </div>
 
-            {/* ── Section D: Heat Generation & Thermal Distribution ── */}
-            <div className="glass-panel p-5 rounded-2xl border border-orange-500/25 relative overflow-hidden shadow-xl">
-              <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 20%, rgba(249,115,22,0.06) 0%, transparent 65%)' }} />
-
-              {/* Compact Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-polar-border/60 relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400">
-                    <Flame className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-white flex items-center gap-2">
-                      Heat Generation & Thermal Distribution
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 font-semibold">
-                        THERMAL NETWORK
-                      </span>
-                    </div>
-                    <div className="text-xs font-mono text-slate-200 mt-0.5 font-medium">
-                      {isMaitri ? 'Open-cycle diesel boilers & engine jacket recovery loops' : 'Jenbacher CHP co-generation & plate heat exchanger network'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="px-3.5 py-1.5 rounded-xl bg-polar-darker/90 border border-orange-500/30 text-right flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-slate-300 uppercase font-bold">Total Heat Output:</span>
-                    <span className="text-base font-black font-mono text-orange-400">{totalHeat} kWth</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sub-section 1: Thermal Sources (4 Cute Compact Cards) */}
-              <div className="mb-4 relative z-10">
-                <div className="text-xs font-mono text-slate-200 uppercase font-bold tracking-wider mb-2.5 flex items-center gap-1.5">
-                  <span className="text-orange-400">🔥</span> Heat Generation Sources
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {heatSources.map(hs => {
-                    const sharePct = Math.round((hs.output / totalHeat) * 100);
-                    return (
-                      <div
-                        key={hs.name}
-                        className="p-3.5 rounded-xl bg-polar-darker/90 border border-slate-700/80 hover:border-slate-500 transition-all shadow-sm flex flex-col justify-between"
-                        style={{ borderTopColor: hs.color, borderTopWidth: 3 }}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-1 mb-1.5">
-                            <span className="text-lg p-1 rounded-md bg-polar-dark border border-polar-border/50">{hs.icon}</span>
-                            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700/60">
-                              {sharePct}%
-                            </span>
-                          </div>
-                          <div className="text-xs font-bold text-white truncate" title={hs.name}>{hs.name}</div>
-                          <div className="text-[11px] font-mono text-slate-200 truncate mt-0.5 font-medium" title={hs.dest}>
-                            ⮑ {hs.dest}
-                          </div>
-                        </div>
-
-                        <div className="mt-2.5 pt-2 border-t border-polar-border/50 flex items-center justify-between">
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-base font-black font-mono" style={{ color: hs.color }}>{hs.output}</span>
-                            <span className="text-xs font-mono text-slate-200 font-bold">kWth</span>
-                          </div>
-                          <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${sharePct}%`, backgroundColor: hs.color }} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Sub-section 2: Thermal Distribution Consumer Zones (4 Cute Compact Cards) */}
-              <div className="relative z-10">
-                <div className="text-xs font-mono text-slate-200 uppercase font-bold tracking-wider mb-2.5 flex items-center gap-1.5">
-                  <span className="text-cyan-400">♨️</span> Thermal Distribution & Zone Conditioning
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {thermalZones.map(z => (
-                    <div
-                      key={z.zone}
-                      className="p-3.5 rounded-xl bg-polar-darker/90 border border-slate-700/80 hover:border-slate-500 transition-all shadow-sm flex flex-col justify-between"
-                      style={{ borderLeftColor: z.color, borderLeftWidth: 3 }}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-base">{z.icon}</span>
-                            <span className="text-xs font-bold text-white truncate">{z.zone}</span>
-                          </div>
-                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-800/90 text-cyan-300 border border-slate-700/60">
-                            {z.temp}
-                          </span>
-                        </div>
-                        <div className="text-[11px] font-mono text-slate-200 truncate font-medium" title={z.method}>
-                          {z.method}
-                        </div>
-                      </div>
-
-                      <div className="mt-2.5 pt-2 border-t border-polar-border/50 flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-slate-300 uppercase font-bold">Delivered:</span>
-                        <span className="text-sm font-black font-mono" style={{ color: z.color }}>
-                          {z.heat}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         );
       })()}
