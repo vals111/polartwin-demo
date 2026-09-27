@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
 import {
-  Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
+  Zap, CloudSnow, Fuel, Droplet, Truck, Users, Radio, Archive,
   ExternalLink, GitCompare, GitCommit, Brain, ChevronRight, Building2
 } from 'lucide-react';
 import { OperationalDomainCard } from './OperationalDomainCard';
@@ -98,31 +98,15 @@ export const TREE_NODES: TreeNode[] = [
     color: '#00e5ff',
     accentRgb: '0, 229, 255'
   },
-  // ── 5. Equipment & Machinery (Row 3 Center) ──
-  {
-    id: 'equipment',
-    name: 'Equipment & Machinery',
-    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
-    tier: 'POWER CONVERSION',
-    tierNumber: 3,
-    x: 420,
-    y: 685,
-    w: 580,
-    h: 250,
-    route: 'equipment',
-    icon: Wrench,
-    color: '#22c55e',
-    accentRgb: '34, 197, 94'
-  },
-  // ── 6. Water (Row 4 Left) ──
+  // ── 5. Water (Row 3 Left) ──
   {
     id: 'water',
     name: 'Water',
     shortDesc: 'Glacial Melt / Seawater RO Seawater purification & Pipe Trace Heating',
     tier: 'WATER LIFELINE',
-    tierNumber: 4,
+    tierNumber: 3,
     x: 40,
-    y: 1010,
+    y: 685,
     w: 420,
     h: 250,
     route: 'water',
@@ -130,15 +114,15 @@ export const TREE_NODES: TreeNode[] = [
     color: '#38bdf8',
     accentRgb: '56, 189, 248'
   },
-  // ── 7. Personnel Safety & Emergency (Row 4 Center) ──
+  // ── 6. Personnel Safety & Emergency (Row 3 Center) ──
   {
     id: 'personnel',
     name: 'Personnel Safety & Emergency',
     shortDesc: 'Crew Headcount, Circadian Diurnal Demand, Life Safety & Shelter Readiness',
     tier: 'HABITAT OCCUPANCY & SAFETY',
-    tierNumber: 4,
+    tierNumber: 3,
     x: 500,
-    y: 1010,
+    y: 685,
     w: 420,
     h: 250,
     route: 'personnel',
@@ -146,15 +130,15 @@ export const TREE_NODES: TreeNode[] = [
     color: '#a855f7',
     accentRgb: '168, 85, 247'
   },
-  // ── 8. Communication (Row 4 Right) ──
+  // ── 7. Communication (Row 3 Right) ──
   {
     id: 'communication',
     name: 'Communication',
     shortDesc: 'LEO Polar Constellation, Low Signal delay & QoS Telemetry Sync',
     tier: 'REAL-TIME LIVE DATA',
-    tierNumber: 4,
+    tierNumber: 3,
     x: 960,
-    y: 1010,
+    y: 685,
     w: 420,
     h: 250,
     route: 'communication',
@@ -187,25 +171,22 @@ const TREE_EDGES: TreeEdgeDef[] = [
   // 7. Logistics -> Infrastructure (Module structural panels & seals restock)
   { id: 'log-infra', from: 'logistics', to: 'infrastructure', label: 'Module seals & panel restock' },
 
-  // 8. Infrastructure -> Equipment (Enclosure shelter for heavy machinery & pumps)
-  { id: 'infra-eq', from: 'infrastructure', to: 'equipment', label: 'Machinery shelter & heating' },
+  // 8. Infrastructure -> Energy & Fuel (Core shelter enclosure & microgrid housing)
+  { id: 'infra-eng', from: 'infrastructure', to: 'energy_fuel', label: 'Habitat shelter & microgrid housing' },
 
-  // 9. Equipment -> Energy & Fuel (Mechanical generator health & diesel generator synchro)
-  { id: 'eq-eng', from: 'equipment', to: 'energy_fuel', label: 'Diesel generator alternator uptime' },
-
-  // 10. Energy & Fuel -> Water (4.2 kW pipeline trace heating protection)
+  // 9. Energy & Fuel -> Water (4.2 kW pipeline trace heating protection)
   { id: 'eng-wat', from: 'energy_fuel', to: 'water', label: '4.2 kW trace line heating' },
 
-  // 11. Energy & Fuel -> Personnel (Power grid warmth, life support & galley)
+  // 10. Energy & Fuel -> Personnel (Power grid warmth, life support & galley)
   { id: 'eng-pers', from: 'energy_fuel', to: 'personnel', label: 'Habitat heating & power' },
 
-  // 12. Energy & Fuel -> Communication (Radome UPS & transmitter power)
+  // 11. Energy & Fuel -> Communication (Radome UPS & transmitter power)
   { id: 'eng-comm', from: 'energy_fuel', to: 'communication', label: 'Radome UPS & uplink power' },
 
-  // 13. Water -> Personnel (Potable hydration & galley supply)
+  // 12. Water -> Personnel (Potable hydration & galley supply)
   { id: 'wat-pers', from: 'water', to: 'personnel', label: 'Filtered potable hydration' },
 
-  // 14. Personnel -> Communication (Mission coordination & Automated Control System operations)
+  // 13. Personnel -> Communication (Mission coordination & Automated Control System operations)
   { id: 'pers-comm', from: 'personnel', to: 'communication', label: 'Operator Automated Control System command' },
 ];
 
@@ -320,13 +301,6 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         snowDriftM: snapshot?.infrastructure?.snow_drift_accumulation_m ?? (isMaitri ? 0.42 : 0.25),
         activeModules: 4,
       },
-      equipment: {
-        score: 93,
-        primaryKpi: `${eq?.avg_health?.toFixed(1) ?? (isMaitri ? 93.5 : 96.2)}%`,
-        primaryLabel: 'Fleet Health',
-        activeMachinesCount: isMaitri ? 6 : 8,
-        vibrationMmS: isMaitri ? 2.1 : 1.4,
-      },
       energy: {
         score: 94,
         primaryKpi: `${eng?.generator_load ?? (isMaitri ? 68 : 82)} kW`,
@@ -420,7 +394,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx - 150} ${sy + 200}, ${tx + 80} ${ty - 200}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx - 150} ${sy + 50}, ${tx + 80} ${ty - 50}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -431,7 +405,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx + 150} ${sy + 150}, ${tx} ${ty - 150}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 40} ${sy + 40}, ${tx} ${ty - 40}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -468,25 +442,14 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           sx, sy, tx, ty
         };
 
-      case 'infra-eq':
-        // Infrastructure bottom-left border curves into Equipment top-left border
-        sx = fromNode.x + 80;
-        sy = fromNode.y + fromNode.h;
-        tx = toNode.x + 80;
-        ty = toNode.y;
+      case 'infra-eng':
+        // Infrastructure right border into Energy & Fuel left border
+        sx = fromNode.x + fromNode.w;
+        sy = fromNode.y + fromNode.h / 2;
+        tx = toNode.x;
+        ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx - 60} ${sy + 180}, ${tx - 60} ${ty - 180}, ${tx} ${ty}`,
-          sx, sy, tx, ty
-        };
-
-      case 'eq-eng':
-        // Equipment top-right border curves up into Energy & Fuel bottom-right border
-        sx = fromNode.x + fromNode.w - 80;
-        sy = fromNode.y;
-        tx = toNode.x + toNode.w - 80;
-        ty = toNode.y + toNode.h;
-        return {
-          path: `M ${sx} ${sy} C 1220 ${sy - 150}, 1220 ${ty + 150}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} L ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -497,7 +460,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C 650 ${sy + 300}, 150 ${ty - 300}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx - 200} ${sy + 180}, ${tx + 100} ${ty - 180}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -508,7 +471,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 250}, ${tx} ${ty - 250}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 150}, ${tx} ${ty - 150}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -519,7 +482,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx + 250}, ${tx} ${ty - 250}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 60} ${sy + 150}, ${tx} ${ty - 150}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -596,11 +559,11 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
           style={{
             backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border)',
-            height: `${Math.round(1310 * scale + 24)}px`,
+            height: `${Math.round(980 * scale + 24)}px`,
           }}
         >
           <div
-            className="w-[1420px] h-[1310px] relative flex-shrink-0"
+            className="w-[1420px] h-[980px] relative flex-shrink-0"
             style={{
               transform: `scale(${scale})`,
               transformOrigin: 'top center',
@@ -643,9 +606,9 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
             })}
 
             {/* SVG Canvas for High-Precision Causal Conduits & Border Terminal Pins */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" viewBox="0 0 1420 1310">
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" viewBox="0 0 1420 980">
               <defs>
-                <filter id="neonGlowCyan" x="0" y="0" width="1420" height="1310" filterUnits="userSpaceOnUse">
+                <filter id="neonGlowCyan" x="0" y="0" width="1420" height="980" filterUnits="userSpaceOnUse">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
                   <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
                   <feMerge>
@@ -654,7 +617,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
-                <filter id="neonGlowAmber" x="0" y="0" width="1420" height="1310" filterUnits="userSpaceOnUse">
+                <filter id="neonGlowAmber" x="0" y="0" width="1420" height="980" filterUnits="userSpaceOnUse">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
                   <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur2" />
                   <feMerge>

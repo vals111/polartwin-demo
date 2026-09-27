@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { useScenarioStore } from '../store/scenarioStore';
 import {
   forecastApi, analyticsApi, alertsApi, optimizationApi,
-  recommendationsApi, scenariosApi
+  recommendationsApi, scenariosApi, resourcesApi
 } from '../api/client';
 import * as echarts from 'echarts';
 import {
@@ -87,13 +87,15 @@ const DOMAIN_CONFIG: Record<string, {
     color: '#8b5cf6',
     icon: <Radio className="w-4 h-4" />,
     forecastDomain: 'energy',
-    riskKeywords: ['communication', 'satellite', 'data speed', 'link', 'signal', 'telemetry'],
-    recKeywords: ['communication', 'satellite', 'link', 'data speed'],
+    riskKeywords: ['communication', 'satellite', 'bandwidth', 'link', 'signal', 'telemetry', 'latency', 'radio'],
+    recKeywords: ['communication', 'satellite', 'link', 'bandwidth', 'relay'],
     analyticsDomain: 'energy_fuel',
     scenarioPresets: [
-      { id: 'primary_link_failure', title: '📡 Primary Link Failure', desc: 'LEO satellite dish lock lost' },
-      { id: 'bandwidth_reduction', title: '📉 Data speed Throttle −65%', desc: 'Transponder orbital contention' },
-      { id: 'high_packet_loss', title: '🌩️ Auroral Packet Loss', desc: 'Solar flare ionospheric storm disrupts signal' },
+      { id: 'primary_link_failure', title: '📡 Primary Link Failure', desc: 'LEO satellite dish lock lost — automatic backup failover drill' },
+      { id: 'bandwidth_reduction', title: '📉 Bandwidth Throttle −65%', desc: 'Transponder orbital contention reduces station throughput' },
+      { id: 'high_packet_loss', title: '🌩️ Auroral Packet Loss 6.8%', desc: 'Solar flare ionospheric storm disrupts radio frequency channels' },
+      { id: 'high_latency', title: '⏱️ Multi-Hop Relay 520ms', desc: 'Geosynchronous inter-satellite relay routing propagation delay' },
+      { id: 'backup_activation', title: '🔄 Backup Inmarsat Link Drill', desc: 'Emergency narrowband Iridium/Inmarsat terminal activation test' },
     ]
   },
   water: {
@@ -481,6 +483,38 @@ export const DecisionIntelligencePage: React.FC = () => {
     try {
       const preset = domainCfg.scenarioPresets.find(s => s.id === whatIfScenario);
       const isWater = resolvedDomain === 'water';
+      const isComm = resolvedDomain === 'communication';
+
+      if (isComm) {
+        let params: Record<string, any> = {};
+        if (whatIfScenario === 'bandwidth_reduction') params = { reduction_pct: 65 };
+        else if (whatIfScenario === 'high_packet_loss') params = { packet_loss_pct: 6.8 };
+        else if (whatIfScenario === 'high_latency') params = { latency_ms: 520 };
+
+        try {
+          const res = await resourcesApi.communicationWhatIf(stationId, whatIfScenario, params);
+          if (res?.baseline && res?.projected) {
+            setWhatIfResult({
+              title: preset?.title || 'Communication What-If Scenario',
+              comparison: {
+                bandwidth_mbps: { baseline: res.baseline.bandwidth_mbps, projected: res.projected.bandwidth_mbps, delta: res.delta?.bandwidth_delta_mbps ?? (res.projected.bandwidth_mbps - res.baseline.bandwidth_mbps), unit: 'Mbps' },
+                latency_ms: { baseline: res.baseline.latency_ms, projected: res.projected.latency_ms, delta: res.delta?.latency_delta_ms ?? (res.projected.latency_ms - res.baseline.latency_ms), unit: 'ms' },
+                packet_loss_pct: { baseline: res.baseline.packet_loss_pct, projected: res.projected.packet_loss_pct, delta: res.delta?.packet_loss_delta_pct ?? (res.projected.packet_loss_pct - res.baseline.packet_loss_pct), unit: '%' },
+                telemetry_freshness_sec: { baseline: res.baseline.telemetry_freshness_sec, projected: res.projected.telemetry_freshness_sec, delta: res.delta?.freshness_delta_sec ?? 0, unit: 's' },
+                station_risk_score: { baseline: 12.0, projected: 48.0, delta: 36.0, unit: 'pts' },
+                station_readiness_score: { baseline: 95.0, projected: 64.0, delta: -31.0, unit: '%' }
+              },
+              recommended_action: res.recommendation
+                ? `${res.recommendation.title}: ${res.recommendation.rationale} ${(res.recommendation.actions || []).join(' · ')}`
+                : 'Prioritize Tier-1 emergency & life support telemetry. Throttle non-critical scientific bulk uploads and crew WiFi.'
+            });
+            return;
+          }
+        } catch {
+          // fallback below
+        }
+      }
+
       const res = await scenariosApi.execute(stationId, {
         name: preset?.title || whatIfScenario,
         perturbation: { type: whatIfScenario },
@@ -493,20 +527,31 @@ export const DecisionIntelligencePage: React.FC = () => {
               : whatIfScenario === 'contamination'
               ? 'Isolate primary potable storage manifold. Initiate dual UV sterilization cycles and switch station drinking water to sealed auxiliary drums.'
               : 'Execute acoustic ultrasonic leak detection sweep across distribution pipeline. Restrict high-demand laundry cycles.')
+          : isComm
+          ? 'Prioritize Tier-1 emergency & life support telemetry. Throttle non-critical scientific bulk uploads and crew WiFi.'
           : (preset?.desc || 'Initiate standard protocol for operational mitigation.')
       });
       setWhatIfResult(res?.result || res);
     } catch {
       // Fallback local simulation object in case of temporary network glitch
       const isWater = resolvedDomain === 'water';
+      const isComm = resolvedDomain === 'communication';
       setWhatIfResult({
         title: domainCfg.scenarioPresets.find(s => s.id === whatIfScenario)?.title || 'Failure Simulation',
         comparison: isWater ? {
           water_storage_liters: { baseline: 18500, projected: 14900, delta: -3600, unit: 'L' },
           station_risk_score: { baseline: 24.5, projected: 58.0, delta: 33.5, unit: 'pts' },
           station_readiness_score: { baseline: 92.0, projected: 68.0, delta: -24.0, unit: '%' }
+        } : isComm ? {
+          bandwidth_mbps: { baseline: 120, projected: 42, delta: -78, unit: 'Mbps' },
+          latency_ms: { baseline: 78, projected: 598, delta: 520, unit: 'ms' },
+          packet_loss_pct: { baseline: 0.05, projected: 6.85, delta: 6.8, unit: '%' },
+          station_risk_score: { baseline: 12.0, projected: 48.0, delta: 36.0, unit: 'pts' },
+          station_readiness_score: { baseline: 95.0, projected: 64.0, delta: -31.0, unit: '%' }
         } : {},
-        recommended_action: 'Activate emergency mitigation protocols. Isolate damaged line and switch to backup systems.'
+        recommended_action: isComm
+          ? 'Activate emergency QoS throttling. Restrict non-critical crew video streaming and prioritize vital SCADA safety telemetry.'
+          : 'Activate emergency mitigation protocols. Isolate damaged line and switch to backup systems.'
       });
     } finally { setWhatIfLoading(false); }
   };
@@ -1048,6 +1093,24 @@ export const DecisionIntelligencePage: React.FC = () => {
                               <div className="text-base font-black font-mono mt-0.5 text-amber-300">
                                 {whatIfResult.comparison.fuel_reserve_liters.delta > 0 ? '+' : ''}
                                 {Math.round(whatIfResult.comparison.fuel_reserve_liters.delta).toLocaleString()} L
+                              </div>
+                            </div>
+                          )}
+                          {whatIfResult.comparison.bandwidth_mbps && (
+                            <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border text-center">
+                              <div className="text-[10px] font-mono text-slate-400">Bandwidth Delta</div>
+                              <div className="text-base font-black font-mono mt-0.5 text-rose-400">
+                                {whatIfResult.comparison.bandwidth_mbps.delta > 0 ? '+' : ''}
+                                {whatIfResult.comparison.bandwidth_mbps.delta} Mbps
+                              </div>
+                            </div>
+                          )}
+                          {whatIfResult.comparison.latency_ms && (
+                            <div className="p-3 rounded-xl bg-polar-dark/70 border border-polar-border text-center">
+                              <div className="text-[10px] font-mono text-slate-400">Signal Delay Delta</div>
+                              <div className="text-base font-black font-mono mt-0.5 text-amber-300">
+                                {whatIfResult.comparison.latency_ms.delta > 0 ? '+' : ''}
+                                {whatIfResult.comparison.latency_ms.delta} ms
                               </div>
                             </div>
                           )}

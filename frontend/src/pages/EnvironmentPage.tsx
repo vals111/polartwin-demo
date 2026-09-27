@@ -6,7 +6,7 @@ import { WindCompass } from '../components/charts/WindCompass';
 import { IndustrialGauge } from '../components/charts/IndustrialGauge';
 import { SparklineChart } from '../components/charts/SparklineChart';
 import {
-  Thermometer, Eye, Sun, AlertTriangle, ShieldCheck, ShieldAlert, CloudLightning,
+  Thermometer, Eye, Sun, AlertTriangle, CloudLightning,
   Wind, Waves, Droplets, Gauge, Compass, Brain, Layers, RefreshCw
 } from 'lucide-react';
 
@@ -74,17 +74,17 @@ const StormIndexCard: React.FC<{ severity: number; isBlizzard?: boolean }> = ({ 
 
   const status = isBlizzard || score >= 70
     ? {
-        label: 'SEVERE',
-        color: '#ef4444',
-        badge: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse',
-      }
+      label: 'SEVERE',
+      color: '#ef4444',
+      badge: 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse',
+    }
     : score >= 40
-    ? {
+      ? {
         label: 'MODERATE',
         color: '#f59e0b',
         badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       }
-    : {
+      : {
         label: 'CALM',
         color: '#10b981',
         badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
@@ -326,12 +326,12 @@ export const EnvironmentPage: React.FC = () => {
 
   const forecastTimestamps = metWeather?.forecast_24h?.length
     ? metWeather.forecast_24h.map((f: any, i: number) => {
-        const hoursAgo = metWeather.forecast_24h.length - 1 - i;
-        const timeStr = f.time
-          ? new Date(f.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-          : '';
-        return hoursAgo === 0 ? 'Now' : `${timeStr ? `${timeStr} ` : ''}(-${hoursAgo}h)`;
-      })
+      const hoursAgo = metWeather.forecast_24h.length - 1 - i;
+      const timeStr = f.time
+        ? new Date(f.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '';
+      return hoursAgo === 0 ? 'Now' : `${timeStr ? `${timeStr} ` : ''}(-${hoursAgo}h)`;
+    })
     : Array.from({ length: 24 }, (_, i) => (i === 23 ? 'Now' : `-${23 - i}h`));
 
   return (
@@ -344,7 +344,7 @@ export const EnvironmentPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-black text-white capitalize">
-              {stationId} Antarctic Microclimate
+              {stationId} Antarctic Climate
             </h1>
           </div>
 
@@ -458,9 +458,9 @@ export const EnvironmentPage: React.FC = () => {
                 {gust} <span className="text-[10px] font-medium text-amber-400/80">km/h</span>
               </div>
               <div className="w-full bg-slate-800/80 h-1 rounded-full mt-1.5 overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(100, (gust / 90) * 100)}%` }} 
+                <div
+                  className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (gust / 90) * 100)}%` }}
                 />
               </div>
             </div>
@@ -489,13 +489,12 @@ export const EnvironmentPage: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
                 <span>Polar downslope wind Dynamics</span>
               </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                wind > 50 
-                  ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse' 
-                  : wind > 30 
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${wind > 50
+                ? 'bg-red-500/20 text-red-300 border-red-500/40 animate-pulse'
+                : wind > 30
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                   : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-              }`}>
+                }`}>
                 {wind > 50 ? 'GALE INFLOW' : wind > 30 ? 'MODERATE ADVECTION' : 'NOMINAL DRAINAGE'}
               </span>
             </div>
@@ -778,161 +777,10 @@ export const EnvironmentPage: React.FC = () => {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════
-          SECTION DIVIDER — EXTENDED WEATHER LAYER INTELLIGENCE
-      ══════════════════════════════════════════════════════════════ */}
-      <div className="flex items-center gap-3 pt-2">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-        <span className="text-[10px] font-mono text-cyan-400/70 uppercase tracking-widest px-2">Extended Weather layer Intelligence</span>
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-      </div>
+      {/* ── EXTENDED ROW: 3 weather layer panels ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
-      {/* ── EXTENDED ROW: 5 new weather layer panels ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-
-        {/* ─── 1. SKY CONDITIONS ──────────────────────────────────────── */}
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-sky-400/50 transition-all">
-          {/* Subtle sky gradient bg */}
-          <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ background: 'radial-gradient(ellipse at 60% 20%, rgba(56,189,248,0.06) 0%, transparent 70%)' }} />
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
-                <Sun className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Sky Conditions</div>
-                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Cloud height sensor · Cloud Cover · Optical Range</div>
-              </div>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold bg-sky-500/10 border-sky-500/30 text-sky-300">LIVE</span>
-          </div>
-
-          {/* Big sky condition icon + label */}
-          {(() => {
-            const cond = condition.toLowerCase();
-            const isClear = cond.includes('clear') || cond.includes('sunny');
-            const isPartly = cond.includes('partly') || cond.includes('scattered');
-            const isOvercast = cond.includes('overcast') || cond.includes('cloudy');
-            const isSnow = cond.includes('snow') || cond.includes('blizzard');
-            const emoji = isSnow ? '🌨️' : isOvercast ? '☁️' : isPartly ? '⛅' : isClear ? '🌤️' : '🌫️';
-            const coverPct = isSnow ? 100 : isOvercast ? 90 : isPartly ? 55 : isClear ? 10 : 75;
-            const ceilKm = isSnow ? 0.4 : isOvercast ? 1.2 : isPartly ? 3.5 : isClear ? 8.0 : 0.8;
-            const oktas = isSnow ? 8 : isOvercast ? 7 : isPartly ? 4 : isClear ? 1 : 6;
-            const skyColor = isSnow ? '#818cf8' : isOvercast ? '#64748b' : isPartly ? '#38bdf8' : '#fbbf24';
-            return (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-5xl">{emoji}</span>
-                  <div>
-                    <div className="text-base font-black text-white capitalize">{condition}</div>
-                    <div className="text-[10px] font-mono mt-1" style={{ color: skyColor }}>{oktas}/8 Oktas cloud cover</div>
-                  </div>
-                </div>
-                {/* Cloud cover bar */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[9px] font-mono text-slate-400">
-                    <span>Cloud Cover</span>
-                    <span style={{ color: skyColor }}>{coverPct}%</span>
-                  </div>
-                  <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${coverPct}%`, background: `linear-gradient(to right, ${skyColor}88, ${skyColor})` }} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'Ceiling', val: `${ceilKm} km`, color: skyColor },
-                    { label: 'Visibility', val: `${visibility} km`, color: visibility > 20 ? '#10b981' : visibility > 8 ? '#f59e0b' : '#ef4444' },
-                    { label: 'UV Index', val: isMaitri ? (isClear ? '3' : '1') : (isClear ? '4' : '2'), color: '#f59e0b' },
-                  ].map(s => (
-                    <div key={s.label} className="bg-slate-900/60 p-2 rounded-xl border border-polar-border text-center">
-                      <div className="text-[8px] font-mono text-slate-500 uppercase">{s.label}</div>
-                      <div className="text-xs font-black font-mono mt-0.5" style={{ color: s.color }}>{s.val}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* ─── 2. WEATHER LAYER PRESSURE ANALYSIS ─────────────────────── */}
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-purple-400/50 transition-all">
-          <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ background: 'radial-gradient(ellipse at 40% 80%, rgba(167,139,250,0.06) 0%, transparent 70%)' }} />
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-                <Gauge className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Atmospheric Pressure</div>
-                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Pressure Trend · Pressure Tendency</div>
-              </div>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold bg-purple-500/10 border-purple-500/30 text-purple-300">BAROMETER</span>
-          </div>
-
-          {(() => {
-            const trend = pressure > 1005 ? 'RISING' : pressure > 990 ? 'STEADY' : 'FALLING';
-            const trendColor = trend === 'RISING' ? '#10b981' : trend === 'STEADY' ? '#f59e0b' : '#ef4444';
-            const trendArrow = trend === 'RISING' ? '↑' : trend === 'STEADY' ? '→' : '↓';
-            const trendDesc = trend === 'RISING'
-              ? 'Improving weather expected. High pressure system building over station.'
-              : trend === 'STEADY'
-              ? 'Stable weather layer mass overhead. Conditions holding.'
-              : 'Low pressure approaching. Deteriorating weather likely within 12–24h.';
-            const normPressure = isMaitri ? 984 : 991; // typical Antarctic values
-            const deviation = (pressure - normPressure).toFixed(1);
-            const pctOfRange = Math.max(0, Math.min(100, ((pressure - 940) / (1050 - 940)) * 100));
-            return (
-              <div className="space-y-4">
-                {/* Big pressure readout */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-black font-mono text-purple-300">{pressure}</span>
-                      <span className="text-sm font-mono text-slate-400">hPa</span>
-                    </div>
-                    <div className="text-[10px] font-mono mt-1 flex items-center gap-1.5">
-                      <span style={{ color: trendColor, fontSize: 16 }}>{trendArrow}</span>
-                      <span className="font-bold" style={{ color: trendColor }}>{trend}</span>
-                      <span className="text-slate-500">· {Number(deviation) >= 0 ? '+' : ''}{deviation} hPa vs seasonal norm</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[9px] font-mono text-slate-500 uppercase">Standard Antarctic</div>
-                    <div className="text-sm font-black font-mono text-slate-300">{normPressure} hPa</div>
-                  </div>
-                </div>
-                {/* Pressure scale */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[9px] font-mono text-slate-500">
-                    <span>940 hPa (Low)</span>
-                    <span>1050 hPa (High)</span>
-                  </div>
-                  <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full rounded-l-full" style={{ width: '33%', background: 'linear-gradient(to right, #ef444488, #ef4444)' }} />
-                    <div className="absolute top-0 h-full" style={{ left: '33%', width: '33%', background: 'linear-gradient(to right, #f59e0b, #10b981)' }} />
-                    <div className="absolute top-0 h-full rounded-r-full" style={{ left: '66%', width: '34%', background: 'linear-gradient(to right, #10b981, #38bdf8)' }} />
-                    {/* Needle */}
-                    <div className="absolute top-0 w-0.5 h-full bg-white shadow-lg rounded-full" style={{ left: `${pctOfRange}%`, transition: 'left 0.7s ease' }} />
-                  </div>
-                  <div className="flex justify-between text-[9px] font-mono">
-                    <span className="text-red-400">Storm</span>
-                    <span className="text-amber-400">Variable</span>
-                    <span className="text-emerald-400">Fair</span>
-                    <span className="text-sky-400">Very High</span>
-                  </div>
-                </div>
-                <p className="text-[10px] font-mono text-slate-400 leading-relaxed p-2.5 rounded-lg bg-slate-900/40 border border-polar-border/40">{trendDesc}</p>
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* ─── 3. WARMER / WETTER CLIMATE TREND ─────────────────────── */}
+        {/* ─── 1. WARMER / WETTER CLIMATE TREND ─────────────────────── */}
         <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-orange-400/50 transition-all">
           <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
             style={{ background: 'radial-gradient(ellipse at 70% 30%, rgba(251,146,60,0.06) 0%, transparent 70%)' }} />
@@ -972,7 +820,7 @@ export const EnvironmentPage: React.FC = () => {
                   ))}
                 </div>
                 {/* Warmer bar */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex justify-between text-[9px] font-mono text-slate-400">
                     <span>Temperature vs Baseline</span>
                     <span className="font-bold" style={{ color: warmColor }}>{tempAnomaly > 0 ? 'WARMER' : 'COOLER'} +{Math.abs(tempAnomaly)}°C</span>
@@ -988,20 +836,116 @@ export const EnvironmentPage: React.FC = () => {
                     <span>→ Warmer</span>
                   </div>
                 </div>
-                {/* Context blurb */}
-                <div className="p-3 rounded-xl border text-[10px] font-mono leading-relaxed"
-                  style={{ backgroundColor: '#f9731608', borderColor: '#f9731630', color: '#fdba74' }}>
-                  {isMaitri
-                    ? `Schirmacher Oasis is running +${tempAnomaly}°C above the 1989–2020 climate baseline. Accelerated snow melt observed in summer. Lake Priyadarshini ice-out now 12 days earlier than 2000 records.`
-                    : `Larsemann Hills air mass is +${tempAnomaly}°C above the 1991–2020 NCPOR baseline. Prydz Bay sea-ice extent tracking 8% below decadal median. Coastal erosion rate elevated.`}
+
+                {/* Wetter bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                    <span>Humidity / Moisture vs Baseline</span>
+                    <span className="font-bold" style={{ color: wetColor }}>{humidAnomaly > 0 ? 'WETTER' : 'DRIER'} +{Math.abs(humidAnomaly)}%</span>
+                  </div>
+                  <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="absolute inset-y-0 left-1/2 w-full rounded-r-full transition-all duration-700"
+                      style={{ width: `${Math.min(50, (Math.abs(humidAnomaly) / 10) * 50)}%`, background: `${wetColor}cc` }} />
+                    <div className="absolute inset-y-0 left-1/2 w-0.5 h-full bg-slate-400" />
+                  </div>
+                  <div className="flex justify-between text-[9px] font-mono text-slate-500">
+                    <span>Drier ←</span>
+                    <span>Baseline</span>
+                    <span>→ Wetter</span>
+                  </div>
                 </div>
               </div>
             );
           })()}
         </div>
 
-        {/* ─── 4. ROTATING STORM ACTIVITY & NATURAL CALAMITIES ─────────────── */}
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-red-400/50 transition-all lg:col-span-1">
+        {/* ─── 2. WEATHER LAYER PRESSURE ANALYSIS ─────────────────────── */}
+        <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-purple-400/50 transition-all flex flex-col justify-between">
+          <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: 'radial-gradient(ellipse at 40% 80%, rgba(167,139,250,0.06) 0%, transparent 70%)' }} />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                <Gauge className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Atmospheric Pressure</div>
+                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Barometric Gradient · Surface Isobars</div>
+              </div>
+            </div>
+            <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold bg-purple-500/10 border-purple-500/30 text-purple-300">BAROMETER</span>
+          </div>
+
+          {(() => {
+            const trend = pressure > 1005 ? 'RISING' : pressure > 990 ? 'STEADY' : 'FALLING';
+            const trendColor = trend === 'RISING' ? '#10b981' : trend === 'STEADY' ? '#f59e0b' : '#ef4444';
+            const trendArrow = trend === 'RISING' ? '↑' : trend === 'STEADY' ? '→' : '↓';
+            const normPressure = isMaitri ? 984 : 991; // typical Antarctic values
+            const deviation = (pressure - normPressure).toFixed(1);
+            const pctOfRange = Math.max(0, Math.min(100, ((pressure - 940) / (1050 - 940)) * 100));
+            const tendency3h = trend === 'RISING' ? '+1.2 hPa' : trend === 'STEADY' ? '±0.0 hPa' : '-2.4 hPa';
+            const qnhSealevel = (pressure + (isMaitri ? 14 : 4)).toFixed(0);
+
+            return (
+              <div className="space-y-4">
+                {/* 3 micro-metric cards matching Card 1 */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-polar-border text-center">
+                    <div className="text-lg mb-1">⏱️</div>
+                    <div className="text-xs font-black font-mono" style={{ color: trendColor }}>{tendency3h}</div>
+                    <div className="text-[8px] font-mono text-slate-500 mt-0.5">3h Trend</div>
+                  </div>
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-polar-border text-center">
+                    <div className="text-lg mb-1">🌊</div>
+                    <div className="text-xs font-black font-mono text-cyan-300">{qnhSealevel} hPa</div>
+                    <div className="text-[8px] font-mono text-slate-500 mt-0.5">MSL (QNH)</div>
+                  </div>
+                  <div className="bg-slate-900/60 p-2.5 rounded-xl border border-polar-border text-center">
+                    <div className="text-lg mb-1">📍</div>
+                    <div className="text-xs font-black font-mono text-purple-300">{isMaitri ? '117m' : '35m'}</div>
+                    <div className="text-[8px] font-mono text-slate-500 mt-0.5">Station Alt</div>
+                  </div>
+                </div>
+
+                {/* Compact Pressure Readout & Trend */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/50 border border-polar-border/60">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black font-mono text-purple-200">{pressure}</span>
+                    <span className="text-xs font-mono text-slate-400">hPa</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                    <span style={{ color: trendColor, fontSize: 14 }}>{trendArrow}</span>
+                    <span className="font-bold" style={{ color: trendColor }}>{trend}</span>
+                    <span className="text-slate-500">({Number(deviation) >= 0 ? '+' : ''}{deviation} norm)</span>
+                  </div>
+                </div>
+
+                {/* Pressure scale meter */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                    <span>Barometric Pressure Range</span>
+                    <span className="font-bold" style={{ color: trendColor }}>{pressure < 970 ? 'STORM LOW' : pressure > 1015 ? 'HIGH ANTICYCLONE' : 'NORMAL RANGE'}</span>
+                  </div>
+                  <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-l-full" style={{ width: '33%', background: 'linear-gradient(to right, #ef444488, #ef4444)' }} />
+                    <div className="absolute top-0 h-full" style={{ left: '33%', width: '33%', background: 'linear-gradient(to right, #f59e0b, #10b981)' }} />
+                    <div className="absolute top-0 h-full rounded-r-full" style={{ left: '66%', width: '34%', background: 'linear-gradient(to right, #10b981, #38bdf8)' }} />
+                    {/* Needle */}
+                    <div className="absolute top-0 w-0.5 h-full bg-white shadow-lg rounded-full" style={{ left: `${pctOfRange}%`, transition: 'left 0.7s ease' }} />
+                  </div>
+                  <div className="flex justify-between text-[9px] font-mono text-slate-500">
+                    <span>940 Low</span>
+                    <span>991 Norm</span>
+                    <span>1050 High</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* ─── 3. ROTATING STORM ACTIVITY & NATURAL CALAMITIES ─────────────── */}
+        <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-red-400/50 transition-all flex flex-col justify-between">
           <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
             style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(239,68,68,0.06) 0%, transparent 70%)' }} />
           <div className="flex items-center justify-between mb-4">
@@ -1011,161 +955,86 @@ export const EnvironmentPage: React.FC = () => {
               </div>
               <div>
                 <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Rotating storm Activity</div>
-                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Polar Spinning air mass · Calamities · Storm Track</div>
+                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Polar Meso-Cyclones · Calamities</div>
               </div>
             </div>
-            <span className={`text-[9px] font-mono px-2 py-0.5 rounded border font-bold ${
-              stormSev > 0.65 ? 'bg-red-500/20 border-red-500/40 text-red-300 animate-pulse'
+            <span className={`text-[9px] font-mono px-2 py-0.5 rounded border font-bold ${stormSev > 0.65 ? 'bg-red-500/20 border-red-500/40 text-red-300 animate-pulse'
               : stormSev > 0.35 ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-              : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
-            }`}>
+                : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+              }`}>
               {stormSev > 0.65 ? 'SEVERE' : stormSev > 0.35 ? 'WATCH' : 'CALM'}
             </span>
           </div>
 
           {(() => {
             const katabaticRisk = wind > 60 ? 'HIGH' : wind > 35 ? 'MODERATE' : 'LOW';
+            const katabaticColor = katabaticRisk === 'HIGH' ? '#ef4444' : katabaticRisk === 'MODERATE' ? '#f59e0b' : '#10b981';
             const blizzardRisk = stormSev > 0.65 ? 'ACTIVE' : stormSev > 0.4 ? 'DEVELOPING' : 'CLEAR';
-            const seismicRisk = 'LOW'; // Antarctica is seismically quiet
-            const polarVortexIdx = isMaitri ? 62 : 71; // 0-100 polar vortex intensity
+            const blizzardColor = blizzardRisk === 'ACTIVE' ? '#ef4444' : blizzardRisk === 'DEVELOPING' ? '#f59e0b' : '#10b981';
+            const polarVortexIdx = isMaitri ? 62 : 71;
             const vortexColor = polarVortexIdx > 70 ? '#ef4444' : polarVortexIdx > 50 ? '#f59e0b' : '#10b981';
-            const events: { name: string; status: string; color: string; detail: string }[] = [
-              { name: '🌀 Katabatic Gale', status: katabaticRisk, color: katabaticRisk === 'HIGH' ? '#ef4444' : katabaticRisk === 'MODERATE' ? '#f59e0b' : '#10b981', detail: `${wind} km/h drainage flow from polar plateau` },
-              { name: '❄️ Blizzard System', status: blizzardRisk, color: blizzardRisk === 'ACTIVE' ? '#ef4444' : blizzardRisk === 'DEVELOPING' ? '#f59e0b' : '#10b981', detail: `Storm index: ${Math.round(stormSev * 100)}/100` },
-              { name: '🌊 Coastal Storm Surge', status: isMaitri ? 'N/A' : (wind > 50 ? 'WATCH' : 'CALM'), color: isMaitri ? '#475569' : (wind > 50 ? '#f59e0b' : '#10b981'), detail: isMaitri ? 'Inland station — not applicable' : `Prydz Bay swell ${wind > 50 ? '2.8m est.' : '0.8m nominal'}` },
-              { name: '🏔️ Seismic Activity', status: seismicRisk, color: '#10b981', detail: 'Last event: M1.2 · 340 km NE · 8 days ago' },
-              { name: '🌪️ Polar Vortex', status: polarVortexIdx > 70 ? 'STRONG' : polarVortexIdx > 50 ? 'MODERATE' : 'WEAK', color: vortexColor, detail: `Vortex intensity index: ${polarVortexIdx}/100` },
+            const marineStatus = isMaitri ? 'CALM' : (wind > 50 ? 'WATCH' : 'NOMINAL');
+            const marineColor = isMaitri ? '#10b981' : (wind > 50 ? '#f59e0b' : '#10b981');
+            const stormScore = Math.round(stormSev * 100);
+
+            const threats = [
+              { name: 'Katabatic Gale', icon: '🌀', val: `${wind} km/h`, status: katabaticRisk, color: katabaticColor, sub: 'Plateau Drainage' },
+              { name: 'Blizzard System', icon: '❄️', val: `${stormScore}%`, status: blizzardRisk, color: blizzardColor, sub: 'Surface Whiteout' },
+              { name: 'Polar Vortex', icon: '🌪️', val: `${polarVortexIdx}/100`, status: polarVortexIdx > 70 ? 'STRONG' : 'MODERATE', color: vortexColor, sub: 'Jet Stream' },
+              { name: isMaitri ? 'Oasis Glacier' : 'Coastal Swell', icon: isMaitri ? '🏔️' : '🌊', val: isMaitri ? 'Stable' : wind > 50 ? '2.8m' : '0.8m', status: marineStatus, color: marineColor, sub: isMaitri ? 'Crevasse Safe' : 'Prydz Bay Swell' },
             ];
+
             return (
-              <div className="space-y-2.5">
-                {events.map(ev => (
-                  <div key={ev.name} className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-polar-border/50 hover:border-slate-700 transition-colors">
-                    <div>
-                      <div className="text-xs font-bold font-mono text-white">{ev.name}</div>
-                      <div className="text-[9px] font-mono text-slate-500 mt-0.5">{ev.detail}</div>
+              <div className="space-y-4">
+                {/* 2x2 Grid of Threat Tiles */}
+                <div className="grid grid-cols-2 gap-2">
+                  {threats.map(t => (
+                    <div key={t.name} className="bg-slate-900/60 p-2.5 rounded-xl border border-polar-border hover:border-slate-700 transition-all flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm">{t.icon}</span>
+                        <span className="text-[8px] font-mono px-1.5 py-0.5 rounded border font-bold"
+                          style={{ backgroundColor: `${t.color}15`, borderColor: `${t.color}40`, color: t.color }}>
+                          {t.status}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold font-mono text-white truncate">{t.name}</div>
+                      <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-800/60 text-[9px] font-mono">
+                        <span className="text-slate-400 truncate">{t.sub}</span>
+                        <span className="font-bold font-mono ml-1" style={{ color: t.color }}>{t.val}</span>
+                      </div>
                     </div>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold ml-3 flex-shrink-0"
-                      style={{ backgroundColor: `${ev.color}15`, borderColor: `${ev.color}40`, color: ev.color }}>
-                      {ev.status}
+                  ))}
+                </div>
+
+                {/* Storm Composite Threat Meter */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                    <span>Atmospheric Threat Severity</span>
+                    <span className="font-bold" style={{ color: stormSev > 0.65 ? '#ef4444' : stormSev > 0.35 ? '#f59e0b' : '#10b981' }}>
+                      {stormScore}/100 INDEX
                     </span>
                   </div>
-                ))}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* ─── 5. SPACE WEATHER ──────────────────────────────────────── */}
-        <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden group hover:border-violet-400/50 transition-all xl:col-span-2">
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(56,189,248,0.04) 0%, transparent 60%)' }} />
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-mono font-bold uppercase tracking-wider text-white">Space Weather</div>
-                <div className="text-[9px] font-mono text-slate-500 mt-0.5">Solar Activity · Upper atmosphere · Aurora · Outer magnetic field region</div>
-              </div>
-            </div>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold bg-violet-500/10 border-violet-500/30 text-violet-300">ISRO · IIG PUNE</span>
-          </div>
-
-          {(() => {
-            // Station-realistic space weather data
-            const kpIndex = isMaitri ? 3.2 : 4.1; // Earth magnetic field Kp index 0-9
-            const kpColor = kpIndex > 6 ? '#ef4444' : kpIndex > 4 ? '#f59e0b' : '#10b981';
-            const kpLabel = kpIndex > 6 ? 'SEVERE STORM' : kpIndex > 4 ? 'ACTIVE' : kpIndex > 2 ? 'UNSETTLED' : 'QUIET';
-            const solarFlux = isMaitri ? 142 : 148; // F10.7 cm radio flux
-            const auroraBrightness = isMaitri ? 'KP3 — Faint Glow' : 'KP4 — Diffuse Aurora';
-            const auroraColor = isMaitri ? '#a855f7' : '#818cf8';
-            const ionosphereState = kpIndex > 4 ? 'DISTURBED' : 'QUIET';
-            const solarWindSpeed = isMaitri ? 420 : 480; // km/s
-            const bz = isMaitri ? -4.2 : -6.8; // Bz component (negative = southward = aurora)
-            const bzColor = bz < -5 ? '#ef4444' : bz < -2 ? '#f59e0b' : '#10b981';
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Left — Kp index + aurora status */}
-                <div className="space-y-4">
-                  {/* Kp meter */}
-                  <div className="bg-slate-900/60 p-4 rounded-2xl border border-violet-500/20">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">Kp Earth magnetic field Index</div>
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded border font-bold"
-                        style={{ backgroundColor: `${kpColor}15`, borderColor: `${kpColor}40`, color: kpColor }}>{kpLabel}</span>
-                    </div>
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-4xl font-black font-mono" style={{ color: kpColor }}>{kpIndex.toFixed(1)}</span>
-                      <span className="text-sm font-mono text-slate-400">/ 9.0</span>
-                    </div>
-                    {/* Kp scale bars */}
-                    <div className="flex gap-1">
-                      {[0,1,2,3,4,5,6,7,8].map(i => (
-                        <div key={i} className="flex-1 h-4 rounded-sm transition-all duration-500"
-                          style={{ backgroundColor: kpIndex > i ? (i > 5 ? '#ef4444' : i > 3 ? '#f59e0b' : '#10b981') : '#1e293b', opacity: kpIndex > i ? 1 : 0.4 }} />
-                      ))}
-                    </div>
-                    <div className="flex justify-between text-[8px] font-mono text-slate-500 mt-1">
-                      <span>0 Quiet</span><span>5 Active</span><span>9 Extreme</span>
-                    </div>
+                  <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${Math.max(5, stormScore)}%`,
+                        background: stormSev > 0.65
+                          ? 'linear-gradient(to right, #f59e0b, #ef4444)'
+                          : 'linear-gradient(to right, #10b981, #f59e0b)'
+                      }} />
                   </div>
-
-                  {/* Aurora status */}
-                  <div className="bg-slate-900/60 p-3.5 rounded-xl border border-purple-500/20 flex items-start gap-3">
-                    <div className="text-3xl">🌌</div>
-                    <div>
-                      <div className="text-xs font-bold text-white">Aurora Australis</div>
-                      <div className="text-[10px] font-mono mt-0.5" style={{ color: auroraColor }}>{auroraBrightness}</div>
-                      <div className="text-[9px] font-mono text-slate-500 mt-1">
-                        {isMaitri
-                          ? 'Faint aurora visible toward southern magnetic pole direction. 74° Earth magnetic field lat — good auroral oval position.'
-                          : 'Diffuse arc visible 12–24° above horizon. Station sits within outer auroral zone during moderate activity.'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right — Solar wind + upper atmosphere grid */}
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: 'Solar Wind', val: `${solarWindSpeed} km/s`, color: '#f59e0b', icon: '☀️', desc: 'ACE satellite measure' },
-                      { label: 'Bz Component', val: `${bz} nT`, color: bzColor, icon: '🧭', desc: bz < -5 ? 'Southward — aurora likely' : 'Northward — quiet' },
-                      { label: 'F10.7 Flux', val: `${solarFlux} sfu`, color: '#818cf8', icon: '📡', desc: '10.7cm radio flux' },
-                      { label: 'Upper Atmosphere', val: ionosphereState, color: ionosphereState === 'DISTURBED' ? '#f59e0b' : '#10b981', icon: '🌐', desc: 'HF propagation state' },
-                    ].map(s => (
-                      <div key={s.label} className="bg-slate-900/60 p-3 rounded-xl border border-polar-border text-center">
-                        <div className="text-xl mb-1">{s.icon}</div>
-                        <div className="text-xs font-black font-mono" style={{ color: s.color }}>{s.val}</div>
-                        <div className="text-[8px] font-mono text-slate-500 mt-0.5">{s.label}</div>
-                        <div className="text-[8px] font-mono text-slate-600 mt-0.5">{s.desc}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* HF Impact note */}
-                  <div className="p-3 rounded-xl text-[9px] font-mono leading-relaxed border"
-                    style={{ backgroundColor: kpIndex > 4 ? 'rgba(239,68,68,0.07)' : 'rgba(16,185,129,0.07)', borderColor: kpIndex > 4 ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)', color: kpIndex > 4 ? '#fca5a5' : '#6ee7b7' }}>
-                    <strong>HF Radio Impact:</strong>{' '}
-                    {kpIndex > 5
-                      ? 'BLACKOUT conditions on HF frequencies. Use satellite backup for emergency communications. SATCOM uptime priority.'
-                      : kpIndex > 3
-                      ? 'Degraded HF propagation on polar paths. Some signal dropout expected on 14–21 MHz bands. Satellite link recommended.'
-                      : 'HF propagation nominal. All frequency bands operational. LEO satellite link unaffected.'}
-                  </div>
-
-                  {/* Station-specific geo context */}
-                  <div className="p-2.5 rounded-xl bg-slate-900/40 border border-polar-border/40 text-[9px] font-mono text-slate-500 leading-relaxed">
-                    {isMaitri
-                      ? '🔬 Maitri operates a fluxgate magnetic field sensor (IIG Pune). Data contributes to INTERMAGNET global Earth magnetic field network. Conjugate point studies with Maitri-Tromsø (Norway) pair ongoing.'
-                      : '🔭 Bharati hosts Light spectrum analyzer for aurora spectroscopy and an all-sky imager. Real-time data shared with Indian Institute of Geomagnetism. Conjugate pair: Bharati–Longyearbyen.'}
+                  <div className="flex justify-between text-[9px] font-mono text-slate-500">
+                    <span>0 Calm</span>
+                    <span>50 Advisory</span>
+                    <span>100 Blizzard</span>
                   </div>
                 </div>
               </div>
             );
           })()}
         </div>
+
+
 
       </div>
     </div>

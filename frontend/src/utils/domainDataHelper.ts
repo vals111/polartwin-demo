@@ -1,5 +1,5 @@
 import {
-  Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
+  Zap, CloudSnow, Fuel, Droplet, Truck, Users, Radio, Archive,
   Building2, Sun, Thermometer, Shield
 } from 'lucide-react';
 import { DomainCardNode, CausalConduitsDef } from '../components/dashboard/OperationalDomainCard';
@@ -13,9 +13,7 @@ export const CAUSAL_EDGES: TreeEdgeDef[] = [
   { id: 'env-comm', from: 'environment', to: 'communication', label: 'Blizzard ionization & RF attenuation' },
   { id: 'log-fl', from: 'logistics', to: 'fuel', label: 'Annual diesel replenishment' },
   { id: 'log-inv', from: 'logistics', to: 'inventory', label: 'Spares & consumables restock' },
-  { id: 'inv-eq', from: 'inventory', to: 'equipment', label: 'Bearings & filter staging' },
   { id: 'fl-eng', from: 'fuel', to: 'energy', label: '17.5 L/hr diesel supply' },
-  { id: 'eq-eng', from: 'equipment', to: 'energy', label: 'Genset alternator uptime' },
   { id: 'eng-wat', from: 'energy', to: 'water', label: '4.2 kW trace line heating' },
   { id: 'eng-pers', from: 'energy', to: 'personnel', label: 'Habitat heating & power' },
   { id: 'eng-comm', from: 'energy', to: 'communication', label: 'Radome UPS & uplink power' },
@@ -119,17 +117,6 @@ export const ALL_DOMAIN_NODES: Record<string, DomainCardNode> = {
     icon: Archive,
     color: '#14b8a6',
     accentRgb: '20, 184, 166',
-  },
-  equipment: {
-    id: 'equipment',
-    name: 'Equipment & Machinery',
-    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
-    tier: 'TIER 3 • POWER CONVERSION',
-    tierNumber: 3,
-    route: 'equipment',
-    icon: Wrench,
-    color: '#22c55e',
-    accentRgb: '34, 197, 94',
   },
   energy: {
     id: 'energy',
@@ -300,17 +287,6 @@ export function extractLiveDomainData(targetStationId: string, snap: any) {
       consumptionLd: isM ? 850 : 1020,
       trend: isM ? [19200, 19000, 18800, 18650, 18550, 18500] : [22500, 22800, 23200, 23600, 23900, 24000],
       architecture: isM ? 'Priyadarshini (Lake Zub) Pump House with 800m Insulated Heated Pipeline' : 'Quilty Bay Marine Infiltration Intake + Seawater Reverse Osmosis (SWRO)',
-    },
-    equipment: {
-      score: ops?.domain_readiness?.equipment ?? (isM ? 93.5 : 96.2),
-      status: '5 Nominal • 1 Watch',
-      primaryKpi: `${eq?.avg_health?.toFixed(1) ?? (isM ? 93.5 : 96.2)}%`,
-      primaryLabel: 'Fleet Health',
-      activeMachinesCount: isM ? 6 : 8,
-      vibrationMmS: isM ? 2.1 : 1.4,
-      runHoursGen1: isM ? 8420 : 5120,
-      trend: isM ? [95.0, 94.8, 94.2, 93.8, 93.6, 93.5] : [97.1, 96.8, 96.5, 96.4, 96.3, 96.2],
-      architecture: isM ? 'Kirloskar Heavy GenSets, Centrifugal Water Pumps, Oil Burners' : 'Automated CHP Units, High-Pressure RO Pumps, Integrated HVAC',
     },
     logistics: {
       score: ops?.domain_readiness?.logistics ?? (isM ? 88 : 94),

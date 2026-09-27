@@ -1,7 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { TelemetrySnapshot } from '../../types';
 import {
-  Zap, Droplet, Wrench, Truck, CloudSnow, Radio, Users, Building2
+  Zap, Droplet, Truck, CloudSnow, Radio, Users, Building2
 } from 'lucide-react';
 
 interface Props {
@@ -14,7 +14,6 @@ export const DomainSummaryGrid: React.FC<Props> = ({ snapshot }) => {
   const eng = snapshot?.energy;
   const fuel = snapshot?.fuel;
   const water = snapshot?.water;
-  const equip = snapshot?.equipment;
   const ops = snapshot?.station_ops;
 
   const domains = [
@@ -94,17 +93,6 @@ export const DomainSummaryGrid: React.FC<Props> = ({ snapshot }) => {
       score: Math.round(((ops?.domain_readiness?.personnel ?? 100) + (ops?.domain_readiness?.safety ?? 96)) / 2),
       color: 'text-purple-400',
       bgColor: 'border-purple-500/30'
-    },
-    {
-      id: 'equipment',
-      name: 'Equipment & Machinery',
-      icon: Wrench,
-      metric: `${equip?.avg_health ?? 93.5}%`,
-      submetric: `${equip?.items?.length ?? 6} active machines • 0 critical trips`,
-      status: 'Operational',
-      score: ops?.domain_readiness?.equipment ?? 93.5,
-      color: 'text-emerald-400',
-      bgColor: 'border-emerald-500/30'
     }
   ];
 

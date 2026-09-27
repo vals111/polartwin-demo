@@ -1,9 +1,9 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { useStationStore } from '../store/stationStore';
 import {
-  Zap, CloudSnow, Fuel, Wrench, Droplet, Truck, Users, Radio, Archive,
+  Zap, CloudSnow, Fuel, Droplet, Truck, Users, Radio, Archive,
   RefreshCw, GitCompare, X, ExternalLink, Activity, ArrowUpRight, ArrowDownRight,
   Compass, Thermometer, ShieldCheck, AlertTriangle, Play, ChevronRight,
   Layers, Clock, CheckCircle2, BatteryCharging, Flame, Box, Maximize2,
@@ -37,7 +37,7 @@ const EIGHT_DOMAINS: DomainConfig[] = [
     accentRgb: '6, 182, 212',
     shortDesc: 'Building Structural Modules, Habitat Envelope & Wind Stress',
     upstream: ['environment', 'logistics'],
-    downstream: ['personnel', 'equipment']
+    downstream: ['personnel']
   },
   {
     id: 'energy_fuel',
@@ -48,8 +48,8 @@ const EIGHT_DOMAINS: DomainConfig[] = [
     color: '#f59e0b',
     accentRgb: '245, 158, 11',
     shortDesc: 'Diesel Generation, Solar PV, Power grid Battery & Bulk Fuel Storage',
-    upstream: ['environment', 'equipment', 'logistics'],
-    downstream: ['water', 'equipment', 'communication']
+    upstream: ['environment', 'logistics'],
+    downstream: ['water', 'communication']
   },
   {
     id: 'logistics',
@@ -97,7 +97,7 @@ const EIGHT_DOMAINS: DomainConfig[] = [
     accentRgb: '56, 189, 248',
     shortDesc: 'Glacial Melt / Seawater RO Seawater purification & Pipe Trace Heating',
     upstream: ['environment', 'energy_fuel'],
-    downstream: ['personnel', 'equipment']
+    downstream: ['personnel']
   },
   {
     id: 'personnel',
@@ -109,20 +109,8 @@ const EIGHT_DOMAINS: DomainConfig[] = [
     accentRgb: '168, 85, 247',
     shortDesc: 'Crew Headcount, Circadian Diurnal Demand, Life Safety & Shelters',
     upstream: ['water', 'energy_fuel', 'infrastructure'],
-    downstream: ['equipment']
+    downstream: []
   },
-  {
-    id: 'equipment',
-    name: 'Equipment & Machinery',
-    category: 'equipment',
-    icon: Wrench,
-    route: 'equipment',
-    color: '#10b981',
-    accentRgb: '16, 185, 129',
-    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
-    upstream: ['infrastructure', 'personnel'],
-    downstream: ['energy_fuel', 'water']
-  }
 ];
 
 // ── Main DomainsPage Component ───────────────────────────────────────────────
@@ -231,17 +219,6 @@ export const DomainsPage: React.FC = () => {
         trend: isM ? [19200, 19000, 18800, 18650, 18550, 18500] : [22500, 22800, 23200, 23600, 23900, 24000],
         architecture: isM ? 'Priyadarshini (Lake Zub) Pump House with 800m Insulated Heated Pipeline' : 'Quilty Bay Marine Infiltration Intake + Seawater Reverse Osmosis (Seawater Filter Plant)'
       },
-      equipment: {
-        score: ops?.domain_readiness?.equipment ?? (isM ? 93.5 : 96.2),
-        status: '5 Nominal • 1 Watch',
-        primaryKpi: `${eq?.avg_health?.toFixed(1) ?? (isM ? 93.5 : 96.2)}%`,
-        primaryLabel: 'Fleet Health',
-        activeMachinesCount: isM ? 6 : 8,
-        vibrationMmS: isM ? 2.1 : 1.4,
-        runHoursGen1: isM ? 8420 : 5120,
-        trend: isM ? [95.0, 94.8, 94.2, 93.8, 93.6, 93.5] : [97.1, 96.8, 96.5, 96.4, 96.3, 96.2],
-        architecture: isM ? 'Kirloskar Heavy Diesel generators, Centrifugal Water Pumps, Oil Burners' : 'Automated CHP Units, High-Pressure RO Pumps, Integrated HVAC'
-      },
       logistics: {
         score: ops?.domain_readiness?.logistics ?? (isM ? 88 : 94),
         status: isM ? 'Overland Traverse Active' : 'Coastal Mooring Ready',
@@ -338,7 +315,7 @@ export const DomainsPage: React.FC = () => {
                     Station Comparison • Maitri (Inland) vs Bharati (Coastal)
                   </h3>
                   <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                    Side-by-side Digital Twin comparison across all 8 interconnected operational domains.
+                    Side-by-side Digital Twin comparison across all 7 interconnected operational domains.
                   </p>
                 </div>
               </div>

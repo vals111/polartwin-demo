@@ -7,7 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { StationTwinPage } from './pages/StationTwinPage';
 import { DomainsPage } from './pages/DomainsPage';
 import { InfrastructurePage } from './pages/InfrastructurePage';
-import { EquipmentPage } from './pages/EquipmentPage';
+
 import { EnvironmentPage } from './pages/EnvironmentPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ForecastPage } from './pages/ForecastPage';
@@ -53,7 +53,7 @@ export const App: React.FC = () => {
           <Route path="/station/:id/communication" element={<CommunicationPage />} />
           <Route path="/station/:id/water" element={<WaterPage />} />
           <Route path="/station/:id/personnel" element={<PersonnelPage />} />
-          <Route path="/station/:id/equipment" element={<EquipmentPage />} />
+
 
           <Route path="/station/:id/analytics" element={<DecisionIntelligencePage />} />
           <Route path="/station/:id/forecast" element={<DecisionIntelligencePage />} />

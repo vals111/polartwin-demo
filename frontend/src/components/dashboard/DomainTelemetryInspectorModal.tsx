@@ -1,9 +1,9 @@
-﻿import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as echarts from 'echarts';
 import {
   X, TrendingUp, ExternalLink, Brain, Activity, ArrowUpRight, ArrowDownRight,
-  Zap, CloudSnow, Fuel, Droplet, Wrench, Truck, Users, Radio, Archive, Building2,
+  Zap, CloudSnow, Fuel, Droplet, Truck, Users, Radio, Archive, Building2,
   LucideIcon
 } from 'lucide-react';
 import { useTelemetryStore } from '../../store/telemetryStore';
@@ -105,19 +105,7 @@ export const ALL_INSPECTOR_DOMAINS: DomainConfig[] = [
     accentRgb: '168, 85, 247',
     shortDesc: 'Crew Headcount, Circadian Diurnal Demand & Life Support',
     upstream: ['water', 'energy_fuel', 'infrastructure'],
-    downstream: ['equipment']
-  },
-  {
-    id: 'equipment',
-    name: 'Equipment & Machinery',
-    category: 'equipment',
-    icon: Wrench,
-    route: 'equipment',
-    color: '#10b981',
-    accentRgb: '16, 185, 129',
-    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
-    upstream: ['infrastructure', 'personnel'],
-    downstream: ['energy_fuel', 'water']
+    downstream: []
   }
 ];
 

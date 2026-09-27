@@ -455,33 +455,6 @@ export const OperationalDomainCard: React.FC<Props> = ({
           </div>
         )}
 
-        {/* 8. EQUIPMENT & MACHINERY */}
-        {node.id === 'equipment' && t && (
-          <div className="flex items-center justify-between gap-4 font-mono">
-            <MiniDonut
-              segments={[
-                { label: 'Operational', pct: 88, color: '#16a34a' },
-                { label: 'Watch', pct: 12, color: '#d97706' }
-              ]}
-              centerLabel={t?.primaryKpi ?? '93%'}
-              size={58}
-            />
-            <div className="flex-1 space-y-1.5 text-xs">
-              <div className="flex justify-between text-xs">
-                <span style={{ color: 'var(--text-muted)' }}>Fleet Reliability</span>
-                <span className="font-bold text-emerald-400 text-sm">{t?.activeMachinesCount ?? 6} Active Units</span>
-              </div>
-              <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'var(--bg-elevated)' }}>
-                <div className="bg-emerald-500 h-full rounded-full shadow-sm" style={{ width: '93%' }} />
-              </div>
-              <div className="flex justify-between text-[11px] pt-0.5">
-                <span>Vibration: <strong className="text-emerald-400 font-bold">{t?.vibrationMmS ?? 2.1} mm/s</strong></span>
-                <span className="text-slate-300 font-semibold">0 Critical Trips</span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Legacy aliases (storage/inventory/fuel/energy fallback) */}
         {(node.id === 'storage' || node.id === 'inventory') && t && (
           <div className="space-y-1.5 font-mono">
