@@ -366,17 +366,9 @@ export const EnvironmentPage: React.FC = () => {
               </div>
             </div>
 
-            <button onClick={() => navigate(`/station/${stationId}/domains`)}
-              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-cyan-400/50 text-white flex items-center gap-1.5 transition-all cursor-pointer">
-              <Layers className="w-3.5 h-3.5 text-cyan-400" /> Domains
-            </button>
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=environment`)}
               className="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:shadow-md">
               <Brain className="w-3.5 h-3.5 text-purple-400" /> Decision Intel
-            </button>
-            <button onClick={() => navigate(isMaitri ? '/station/bharati/environment' : '/station/maitri/environment')}
-              className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-polar-dark/80 hover:bg-polar-dark border border-polar-border hover:border-blue-400/50 text-white flex items-center gap-1.5 transition-all cursor-pointer">
-              <RefreshCw className="w-3.5 h-3.5" /> Switch Station
             </button>
           </div>
         </div>

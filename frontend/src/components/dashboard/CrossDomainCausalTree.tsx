@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useTelemetryStore } from '../../store/telemetryStore';
@@ -34,47 +34,15 @@ export interface TreeEdgeDef {
 // 9 Interconnected Operational Domains organized in strict Causal Priority Tiers
 // Canvas Dimensions: 1420px x 1310px - Precision 4-Tier Causal DAG
 export const TREE_NODES: TreeNode[] = [
-  // ── Tier 1: Primary Environmental & Supply Forcing (y = 35, h = 250) ──
-  {
-    id: 'environment',
-    name: 'Environment & Weather',
-    shortDesc: 'Polar Atmosphere, Polar downslope wind Wind Chill & Storm Severity',
-    tier: 'TIER 1 • ROOT CLIMATE DRIVER',
-    tierNumber: 1,
-    x: 220,
-    y: 35,
-    w: 440,
-    h: 250,
-    route: 'environment',
-    icon: CloudSnow,
-    color: '#00e5ff',
-    accentRgb: '0, 229, 255'
-  },
-  {
-    id: 'logistics',
-    name: 'Transportation & Logistics',
-    shortDesc: 'Overland Traverse Supply runs, Cargo Resupply & Vessel ETA',
-    tier: 'TIER 1 • EXPEDITION RESUPPLY',
-    tierNumber: 1,
-    x: 760,
-    y: 35,
-    w: 440,
-    h: 250,
-    route: 'logistics',
-    icon: Truck,
-    color: '#f97316',
-    accentRgb: '249, 115, 22'
-  },
-
-  // ── Tier 2: Structural Envelope & Power Conversion Machinery (y = 360, h = 250) ──
+  // ── 1. Infrastructure (Row 1 Left) ──
   {
     id: 'infrastructure',
     name: 'Infrastructure',
     shortDesc: 'Habitat Envelope, Structural Wind Stress & Building Integrity',
-    tier: 'TIER 2 • STRUCTURAL ENVELOPE',
-    tierNumber: 2,
+    tier: 'STRUCTURAL ENVELOPE',
+    tierNumber: 1,
     x: 220,
-    y: 360,
+    y: 35,
     w: 440,
     h: 250,
     route: 'infrastructure',
@@ -82,45 +50,76 @@ export const TREE_NODES: TreeNode[] = [
     color: '#06b6d4',
     accentRgb: '6, 182, 212'
   },
-  {
-    id: 'equipment',
-    name: 'Equipment & Machinery',
-    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
-    tier: 'TIER 2 • POWER CONVERSION',
-    tierNumber: 2,
-    x: 760,
-    y: 360,
-    w: 440,
-    h: 250,
-    route: 'equipment',
-    icon: Wrench,
-    color: '#22c55e',
-    accentRgb: '34, 197, 94'
-  },
-
-  // ── Tier 3: Central Power grid Power Core & Bulk Fuel Depot (y = 685, h = 250) ──
+  // ── 2. Energy & Fuel (Row 1 Right) ──
   {
     id: 'energy_fuel',
     name: 'Energy & Fuel',
     shortDesc: 'Diesel Generation, Solar PV, Power grid Battery & Bulk Fuel Storage',
-    tier: 'TIER 3 • CENTRAL POWER & FUEL CORE',
-    tierNumber: 3,
-    x: 420,
-    y: 685,
-    w: 580,
+    tier: 'CENTRAL POWER & FUEL CORE',
+    tierNumber: 1,
+    x: 760,
+    y: 35,
+    w: 440,
     h: 250,
     route: 'energy',
     icon: Zap,
     color: '#eab308',
     accentRgb: '234, 179, 8'
   },
-
-  // ── Tier 4: Life Support, Human Habitation, Safety & Telemetry (y = 1010, h = 250) ──
+  // ── 3. Transportation & Logistics (Row 2 Left) ──
+  {
+    id: 'logistics',
+    name: 'Transportation & Logistics',
+    shortDesc: 'Overland Traverse Supply runs, Cargo Resupply & Vessel ETA',
+    tier: 'EXPEDITION RESUPPLY',
+    tierNumber: 2,
+    x: 220,
+    y: 360,
+    w: 440,
+    h: 250,
+    route: 'logistics',
+    icon: Truck,
+    color: '#f97316',
+    accentRgb: '249, 115, 22'
+  },
+  // ── 4. Environment & Weather (Row 2 Right) ──
+  {
+    id: 'environment',
+    name: 'Environment & Weather',
+    shortDesc: 'Polar Atmosphere, Polar downslope wind Wind Chill & Storm Severity',
+    tier: 'ROOT CLIMATE DRIVER',
+    tierNumber: 2,
+    x: 760,
+    y: 360,
+    w: 440,
+    h: 250,
+    route: 'environment',
+    icon: CloudSnow,
+    color: '#00e5ff',
+    accentRgb: '0, 229, 255'
+  },
+  // ── 5. Equipment & Machinery (Row 3 Center) ──
+  {
+    id: 'equipment',
+    name: 'Equipment & Machinery',
+    shortDesc: 'Mechanical Asset Health, Vibration Spectrum & Maintenance',
+    tier: 'POWER CONVERSION',
+    tierNumber: 3,
+    x: 420,
+    y: 685,
+    w: 580,
+    h: 250,
+    route: 'equipment',
+    icon: Wrench,
+    color: '#22c55e',
+    accentRgb: '34, 197, 94'
+  },
+  // ── 6. Water (Row 4 Left) ──
   {
     id: 'water',
     name: 'Water',
     shortDesc: 'Glacial Melt / Seawater RO Seawater purification & Pipe Trace Heating',
-    tier: 'TIER 4 • WATER LIFELINE',
+    tier: 'WATER LIFELINE',
     tierNumber: 4,
     x: 40,
     y: 1010,
@@ -131,11 +130,12 @@ export const TREE_NODES: TreeNode[] = [
     color: '#38bdf8',
     accentRgb: '56, 189, 248'
   },
+  // ── 7. Personnel Safety & Emergency (Row 4 Center) ──
   {
     id: 'personnel',
     name: 'Personnel Safety & Emergency',
     shortDesc: 'Crew Headcount, Circadian Diurnal Demand, Life Safety & Shelter Readiness',
-    tier: 'TIER 4 • HABITAT OCCUPANCY & SAFETY',
+    tier: 'HABITAT OCCUPANCY & SAFETY',
     tierNumber: 4,
     x: 500,
     y: 1010,
@@ -146,11 +146,12 @@ export const TREE_NODES: TreeNode[] = [
     color: '#a855f7',
     accentRgb: '168, 85, 247'
   },
+  // ── 8. Communication (Row 4 Right) ──
   {
     id: 'communication',
     name: 'Communication',
     shortDesc: 'LEO Polar Constellation, Low Signal delay & QoS Telemetry Sync',
-    tier: 'TIER 4 • REAL-TIME LIVE DATA',
+    tier: 'REAL-TIME LIVE DATA',
     tierNumber: 4,
     x: 960,
     y: 1010,
@@ -391,101 +392,101 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
 
     switch (edge.id) {
       case 'env-log':
-        // Environment right border to Logistics left border
-        sx = fromNode.x + fromNode.w;
+        // Environment left border into Logistics right border
+        sx = fromNode.x;
         sy = fromNode.y + fromNode.h / 2;
-        tx = toNode.x;
+        tx = toNode.x + toNode.w;
         ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 35} ${sy}, ${tx - 35} ${ty}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx - 35} ${sy}, ${tx + 35} ${ty}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'env-eng':
-        // Environment bottom-center border directly into Energy & Fuel top-left border
+        // Environment top border directly into Energy & Fuel bottom border
         sx = fromNode.x + fromNode.w / 2;
-        sy = fromNode.y + fromNode.h;
-        tx = toNode.x + 100;
-        ty = toNode.y;
-        return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 120}, ${tx} ${ty - 120}, ${tx} ${ty}`,
-          sx, sy, tx, ty
-        };
-
-      case 'env-wat':
-        // Environment left border down along clear left perimeter into Water top-left border
-        sx = fromNode.x;
-        sy = fromNode.y + fromNode.h / 2;
-        tx = toNode.x + 50;
-        ty = toNode.y;
-        return {
-          path: `M ${sx} ${sy} C 15 ${sy}, 15 ${ty - 120}, ${tx} ${ty}`,
-          sx, sy, tx, ty
-        };
-
-      case 'env-comm':
-        // Environment top-right border over the top and down right channel into Communication top-right
-        sx = fromNode.x + fromNode.w - 40;
         sy = fromNode.y;
-        tx = toNode.x + toNode.w - 40;
-        ty = toNode.y;
-        return {
-          path: `M ${sx} ${sy} C ${sx + 100} ${sy - 28}, 1410 15, 1410 500 C 1410 800, ${tx + 30} ${ty - 100}, ${tx} ${ty}`,
-          sx, sy, tx, ty
-        };
-
-      case 'log-fl':
-        // Logistics bottom-center border down into Energy & Fuel top-right border
-        sx = fromNode.x + fromNode.w / 2;
-        sy = fromNode.y + fromNode.h;
-        tx = toNode.x + toNode.w - 60;
-        ty = toNode.y;
-        return {
-          path: `M ${sx} ${sy} C ${sx + 60} ${sy + 140}, ${tx + 40} ${ty - 100}, ${tx} ${ty}`,
-          sx, sy, tx, ty
-        };
-
-      case 'env-infra':
-        // Environment bottom-center directly into Infrastructure top-center
-        sx = fromNode.x + fromNode.w / 2;
-        sy = fromNode.y + fromNode.h;
         tx = toNode.x + toNode.w / 2;
-        ty = toNode.y;
+        ty = toNode.y + toNode.h;
         return {
           path: `M ${sx} ${sy} L ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
-      case 'log-infra':
-        // Logistics bottom-left border into Infrastructure top-right border
-        sx = fromNode.x + 50;
+      case 'env-wat':
+        // Environment bottom-left border down into Water top border
+        sx = fromNode.x + 80;
         sy = fromNode.y + fromNode.h;
-        tx = toNode.x + toNode.w - 50;
+        tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 35}, ${tx} ${ty - 35}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx - 150} ${sy + 200}, ${tx + 80} ${ty - 200}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
+
+      case 'env-comm':
+        // Environment bottom-right border directly into Communication top border
+        sx = fromNode.x + fromNode.w - 80;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + toNode.w / 2;
+        ty = toNode.y;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 150} ${sy + 150}, ${tx} ${ty - 150}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
+
+      case 'log-fl':
+        // Logistics right-upper border into Energy & Fuel left-lower border
+        sx = fromNode.x + fromNode.w;
+        sy = fromNode.y + 40;
+        tx = toNode.x;
+        ty = toNode.y + toNode.h - 40;
+        return {
+          path: `M ${sx} ${sy} C ${sx + 45} ${sy}, ${tx - 45} ${ty}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
+
+      case 'env-infra':
+        // Environment left-upper border into Infrastructure right-lower border
+        sx = fromNode.x;
+        sy = fromNode.y + 40;
+        tx = toNode.x + toNode.w;
+        ty = toNode.y + toNode.h - 40;
+        return {
+          path: `M ${sx} ${sy} C ${sx - 45} ${sy}, ${tx + 45} ${ty}, ${tx} ${ty}`,
+          sx, sy, tx, ty
+        };
+
+      case 'log-infra':
+        // Logistics top border directly up into Infrastructure bottom border
+        sx = fromNode.x + fromNode.w / 2;
+        sy = fromNode.y;
+        tx = toNode.x + toNode.w / 2;
+        ty = toNode.y + toNode.h;
+        return {
+          path: `M ${sx} ${sy} L ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'infra-eq':
-        // Infrastructure right border into Equipment left border
-        sx = fromNode.x + fromNode.w;
-        sy = fromNode.y + fromNode.h / 2;
-        tx = toNode.x;
-        ty = toNode.y + toNode.h / 2;
+        // Infrastructure bottom-left border curves into Equipment top-left border
+        sx = fromNode.x + 80;
+        sy = fromNode.y + fromNode.h;
+        tx = toNode.x + 80;
+        ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx + 35} ${sy}, ${tx - 35} ${ty}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx - 60} ${sy + 180}, ${tx - 60} ${ty - 180}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
       case 'eq-eng':
-        // Equipment bottom-center border into Energy & Fuel right border
-        sx = fromNode.x + fromNode.w / 2;
-        sy = fromNode.y + fromNode.h;
-        tx = toNode.x + toNode.w - 100;
-        ty = toNode.y;
+        // Equipment top-right border curves up into Energy & Fuel bottom-right border
+        sx = fromNode.x + fromNode.w - 80;
+        sy = fromNode.y;
+        tx = toNode.x + toNode.w - 80;
+        ty = toNode.y + toNode.h;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 35}, ${tx} ${ty - 35}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C 1220 ${sy - 150}, 1220 ${ty + 150}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -496,7 +497,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 35}, ${tx} ${ty - 35}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C 650 ${sy + 300}, 150 ${ty - 300}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -507,7 +508,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} L ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx} ${sy + 250}, ${tx} ${ty - 250}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -518,7 +519,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x + toNode.w / 2;
         ty = toNode.y;
         return {
-          path: `M ${sx} ${sy} C ${sx} ${sy + 35}, ${tx} ${ty - 35}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} C ${sx + 250}, ${tx} ${ty - 250}, ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -529,7 +530,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x;
         ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 15} ${sy}, ${tx - 15} ${ty}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} L ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 
@@ -540,7 +541,7 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
         tx = toNode.x;
         ty = toNode.y + toNode.h / 2;
         return {
-          path: `M ${sx} ${sy} C ${sx + 15} ${sy}, ${tx - 15} ${ty}, ${tx} ${ty}`,
+          path: `M ${sx} ${sy} L ${tx} ${ty}`,
           sx, sy, tx, ty
         };
 

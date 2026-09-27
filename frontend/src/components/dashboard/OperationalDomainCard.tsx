@@ -1,6 +1,5 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Brain } from 'lucide-react';
 import {
   MiniRing,
   MiniFluidTank,
@@ -60,7 +59,6 @@ export const OperationalDomainCard: React.FC<Props> = ({
   isUpstream,
   isDownstream,
   isDimmed,
-  showFooterButtons = false,
   causalConduits,
   onClick,
   onSelectDomain,
@@ -502,22 +500,6 @@ export const OperationalDomainCard: React.FC<Props> = ({
         )}
       </div>
 
-      {/* ── CARD BOTTOM ACCENT ROW (Click Indicator & Micro-Telemetry) ── */}
-      <div
-        className="pt-2 flex items-center justify-between text-[11px] font-mono text-slate-300 border-t border-white/10"
-      >
-        <span className="truncate flex items-center gap-1.5">
-          <span className="text-slate-400 font-medium">Domain Route:</span>
-          <span className="text-slate-200 font-bold uppercase tracking-wider">/{node.route}</span>
-        </span>
-        <span
-          className="flex items-center gap-1 font-bold transition-transform group-hover:translate-x-1"
-          style={{ color: node.color }}
-        >
-          <span>Explore Studio</span>
-          <span className="text-base leading-none">›</span>
-        </span>
-      </div>
 
       {/* ── SECTION 4: CAUSAL CONDUITS ── */}
       {causalConduits && (
@@ -590,29 +572,6 @@ export const OperationalDomainCard: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ── SECTION 5: FOOTER BUTTONS ── */}
-      {showFooterButtons && (
-        <div
-          className="pt-2 mt-2 flex items-center justify-end text-xs font-mono gap-1.5"
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/station/${stationId}/decision?domain=${node.id}`);
-            }}
-            className="flex items-center gap-1.5 text-[9px] font-mono font-bold px-2.5 py-1 rounded-lg border cursor-pointer transition-all hover:opacity-90"
-            style={{
-              backgroundColor: `${node.color}18`,
-              border: `1px solid ${node.color}44`,
-              color: node.color,
-            }}
-          >
-            <Brain className="w-2.5 h-2.5" />
-            <span>Decision Intelligence</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 };

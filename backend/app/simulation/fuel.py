@@ -31,7 +31,7 @@ def init_fuel_state(station_id: str) -> dict:
         tanks = [
             {
                 "id": "tank_m01",
-                "name": "Bulk Tank #1 (AGO North)",
+                "name": "AGO North #1",
                 "capacity_l": 32000.0,
                 "current_level_l": 25600.0,
                 "level_pct": 80.0,
@@ -45,7 +45,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_m02",
-                "name": "Bulk Tank #2 (AGO North-East)",
+                "name": "AGO North-East #2",
                 "capacity_l": 32000.0,
                 "current_level_l": 24320.0,
                 "level_pct": 76.0,
@@ -59,7 +59,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_m03",
-                "name": "Bulk Tank #3 (AGO East)",
+                "name": "AGO East #1",
                 "capacity_l": 30000.0,
                 "current_level_l": 23100.0,
                 "level_pct": 77.0,
@@ -73,7 +73,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_m04",
-                "name": "Bulk Tank #4 (AGO South-East)",
+                "name": "AGO South-East #2",
                 "capacity_l": 30000.0,
                 "current_level_l": 22800.0,
                 "level_pct": 76.0,
@@ -87,7 +87,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_m05",
-                "name": "Bulk Tank #5 (AGO South)",
+                "name": "AGO South #1",
                 "capacity_l": 28000.0,
                 "current_level_l": 21280.0,
                 "level_pct": 76.0,
@@ -101,7 +101,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_m06",
-                "name": "Bulk Tank #6 (AGO Reserve)",
+                "name": "AGO Reserve",
                 "capacity_l": 28000.0,
                 "current_level_l": 20900.0,
                 "level_pct": 74.6,
@@ -119,7 +119,7 @@ def init_fuel_state(station_id: str) -> dict:
             "pump_status": "RUNNING",
             "flow_rate_l_min": 4.8,
             "active_source_tank": "tank_m02",
-            "source_tank_name": "Bulk Tank #2 (AGO North-East)",
+            "source_tank_name": "AGO North-East #2",
             "destination": "Generator Day Tank #1 (4,000 L)",
             "day_tank_level_pct": 86.4,
             "line_pressure_bar": 2.8,
@@ -178,7 +178,7 @@ def init_fuel_state(station_id: str) -> dict:
         tanks = [
             {
                 "id": "tank_b01",
-                "name": "Coastal Tank #1 (Larsemann North)",
+                "name": "Larsemann North #1",
                 "capacity_l": 37500.0,
                 "current_level_l": 31875.0,
                 "level_pct": 85.0,
@@ -192,7 +192,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b02",
-                "name": "Coastal Tank #2 (Larsemann North)",
+                "name": "Larsemann North #2",
                 "capacity_l": 37500.0,
                 "current_level_l": 31125.0,
                 "level_pct": 83.0,
@@ -206,7 +206,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b03",
-                "name": "Coastal Tank #3 (Central Matrix)",
+                "name": "Central Matrix #1",
                 "capacity_l": 37500.0,
                 "current_level_l": 30750.0,
                 "level_pct": 82.0,
@@ -220,7 +220,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b04",
-                "name": "Coastal Tank #4 (Central Matrix)",
+                "name": "Central Matrix #2",
                 "capacity_l": 37500.0,
                 "current_level_l": 30375.0,
                 "level_pct": 81.0,
@@ -234,7 +234,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b05",
-                "name": "Coastal Tank #5 (South Bay)",
+                "name": "South Bay #1",
                 "capacity_l": 37500.0,
                 "current_level_l": 30000.0,
                 "level_pct": 80.0,
@@ -248,7 +248,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b06",
-                "name": "Coastal Tank #6 (South Bay)",
+                "name": "South Bay #2",
                 "capacity_l": 37500.0,
                 "current_level_l": 30375.0,
                 "level_pct": 81.0,
@@ -262,7 +262,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b07",
-                "name": "Coastal Tank #7 (Deep Winter Reserve)",
+                "name": "Deep Winter Reserve",
                 "capacity_l": 37500.0,
                 "current_level_l": 30750.0,
                 "level_pct": 82.0,
@@ -276,7 +276,7 @@ def init_fuel_state(station_id: str) -> dict:
             },
             {
                 "id": "tank_b08",
-                "name": "Coastal Tank #8 (CHP Return Sump)",
+                "name": "CHP Return Sump",
                 "capacity_l": 37500.0,
                 "current_level_l": 29750.0,
                 "level_pct": 79.3,
@@ -294,7 +294,7 @@ def init_fuel_state(station_id: str) -> dict:
             "pump_status": "RUNNING",
             "flow_rate_l_min": 6.2,
             "active_source_tank": "tank_b02",
-            "source_tank_name": "Coastal Tank #2 (Larsemann North)",
+            "source_tank_name": "Larsemann North #2",
             "destination": "Combined Heat & Power Header Day Tank (6,000 L)",
             "day_tank_level_pct": 91.2,
             "line_pressure_bar": 3.2,

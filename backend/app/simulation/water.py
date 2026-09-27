@@ -272,9 +272,12 @@ def step(state: dict, perturbation: dict = None) -> dict:
     # Apply Perturbations
     if perturbation:
         p_type = perturbation.get("type", "")
-        if p_type == "trace_heating_failure":
+        if p_type in ["trace_heating_failure", "pipe_freeze"]:
             trace_active = False
             trace_draw_kw = 0.0
+            pipe_temp = -2.8
+            water["pump_status"] = "BLOCKED_FROZEN"
+            water["production_rate_l_hr"] = 0.0
         elif p_type == "extreme_cold":
             temp -= perturbation.get("drop_c", 16.0)
             wind_chill -= 20.0
@@ -283,10 +286,14 @@ def step(state: dict, perturbation: dict = None) -> dict:
         elif p_type == "personnel_increase":
             base_headcount += perturbation.get("additional_people", 12)
             daily_demand = (base_headcount * per_capita_day) + research_draw_day
-        elif p_type == "water_consumption_spike":
+        elif p_type in ["water_consumption_spike", "fissure_leak"]:
             daily_demand *= 2.5 # Simulated fissure / stuck valve
-        elif p_type == "pump_failure" or (p_type == "equipment_failure" and "pump" in perturbation.get("asset_id", "")):
+        elif p_type in ["pump_failure", "pump_fail"] or (p_type == "equipment_failure" and "pump" in perturbation.get("asset_id", "")):
             water["pump_status"] = "TRIPPED"
+            water["production_rate_l_hr"] = 0.0
+        elif p_type == "contamination":
+            water["treatment"]["water_quality_index"] = 42.0
+            water["treatment"]["status"] = "CONTAMINATION_ALERT"
             water["production_rate_l_hr"] = 0.0
 
     # Pipeline fluid temperature dynamics
@@ -335,8 +342,11 @@ def step(state: dict, perturbation: dict = None) -> dict:
     hourly_consumption = daily_demand / 24.0
     net_flow_hourly = production_rate - hourly_consumption
     
-    # Tick scaling (scaled for live twin demonstration)
-    tick_net = net_flow_hourly * (5.0 / 3600.0 * 20.0)
+    # Tick scaling: full hourly step during lookahead simulations, micro-scaled for live ticks
+    if perturbation is not None:
+        tick_net = net_flow_hourly
+    else:
+        tick_net = net_flow_hourly * (5.0 / 3600.0 * 20.0)
     
     curr_storage = max(0.0, round(water.get("storage_liters", 18500.0) + tick_net, 1))
     max_storage = water.get("max_storage_liters", 25000.0 if is_maitri else 35000.0)

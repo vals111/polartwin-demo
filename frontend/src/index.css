@@ -127,6 +127,26 @@ body {
   animation: polar-pulse 2s infinite ease-in-out;
 }
 
+/* ── Pipeline fluid flow animations ────────────────────────────── */
+@keyframes pipeFlow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes pipeDash {
+  to { stroke-dashoffset: -32; }
+}
+.animate-pipe-dash {
+  animation: pipeDash 1.2s linear infinite;
+}
+@keyframes flow {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ── Fade-in animation ────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-6px); }
