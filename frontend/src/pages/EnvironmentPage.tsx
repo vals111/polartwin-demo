@@ -198,34 +198,39 @@ const ForecastArchiveCard: React.FC<{
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900/80 via-polar-dark/95 to-slate-950/90 p-3 rounded-xl border border-polar-border/60 hover:border-cyan-500/40 transition-all flex flex-col justify-between h-full shadow-sm group">
-      {/* Top Header: ONLY single graph name + hover-activated readout */}
-      <div className="flex items-center justify-between text-xs font-mono mb-1">
-        <div className="flex items-center gap-2">
+    <div className="bg-gradient-to-br from-slate-900/80 via-polar-dark/95 to-slate-950/90 p-3 rounded-xl border border-polar-border/60 hover:border-cyan-500/40 transition-colors flex flex-col justify-between h-full shadow-sm group overflow-hidden">
+      {/* Top Header: single graph name + hover-activated readout */}
+      <div className="flex items-center justify-between text-xs font-mono mb-1 gap-2 min-w-0 flex-shrink-0">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <span
-            className="w-2 h-2 rounded-full flex-shrink-0 transition-all group-hover:scale-125"
+            className="w-2 h-2 rounded-full flex-shrink-0"
             style={{ backgroundColor: color }}
           />
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-200">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-200 truncate">
             {label}
           </span>
         </div>
 
-        {/* Hover-only data readout (zero layout shift in default state) */}
-        <div className="text-right min-h-[16px] flex items-center justify-end">
-          {hovered && (
+        {/* Hover-only data readout */}
+        <div className="text-right flex items-center justify-end flex-shrink-0">
+          {hovered ? (
             <div className="flex items-baseline gap-1.5 font-mono">
               <span className="text-[9px] text-slate-400 font-semibold">{hovered.time}</span>
               <span className="text-xs font-black text-white">
                 {hovered.val.toFixed(1)} <span className="text-[10px] text-slate-400 font-normal">{unit}</span>
               </span>
             </div>
+          ) : (
+            <span className="text-xs font-black font-mono text-slate-300">
+              {data && data.length > 0 ? `${data[data.length - 1].toFixed(1)}` : ''}
+              <span className="text-[10px] text-slate-400 font-normal ml-0.5">{unit}</span>
+            </span>
           )}
         </div>
       </div>
 
-      {/* Pure graph canvas filling available card space with zero clutter */}
-      <div className="flex-1 w-full min-h-[56px] relative">
+      {/* Pure graph canvas filling available card space from top to bottom */}
+      <div className="flex-1 w-full min-h-0 relative overflow-hidden mt-0.5">
         <SparklineChart
           data={data}
           color={color}
@@ -719,7 +724,7 @@ export const EnvironmentPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Evenly Spaced 4 Archive Trend Graphs Filling Empty Space */}
+          {/* Evenly Spaced 4 Archive Trend Graphs Filling Space */}
           <div className="grid grid-rows-4 gap-2.5 flex-1 min-h-[400px]">
             {[
               { label: 'Temperature', data: tempHistory, color: '#06b6d4', unit: '°C' },

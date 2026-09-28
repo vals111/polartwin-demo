@@ -49,15 +49,16 @@ export const IndustrialGauge: React.FC<IndustrialGaugeProps> = ({
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
+    const canvasHeight = Math.round(size * 0.82);
     canvas.width = size * dpr;
-    canvas.height = size * dpr;
+    canvas.height = canvasHeight * dpr;
     canvas.style.width = `${size}px`;
-    canvas.style.height = `${size}px`;
+    canvas.style.height = `${canvasHeight}px`;
     ctx.scale(dpr, dpr);
 
     const cx = size / 2;
-    const cy = size / 2;
-    const radius = size * 0.38;
+    const cy = size * 0.44;
+    const radius = size * 0.36;
     const startAngle = Math.PI * 0.75;
     const endAngle = Math.PI * 2.25;
     const totalAngle = endAngle - startAngle;
@@ -66,7 +67,7 @@ export const IndustrialGauge: React.FC<IndustrialGaugeProps> = ({
     const speed = 0.04;
 
     const draw = () => {
-      ctx.clearRect(0, 0, size, size);
+      ctx.clearRect(0, 0, size, canvasHeight);
 
       // Background ring
       ctx.beginPath();
@@ -128,20 +129,13 @@ export const IndustrialGauge: React.FC<IndustrialGaugeProps> = ({
       // Center value
       ctx.textAlign = 'center';
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${size * 0.2}px 'JetBrains Mono', monospace`;
-      ctx.fillText(currentRef.current.toFixed(decimals), cx, cy + size * 0.06);
+      ctx.font = `bold ${size * 0.19}px 'JetBrains Mono', monospace`;
+      ctx.fillText(currentRef.current.toFixed(decimals), cx, cy + size * 0.05);
 
       // Unit
       ctx.fillStyle = color;
-      ctx.font = `${size * 0.1}px 'JetBrains Mono', monospace`;
-      ctx.fillText(unit, cx, cy + size * 0.18);
-
-      // Label at bottom
-      if (label) {
-        ctx.fillStyle = 'rgba(148,163,184,0.85)';
-        ctx.font = `${size * 0.085}px 'Inter', sans-serif`;
-        ctx.fillText(label, cx, cy + size * 0.36);
-      }
+      ctx.font = `${size * 0.095}px 'JetBrains Mono', monospace`;
+      ctx.fillText(unit, cx, cy + size * 0.17);
 
       // Animate towards target
       const diff = target - currentRef.current;
@@ -159,5 +153,14 @@ export const IndustrialGauge: React.FC<IndustrialGaugeProps> = ({
     return () => cancelAnimationFrame(animRef.current);
   }, [value, min, max, size, unit, label, accentColor, decimals, warningThreshold, criticalThreshold]);
 
-  return <canvas ref={canvasRef} style={{ display: 'block' }} />;
+  return (
+    <div className="flex flex-col items-center">
+      <canvas ref={canvasRef} style={{ display: 'block' }} />
+      {label && (
+        <div className="text-xs font-mono font-bold text-slate-300 tracking-wide text-center mt-3.5">
+          {label}
+        </div>
+      )}
+    </div>
+  );
 };

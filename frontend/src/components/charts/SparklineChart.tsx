@@ -54,8 +54,17 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
       });
     }
 
-    const ro = new ResizeObserver(() => {
-      chart.resize();
+    let prevWidth = 0;
+    let prevHeight = 0;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0 && (Math.abs(width - prevWidth) > 1 || Math.abs(height - prevHeight) > 1)) {
+          prevWidth = width;
+          prevHeight = height;
+          chart.resize();
+        }
+      }
     });
     ro.observe(ref.current);
 
@@ -81,7 +90,7 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
     inst.current.setOption({
       backgroundColor: 'transparent',
       animation: false, // Prevents any flash or jitter on updates
-      grid: { top: 6, bottom: 4, left: 4, right: 4 },
+      grid: { top: 4, bottom: 2, left: 2, right: 2 },
       xAxis: {
         type: 'category',
         show: false,
@@ -154,5 +163,21 @@ export const SparklineChart: React.FC<SparklineChartProps> = ({
     });
   }, [data, color, unit, label, showArea, timestamps, interactive]);
 
-  return <div ref={ref} style={{ width: '100%', height: height || '100%' }} />;
+  const isAbs = height === '100%';
+  return (
+    <div
+      ref={ref}
+      style={isAbs ? {
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        inset: 0,
+        overflow: 'hidden',
+      } : {
+        width: '100%',
+        height: typeof height === 'number' ? `${height}px` : (height || '100%'),
+        overflow: 'hidden',
+      }}
+    />
+  );
 };

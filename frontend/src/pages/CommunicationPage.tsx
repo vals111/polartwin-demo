@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
@@ -547,35 +547,94 @@ const WiFiFloorPlan: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
 };
 
 // ── Fiber-Optic Backbone Health & OTDR Spectral Analyzer ──────────────────────
+interface FiberLink {
+  id: string;
+  name: string;
+  distance: string;
+  baseAttn: number;
+  baseTemp: number;
+  ok: boolean;
+  note: string;
+}
+
+const MAITRI_FIBER_LINKS: FiberLink[] = [
+  { id: 'A', name: 'Station Core ↔ Science Wing', distance: '450m', baseAttn: 0.8, baseTemp: -12, ok: true, note: 'Signal optimal across indoor plenum run.' },
+  { id: 'B', name: 'Station Core ↔ Living Qtrs', distance: '620m', baseAttn: 1.1, baseTemp: -14, ok: true, note: 'Normal attenuation through thermal conduit.' },
+  { id: 'C', name: 'Station ↔ Magnetometer Hut', distance: '1,850m', baseAttn: 4.2, baseTemp: -31, ok: false, note: 'High attenuation — Ice displacement shear stress at 1,180m.' },
+  { id: 'D', name: 'Station ↔ AWS Site 3', distance: '2,400m', baseAttn: 2.1, baseTemp: -22, ok: true, note: 'Within polar operating threshold for permafrost line.' },
+];
+
+const BHARATI_FIBER_LINKS: FiberLink[] = [
+  { id: 'A', name: 'Main Hub ↔ Lab Module', distance: '320m', baseAttn: 0.6, baseTemp: -8, ok: true, note: 'Cryo-jacketed direct run operating at peak margin.' },
+  { id: 'B', name: 'Main Hub ↔ AGEOS Pad', distance: '1,200m', baseAttn: 1.4, baseTemp: -11, ok: true, note: 'Optical return loss within nominal spec.' },
+  { id: 'C', name: 'Main Hub ↔ Helipad Comms', distance: '850m', baseAttn: 0.9, baseTemp: -9, ok: true, note: 'Direct underground trunk with heat trace active.' },
+  { id: 'D', name: 'Main Hub ↔ Ocean Instruments', distance: '1,950m', baseAttn: 1.8, baseTemp: -16, ok: true, note: 'Sub-ice marine tether maintaining stable throughput.' },
+];
+
 const FiberBackboneChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
-  const [selectedTrunkId, setSelectedTrunkId] = useState<string>('C');
+  const [selectedTrunkId] = useState<string>('C');
   const [chartMode, setChartMode] = useState<'attenuation' | 'otdr'>('attenuation');
+  const [animTick, setAnimTick] = useState(0);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInst = useRef<echarts.ECharts | null>(null);
 
-  const links = isMaitri ? [
-    { id: 'A', name: 'Station Core ↔ Science Wing', distance: '450m', attn: 0.8, temp: -12, ok: true, note: 'Signal optimal across indoor plenum run.' },
-    { id: 'B', name: 'Station Core ↔ Living Qtrs', distance: '620m', attn: 1.1, temp: -14, ok: true, note: 'Normal attenuation through thermal conduit.' },
-    { id: 'C', name: 'Station ↔ Magnetometer Hut', distance: '1,850m', attn: 4.2, temp: -31, ok: false, note: 'High attenuation — Ice displacement shear stress at 1,180m.' },
-    { id: 'D', name: 'Station ↔ AWS Site 3', distance: '2,400m', attn: 2.1, temp: -22, ok: true, note: 'Within polar operating threshold for permafrost line.' },
-  ] : [
-    { id: 'A', name: 'Main Hub ↔ Lab Module', distance: '320m', attn: 0.6, temp: -8, ok: true, note: 'Cryo-jacketed direct run operating at peak margin.' },
-    { id: 'B', name: 'Main Hub ↔ AGEOS Pad', distance: '1,200m', attn: 1.4, temp: -11, ok: true, note: 'Optical return loss within nominal spec.' },
-    { id: 'C', name: 'Main Hub ↔ Helipad Comms', distance: '850m', attn: 0.9, temp: -9, ok: true, note: 'Direct underground trunk with heat trace active.' },
-    { id: 'D', name: 'Main Hub ↔ Ocean Instruments', distance: '1,950m', attn: 1.8, temp: -16, ok: true, note: 'Sub-ice marine tether maintaining stable throughput.' },
-  ];
+  const baseLinks = isMaitri ? MAITRI_FIBER_LINKS : BHARATI_FIBER_LINKS;
+
+  // Seamless live telemetry pulse interval — updates values without canvas re-creation
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnimTick(t => (t + 1) % 360);
+    }, 2500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const links = useMemo(() => {
+    return baseLinks.map((l, idx) => {
+      const attnDelta = Math.sin(animTick * 0.4 + idx * 1.5) * 0.04;
+      const tempDelta = Math.cos(animTick * 0.35 + idx * 1.2) * 0.35;
+      return {
+        ...l,
+        attn: Number((l.baseAttn + attnDelta).toFixed(2)),
+        temp: Number((l.baseTemp + tempDelta).toFixed(1)),
+      };
+    });
+  }, [baseLinks, animTick]);
 
   const selectedLink = links.find(l => l.id === selectedTrunkId) || links[0];
 
+  // 1. Initialize ECharts instance once on mount
   useEffect(() => {
     if (!chartRef.current) return;
-    if (chartInst.current) chartInst.current.dispose();
     const chart = echarts.init(chartRef.current, 'dark');
     chartInst.current = chart;
+
+    const ro = new ResizeObserver(() => {
+      if (chart && !chart.isDisposed()) {
+        chart.resize();
+      }
+    });
+    ro.observe(chartRef.current);
+
+    return () => {
+      ro.disconnect();
+      chart.dispose();
+      chartInst.current = null;
+    };
+  }, []);
+
+  // 2. Seamlessly update chart options with smooth morphing and zero flickering
+  useEffect(() => {
+    const chart = chartInst.current;
+    if (!chart || chart.isDisposed()) return;
 
     if (chartMode === 'attenuation') {
       chart.setOption({
         backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 800,
+        animationDurationUpdate: 1200,
+        animationEasing: 'cubicInOut',
+        animationEasingUpdate: 'cubicInOut',
         tooltip: {
           trigger: 'axis',
           backgroundColor: 'rgba(10,15,30,0.95)',
@@ -651,20 +710,26 @@ const FiberBackboneChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
             symbolSize: 6,
           },
         ],
-      });
+      }, { notMerge: false, lazyUpdate: true });
     } else {
       const distances = [0, 200, 400, 600, 800, 1000, 1180, 1200, 1400, 1600, 1850];
       const isFault = !selectedLink.ok;
-      const traceData = distances.map(d => {
+      const traceData = distances.map((d, di) => {
+        const noise = Math.sin(animTick * 0.5 + di) * 0.03;
         if (isFault) {
-          if (d < 1180) return Number((0 - (d / 1000) * 0.9).toFixed(2));
-          return Number((0 - (d / 1000) * 0.9 - 3.2).toFixed(2));
+          if (d < 1180) return Number((0 - (d / 1000) * 0.9 + noise).toFixed(2));
+          return Number((0 - (d / 1000) * 0.9 - 3.2 + noise).toFixed(2));
         }
-        return Number((0 - (d / 1000) * selectedLink.attn).toFixed(2));
+        return Number((0 - (d / 1000) * selectedLink.attn + noise).toFixed(2));
       });
 
       chart.setOption({
         backgroundColor: 'transparent',
+        animation: true,
+        animationDuration: 800,
+        animationDurationUpdate: 1200,
+        animationEasing: 'cubicInOut',
+        animationEasingUpdate: 'cubicInOut',
         tooltip: {
           trigger: 'axis',
           backgroundColor: 'rgba(10,15,30,0.95)',
@@ -717,16 +782,9 @@ const FiberBackboneChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
             } : undefined,
           },
         ],
-      });
+      }, { notMerge: true, lazyUpdate: true });
     }
-
-    const ro = new ResizeObserver(() => chart.resize());
-    ro.observe(chartRef.current!);
-    return () => {
-      ro.disconnect();
-      chart.dispose();
-    };
-  }, [links, chartMode, selectedTrunkId]);
+  }, [links, chartMode, selectedTrunkId, selectedLink, animTick]);
 
   return (
     <div className="p-5 rounded-2xl border border-teal-500/30 bg-teal-500/06 space-y-4">
@@ -737,12 +795,12 @@ const FiberBackboneChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
         <div className="flex items-center bg-black/40 border border-white/10 rounded-lg p-0.5 text-xs font-mono">
           <button
             onClick={() => setChartMode('attenuation')}
-            className={`px-2 py-0.5 rounded text-[10px] transition-all ${chartMode === 'attenuation' ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30' : 'text-white hover:text-teal-200'}`}>
+            className={`px-2 py-0.5 rounded text-[10px] transition-all cursor-pointer ${chartMode === 'attenuation' ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30' : 'text-white hover:text-teal-200'}`}>
             Attenuation Profile
           </button>
           <button
             onClick={() => setChartMode('otdr')}
-            className={`px-2 py-0.5 rounded text-[10px] transition-all ${chartMode === 'otdr' ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30' : 'text-white hover:text-teal-200'}`}>
+            className={`px-2 py-0.5 rounded text-[10px] transition-all cursor-pointer ${chartMode === 'otdr' ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30' : 'text-white hover:text-teal-200'}`}>
             OTDR Trace
           </button>
         </div>

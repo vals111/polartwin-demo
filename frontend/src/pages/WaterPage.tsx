@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStationStore } from '../store/stationStore';
 import { useTelemetryStore } from '../store/telemetryStore';
 import { resourcesApi } from '../api/client';
 import * as echarts from 'echarts';
+import { SparklineChart } from '../components/charts/SparklineChart';
 import {
   Droplet, Thermometer, Zap, AlertTriangle, ShieldCheck,
   Clock, ArrowRight, RefreshCw, Layers, Activity, Users,
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const lgrapherp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp = (v: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, v));
 
 // ── Animated Ring Gauge ───────────────────────────────────────────────────────
@@ -31,15 +32,15 @@ const RingGauge: React.FC<{
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter: 'none' }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} style={{ filter: 'none' }}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={c} strokeWidth={6}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} style={{ filter: 'none' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={c} strokeWidth={6}
           strokeLinecap="round" strokeDasharray={`${dash} ${circ}`}
-          transform={`rotate(-90 ${size/2} ${size/2})`}
-          style={{ transition: 'stroke-dasharray 1s ease', filter: 'none' }}/>
-        <text x={size/2} y={size/2 - 4} textAnchor="middle" fill="white" fontSize={size >= 70 ? 13 : 11} fontWeight="900" fontFamily="monospace">
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ transition: 'stroke-dasharray 1s ease', filter: 'none' }} />
+        <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fill="white" fontSize={size >= 70 ? 13 : 11} fontWeight="900" fontFamily="monospace">
           {value}
         </text>
-        <text x={size/2} y={size/2 + 10} textAnchor="middle" fill={c} fontSize={size >= 70 ? 9 : 8} fontFamily="monospace" fontWeight="bold">
+        <text x={size / 2} y={size / 2 + 10} textAnchor="middle" fill={c} fontSize={size >= 70 ? 9 : 8} fontFamily="monospace" fontWeight="bold">
           {unit}
         </text>
       </svg>
@@ -67,18 +68,18 @@ const BarMetric: React.FC<{
       </div>
       <div className="relative h-2.5 bg-slate-950/80 rounded-md overflow-hidden border border-white/10">
         <div className="absolute inset-0 flex justify-between px-1 pointer-events-none z-10 opacity-30">
-          <span className="w-px h-full bg-white" style={{ left: '25%' }}/>
-          <span className="w-px h-full bg-white" style={{ left: '50%' }}/>
-          <span className="w-px h-full bg-white" style={{ left: '75%' }}/>
+          <span className="w-px h-full bg-white" style={{ left: '25%' }} />
+          <span className="w-px h-full bg-white" style={{ left: '50%' }} />
+          <span className="w-px h-full bg-white" style={{ left: '75%' }} />
         </div>
         <div className="h-full rounded-md transition-all duration-1000 relative flex items-center justify-end"
           style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}33, ${color})`, boxShadow: `0 0 8px ${color}66` }}>
-          <div className="w-1.5 h-full bg-white rounded-r shadow-[0_0_6px_#fff]"/>
+          <div className="w-1.5 h-full bg-white rounded-r shadow-[0_0_6px_#fff]" />
         </div>
       </div>
       {sublabel && (
         <div className="flex items-center gap-1.5 text-[9px] font-mono text-cyan-300/80">
-          <span className="w-1 h-1 rounded-full bg-cyan-400"/>
+          <span className="w-1 h-1 rounded-full bg-cyan-400" />
           {sublabel}
         </div>
       )}
@@ -216,7 +217,7 @@ const AnalyticsBarChart: React.FC<{
     <div className="p-4 rounded-2xl border border-polar-border bg-polar-dark/60 shadow-xl flex flex-col justify-between h-full">
       {/* Header */}
       <div className="flex items-center gap-2 pb-2.5 border-b border-white/5">
-        {icon || <BarChart3 className="w-4 h-4 text-sky-400"/>}
+        {icon || <BarChart3 className="w-4 h-4 text-sky-400" />}
         <span className="text-[11px] font-mono uppercase tracking-wider text-slate-200 font-bold">{title}</span>
       </div>
 
@@ -349,27 +350,27 @@ const WaterTankSVG: React.FC<{ pct: number; liters: number; maxL: number; qualit
       <svg width={w + 60} height={h + 80} viewBox={`0 0 ${w + 60} ${h + 80}`}>
         <defs>
           <linearGradient id="wFill" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={`${fillColor}cc`}/>
-            <stop offset="100%" stopColor={`${fillColor}44`}/>
+            <stop offset="0%" stopColor={`${fillColor}cc`} />
+            <stop offset="100%" stopColor={`${fillColor}44`} />
           </linearGradient>
           <linearGradient id="wBody" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(8,15,30,0.95)"/>
-            <stop offset="50%" stopColor="rgba(15,25,50,0.9)"/>
-            <stop offset="100%" stopColor="rgba(8,15,30,0.95)"/>
+            <stop offset="0%" stopColor="rgba(8,15,30,0.95)" />
+            <stop offset="50%" stopColor="rgba(15,25,50,0.9)" />
+            <stop offset="100%" stopColor="rgba(8,15,30,0.95)" />
           </linearGradient>
-          <clipPath id="wClip"><rect x={30} y={20} width={w} height={h} rx={rx}/></clipPath>
+          <clipPath id="wClip"><rect x={30} y={20} width={w} height={h} rx={rx} /></clipPath>
         </defs>
-        <rect x={30} y={20} width={w} height={h} rx={rx} fill="url(#wBody)" stroke="rgba(255,255,255,0.1)" strokeWidth={1.5}/>
+        <rect x={30} y={20} width={w} height={h} rx={rx} fill="url(#wBody)" stroke="rgba(255,255,255,0.1)" strokeWidth={1.5} />
         <g clipPath="url(#wClip)">
-          <rect x={30} y={20 + h * (1 - c / 100)} width={w} height={h * (c / 100)} fill="url(#wFill)"/>
+          <rect x={30} y={20 + h * (1 - c / 100)} width={w} height={h * (c / 100)} fill="url(#wFill)" />
           {c > 5 && <ellipse cx={30 + w / 2} cy={20 + h * (1 - c / 100)} rx={w * 0.5} ry={5} fill={`${fillColor}88`}>
-            <animate attributeName="ry" values="4;7;4" dur="2.5s" repeatCount="indefinite"/>
+            <animate attributeName="ry" values="4;7;4" dur="2.5s" repeatCount="indefinite" />
           </ellipse>}
           {c > 20 && [0.25, 0.55, 0.75].map((bx, i) => (
             <circle key={i} cx={30 + w * bx} cy={20 + h * (1 - c / 100) + 10} r={2} fill={`${fillColor}66`}>
               <animate attributeName="cy"
                 values={`${20 + h * (1 - c / 100) + 10};${20 + h * 0.8 + 10};${20 + h * (1 - c / 100) + 10}`}
-                dur={`${2 + i * 0.7}s`} repeatCount="indefinite"/>
+                dur={`${2 + i * 0.7}s`} repeatCount="indefinite" />
             </circle>
           ))}
         </g>
@@ -377,7 +378,7 @@ const WaterTankSVG: React.FC<{ pct: number; liters: number; maxL: number; qualit
           const y = 20 + h * (1 - t / 100);
           return (
             <g key={t}>
-              <line x1={28} y1={y} x2={34} y2={y} stroke="rgba(255,255,255,0.4)" strokeWidth={1}/>
+              <line x1={28} y1={y} x2={34} y2={y} stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
               <text x={22} y={y + 4} textAnchor="end" fill="rgba(226,232,240,0.8)" fontSize={9} fontFamily="monospace">{t}</text>
             </g>
           );
@@ -388,7 +389,7 @@ const WaterTankSVG: React.FC<{ pct: number; liters: number; maxL: number; qualit
         <text x={30 + w + 8} y={20 + h / 2 - 8} fill={riskColor} fontSize={10} fontFamily="monospace">{pipeTemp}°C</text>
         <text x={30 + w + 8} y={20 + h / 2 + 6} fill={riskColor} fontSize={8} fontFamily="monospace">PIPE</text>
         <rect x={30 + w / 2 - 36} y={h + 26} width={72} height={22} rx={11}
-          fill={quality > 95 ? '#10b98133' : '#f59e0b33'} stroke={quality > 95 ? '#10b981' : '#f59e0b'} strokeWidth={1}/>
+          fill={quality > 95 ? '#10b98133' : '#f59e0b33'} stroke={quality > 95 ? '#10b981' : '#f59e0b'} strokeWidth={1} />
         <text x={30 + w / 2} y={h + 41} textAnchor="middle"
           fill={quality > 95 ? '#10b981' : '#f59e0b'} fontSize={10} fontFamily="monospace" fontWeight="700">
           WQI {quality}%
@@ -450,30 +451,10 @@ const ConsumptionDonut: React.FC<{ breakdown: any; total: number }> = ({ breakdo
       }],
     }, { notMerge: true, lazyUpdate: true });
   }, [breakdown, total]);
-  return <div ref={ref} className="w-full h-44"/>;
+  return <div ref={ref} className="w-full h-44" />;
 };
 
-// ── Sparkline Timeline Chart ──────────────────────────────────────────────────
-const SparklineChart: React.FC<{ data: number[]; color: string; height?: number }> = ({ data, color, height = 50 }) => {
-  const max = Math.max(...data, 1);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const w = 200, h = height;
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * (h - 4) - 2}`).join(' ');
-  return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" height={h}>
-      <defs>
-        <linearGradient id={`sg${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.3"/>
-          <stop offset="100%" stopColor={color} stopOpacity="0"/>
-        </linearGradient>
-      </defs>
-      <polygon points={`0,${h} ${pts} ${w},${h}`} fill={`url(#sg${color.replace('#','')})`}/>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-        style={{ filter: `drop-shadow(0 0 3px ${color}88)` }}/>
-    </svg>
-  );
-};
+
 
 // ── Status Badge ─────────────────────────────────────────────────────────────
 const StatusBadge: React.FC<{ label: string; ok: boolean; warn?: boolean }> = ({ label, ok, warn }) => (
@@ -483,7 +464,7 @@ const StatusBadge: React.FC<{ label: string; ok: boolean; warn?: boolean }> = ({
       borderColor: ok ? '#10b98144' : warn ? '#f59e0b44' : '#ef444444',
       color: ok ? '#10b981' : warn ? '#f59e0b' : '#ef4444',
     }}>
-    <span className="w-1.5 h-1.5 rounded-full" style={{ background: ok ? '#10b981' : warn ? '#f59e0b' : '#ef4444' }}/>
+    <span className="w-1.5 h-1.5 rounded-full" style={{ background: ok ? '#10b981' : warn ? '#f59e0b' : '#ef4444' }} />
     {label}
   </span>
 );
@@ -497,23 +478,23 @@ const SectionHeader: React.FC<{
 }> = ({
   icon, title, color, rightContent
 }) => (
-  <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-    <div className="flex items-center gap-4">
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-        style={{ background: `${color}18`, color, border: `1px solid ${color}33` }}>
-        {icon}
-      </div>
-      <div>
-        <h2 className="text-lg font-black text-white">{title}</h2>
-      </div>
-    </div>
-    {rightContent && (
+    <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
       <div className="flex items-center gap-4">
-        {rightContent}
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: `${color}18`, color, border: `1px solid ${color}33` }}>
+          {icon}
+        </div>
+        <div>
+          <h2 className="text-lg font-black text-white">{title}</h2>
+        </div>
       </div>
-    )}
-  </div>
-);
+      {rightContent && (
+        <div className="flex items-center gap-4">
+          {rightContent}
+        </div>
+      )}
+    </div>
+  );
 
 // ── Thermal Depth Profile (ECharts visual wonder) ────────────────────────────
 const ThermalDepthProfile: React.FC<{
@@ -813,10 +794,10 @@ const UVReactorApparatus: React.FC<{ isMaitri: boolean; color: string }> = ({ is
       {[38, 68, 98].map((y, idx) => (
         <g key={idx}>
           <rect x="16" y={y} width="98" height="20" rx="4" fill="#1e293b" stroke="#818cf8" strokeWidth="1.5" />
-          <rect x="12" y={y-2} width="5" height="24" rx="2" fill="#475569" />
-          <rect x="113" y={y-2} width="5" height="24" rx="2" fill="#475569" />
-          <line x1="42" y1={y} x2="42" y2={y+20} stroke="#38bdf8" strokeWidth="1.5" opacity="0.6" />
-          <line x1="88" y1={y} x2="88" y2={y+20} stroke="#38bdf8" strokeWidth="1.5" opacity="0.6" />
+          <rect x="12" y={y - 2} width="5" height="24" rx="2" fill="#475569" />
+          <rect x="113" y={y - 2} width="5" height="24" rx="2" fill="#475569" />
+          <line x1="42" y1={y} x2="42" y2={y + 20} stroke="#38bdf8" strokeWidth="1.5" opacity="0.6" />
+          <line x1="88" y1={y} x2="88" y2={y + 20} stroke="#38bdf8" strokeWidth="1.5" opacity="0.6" />
         </g>
       ))}
       <rect x="0" y="100" width="16" height="8" fill="#475569" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
@@ -931,139 +912,139 @@ const TreatmentProcessFlow: React.FC<{
 }> = ({ isMaitri, fillPct, storageLiters, daysBuffer, productionRateHr }) => {
   const units = isMaitri
     ? [
-        {
-          tag: 'TK-101',
-          step: '01',
-          name: 'Lake Intake Well',
-          type: 'Glacial Source Pump',
-          metric: `${productionRateHr} L/hr`,
-          detail: 'Temp 1.5°C · Lake Priyadarshini',
-          status: 'ONLINE',
-          ok: true,
-          color: '#38bdf8',
-          pipeFlow: '28 L/min',
-          apparatus: <IntakeApparatus isMaitri={true} color="#38bdf8" />,
-        },
-        {
-          tag: 'FL-201',
-          step: '02',
-          name: 'Sand Filter Vessel',
-          type: 'Multi-Media Pressure Bed',
-          metric: '0.4 NTU',
-          detail: 'ΔP 0.18 bar · Bed Nominal',
-          status: 'FILTERING',
-          ok: true,
-          color: '#06b6d4',
-          pipeFlow: 'Pre-Filtered',
-          apparatus: <FilterVesselApparatus isMaitri={true} color="#06b6d4" />,
-        },
-        {
-          tag: 'RX-301',
-          step: '03',
-          name: 'UV Disinfection Chamber',
-          type: '254nm Quartz Reactor',
-          metric: '40 mJ/cm²',
-          detail: '98% Intensity · Dual Lamps',
-          status: 'ACTIVE',
-          ok: true,
-          color: '#818cf8',
-          pipeFlow: 'Treated',
-          apparatus: <UVReactorApparatus isMaitri={true} color="#818cf8" />,
-        },
-        {
-          tag: 'QC-401',
-          step: '04',
-          name: 'QA Sensor Flow Cell',
-          type: 'In-Line Potability Analyzer',
-          metric: 'TDS 18 ppm',
-          detail: 'pH 7.2 · Residual 0.2 mg/L',
-          status: 'PASS',
-          ok: true,
-          color: '#10b981',
-          pipeFlow: 'Verified',
-          apparatus: <QASensorApparatus color="#10b981" />,
-        },
-        {
-          tag: 'TK-501',
-          step: '05',
-          name: 'Potable Buffer Tank',
-          type: 'Insulated Storage Bank',
-          metric: `${(storageLiters / 1000).toFixed(1)}k L`,
-          detail: `${fillPct.toFixed(0)}% Cap · ${daysBuffer}d Autonomy`,
-          status: 'BUFFERING',
-          ok: true,
-          color: '#a855f7',
-          pipeFlow: '',
-          apparatus: <BufferTankApparatus fillPct={fillPct} storageLiters={storageLiters} color="#a855f7" />,
-        },
-      ]
+      {
+        tag: 'TK-101',
+        step: '01',
+        name: 'Lake Intake Well',
+        type: 'Glacial Source Pump',
+        metric: `${productionRateHr} L/hr`,
+        detail: 'Temp 1.5°C · Lake Priyadarshini',
+        status: 'ONLINE',
+        ok: true,
+        color: '#38bdf8',
+        pipeFlow: '28 L/min',
+        apparatus: <IntakeApparatus isMaitri={true} color="#38bdf8" />,
+      },
+      {
+        tag: 'FL-201',
+        step: '02',
+        name: 'Sand Filter Vessel',
+        type: 'Multi-Media Pressure Bed',
+        metric: '0.4 NTU',
+        detail: 'ΔP 0.18 bar · Bed Nominal',
+        status: 'FILTERING',
+        ok: true,
+        color: '#06b6d4',
+        pipeFlow: 'Pre-Filtered',
+        apparatus: <FilterVesselApparatus isMaitri={true} color="#06b6d4" />,
+      },
+      {
+        tag: 'RX-301',
+        step: '03',
+        name: 'UV Disinfection Chamber',
+        type: '254nm Quartz Reactor',
+        metric: '40 mJ/cm²',
+        detail: '98% Intensity · Dual Lamps',
+        status: 'ACTIVE',
+        ok: true,
+        color: '#818cf8',
+        pipeFlow: 'Treated',
+        apparatus: <UVReactorApparatus isMaitri={true} color="#818cf8" />,
+      },
+      {
+        tag: 'QC-401',
+        step: '04',
+        name: 'QA Sensor Flow Cell',
+        type: 'In-Line Potability Analyzer',
+        metric: 'TDS 18 ppm',
+        detail: 'pH 7.2 · Residual 0.2 mg/L',
+        status: 'PASS',
+        ok: true,
+        color: '#10b981',
+        pipeFlow: 'Verified',
+        apparatus: <QASensorApparatus color="#10b981" />,
+      },
+      {
+        tag: 'TK-501',
+        step: '05',
+        name: 'Potable Buffer Tank',
+        type: 'Insulated Storage Bank',
+        metric: `${(storageLiters / 1000).toFixed(1)}k L`,
+        detail: `${fillPct.toFixed(0)}% Cap · ${daysBuffer}d Autonomy`,
+        status: 'BUFFERING',
+        ok: true,
+        color: '#a855f7',
+        pipeFlow: '',
+        apparatus: <BufferTankApparatus fillPct={fillPct} storageLiters={storageLiters} color="#a855f7" />,
+      },
+    ]
     : [
-        {
-          tag: 'TK-101',
-          step: '01',
-          name: 'Marine Intake Sump',
-          type: 'Quilty Bay Deep Inlet',
-          metric: '45 L/min',
-          detail: '6m Depth · Salinity 34.2',
-          status: 'ONLINE',
-          ok: true,
-          color: '#38bdf8',
-          pipeFlow: '45 L/min',
-          apparatus: <IntakeApparatus isMaitri={false} color="#38bdf8" />,
-        },
-        {
-          tag: 'FL-201',
-          step: '02',
-          name: 'Pre-Filter Skid',
-          type: '5μm Cartridge + Antiscalant',
-          metric: '3.0 mg/L',
-          detail: 'SDI < 3 · Coagulant Active',
-          status: 'NOMINAL',
-          ok: true,
-          color: '#06b6d4',
-          pipeFlow: 'Pressurized',
-          apparatus: <FilterVesselApparatus isMaitri={false} color="#06b6d4" />,
-        },
-        {
-          tag: 'RX-301',
-          step: '03',
-          name: 'RO Membrane Rack',
-          type: 'High-Pressure Desalination',
-          metric: '62 bar',
-          detail: '99.4% Rejection · 250 L/hr',
-          status: 'OPTIMAL',
-          ok: true,
-          color: '#818cf8',
-          pipeFlow: 'Permeate',
-          apparatus: <UVReactorApparatus isMaitri={false} color="#818cf8" />,
-        },
-        {
-          tag: 'QC-401',
-          step: '04',
-          name: 'Conditioning Cell',
-          type: 'CaCO₃ / CO₂ Correction',
-          metric: 'pH 7.5',
-          detail: 'Hardness 45mg/L · UV Polish',
-          status: 'ACTIVE',
-          ok: true,
-          color: '#10b981',
-          pipeFlow: 'Conditioned',
-          apparatus: <QASensorApparatus color="#10b981" />,
-        },
-        {
-          tag: 'TK-501',
-          step: '05',
-          name: 'Potable Buffer Tank',
-          type: 'SS316L Insulated Buffer',
-          metric: `${(storageLiters / 1000).toFixed(1)}k L`,
-          detail: `${fillPct.toFixed(0)}% Cap · ${daysBuffer}d Autonomy`,
-          status: 'BUFFERING',
-          ok: true,
-          color: '#a855f7',
-          pipeFlow: '',
-          apparatus: <BufferTankApparatus fillPct={fillPct} storageLiters={storageLiters} color="#a855f7" />,
-        },
-      ];
+      {
+        tag: 'TK-101',
+        step: '01',
+        name: 'Marine Intake Sump',
+        type: 'Quilty Bay Deep Inlet',
+        metric: '45 L/min',
+        detail: '6m Depth · Salinity 34.2',
+        status: 'ONLINE',
+        ok: true,
+        color: '#38bdf8',
+        pipeFlow: '45 L/min',
+        apparatus: <IntakeApparatus isMaitri={false} color="#38bdf8" />,
+      },
+      {
+        tag: 'FL-201',
+        step: '02',
+        name: 'Pre-Filter Skid',
+        type: '5μm Cartridge + Antiscalant',
+        metric: '3.0 mg/L',
+        detail: 'SDI < 3 · Coagulant Active',
+        status: 'NOMINAL',
+        ok: true,
+        color: '#06b6d4',
+        pipeFlow: 'Pressurized',
+        apparatus: <FilterVesselApparatus isMaitri={false} color="#06b6d4" />,
+      },
+      {
+        tag: 'RX-301',
+        step: '03',
+        name: 'RO Membrane Rack',
+        type: 'High-Pressure Desalination',
+        metric: '62 bar',
+        detail: '99.4% Rejection · 250 L/hr',
+        status: 'OPTIMAL',
+        ok: true,
+        color: '#818cf8',
+        pipeFlow: 'Permeate',
+        apparatus: <UVReactorApparatus isMaitri={false} color="#818cf8" />,
+      },
+      {
+        tag: 'QC-401',
+        step: '04',
+        name: 'Conditioning Cell',
+        type: 'CaCO₃ / CO₂ Correction',
+        metric: 'pH 7.5',
+        detail: 'Hardness 45mg/L · UV Polish',
+        status: 'ACTIVE',
+        ok: true,
+        color: '#10b981',
+        pipeFlow: 'Conditioned',
+        apparatus: <QASensorApparatus color="#10b981" />,
+      },
+      {
+        tag: 'TK-501',
+        step: '05',
+        name: 'Potable Buffer Tank',
+        type: 'SS316L Insulated Buffer',
+        metric: `${(storageLiters / 1000).toFixed(1)}k L`,
+        detail: `${fillPct.toFixed(0)}% Cap · ${daysBuffer}d Autonomy`,
+        status: 'BUFFERING',
+        ok: true,
+        color: '#a855f7',
+        pipeFlow: '',
+        apparatus: <BufferTankApparatus fillPct={fillPct} storageLiters={storageLiters} color="#a855f7" />,
+      },
+    ];
 
   const kpis = [
     { label: 'Throughput', value: `${productionRateHr} L/hr`, color: '#38bdf8' },
@@ -1093,8 +1074,8 @@ const TreatmentProcessFlow: React.FC<{
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="relative flex w-1.5 h-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"/>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"/>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
               </span>
               <span className="text-[9px] font-mono text-emerald-400 tracking-widest font-semibold">CLOSED-CIRCUIT ACTIVE</span>
             </div>
@@ -1124,7 +1105,7 @@ const TreatmentProcessFlow: React.FC<{
             <React.Fragment key={u.tag}>
               {/* ── Apparatus Unit Column (Physical Representation) ── */}
               <div className="flex-1 flex flex-col items-center group relative cursor-default" style={{ minWidth: '150px' }}>
-                
+
                 {/* Equipment Tag Header */}
                 <div className="flex items-center justify-between w-full px-2 mb-2">
                   <span className="px-2 py-0.5 rounded text-[8px] font-mono font-bold tracking-wider bg-white/5 border border-white/10 text-slate-300">
@@ -1149,7 +1130,7 @@ const TreatmentProcessFlow: React.FC<{
                 <div className="mt-3 text-center w-full px-1">
                   <div className="text-[12px] font-bold text-white font-mono leading-tight">{u.name}</div>
                   <div className="text-[8px] font-mono text-slate-400 mt-0.5">{u.type}</div>
-                  
+
                   {/* Primary Metric */}
                   <div className="text-[17px] font-black font-mono mt-1.5" style={{ color: u.color }}>
                     {u.metric}
@@ -1167,11 +1148,11 @@ const TreatmentProcessFlow: React.FC<{
                   <div className="relative w-full h-3 rounded-full overflow-hidden bg-slate-900 border border-white/15">
                     {/* Fluid stream */}
                     <div className="absolute inset-0 rounded-full"
-                      style={{ background: `linear-gradient(90deg, ${u.color}35, ${units[i+1].color}35)` }} />
+                      style={{ background: `linear-gradient(90deg, ${u.color}35, ${units[i + 1].color}35)` }} />
                     {/* Animated fluid pulse */}
                     <div className="absolute inset-y-0.5 w-5 rounded-full"
                       style={{
-                        background: `linear-gradient(90deg, transparent, ${u.color}, ${units[i+1].color}, transparent)`,
+                        background: `linear-gradient(90deg, transparent, ${u.color}, ${units[i + 1].color}, transparent)`,
                         animation: `flow ${1.5 + i * 0.2}s linear infinite`,
                       }} />
                   </div>
@@ -1201,6 +1182,7 @@ export const WaterPage: React.FC = () => {
 
   const [waterDetails, setWaterDetails] = useState<any>(null);
   const [activeLayer, setActiveLayer] = useState<'source' | 'production' | 'distribution'>('source');
+  const [storageHover, setStorageHover] = useState<{ val: number; time: string } | null>(null);
 
   const station = stations.find((s) => s.station_id === stationId) || {
     station_id: stationId,
@@ -1213,7 +1195,7 @@ export const WaterPage: React.FC = () => {
       try {
         const res = await resourcesApi.getWater(stationId);
         if (mounted && res?.water) setWaterDetails(res.water);
-      } catch {}
+      } catch { }
     };
     load();
     const iv = setInterval(load, 5000);
@@ -1249,17 +1231,22 @@ export const WaterPage: React.FC = () => {
   const netColor = netDaily >= 0 ? '#10b981' : '#ef4444';
   const fillColor = fillPct < 20 ? '#ef4444' : fillPct < 40 ? '#f59e0b' : '#38bdf8';
 
-  // ── Simulated time-series sparklines ──
-  const makeSparkline = (base: number, noise: number, len = 12) =>
-    Array.from({ length: len }, (_, i) => base + (Math.sin(i * 0.8) * noise) + (Math.random() * noise * 0.3));
+  // ── Stable 12h time-series trend (no random re-render jitter) ──
+  const storageTimestamps = useMemo(() => [
+    '12h ago', '11h ago', '10h ago', '9h ago', '8h ago', '7h ago',
+    '6h ago', '5h ago', '4h ago', '3h ago', '2h ago', 'Now'
+  ], []);
 
-  const storageTrend = makeSparkline(fillPct, 8);
-  const flowTrend = makeSparkline(productionRateHr, 15);
+  const storageTrend = useMemo(() => {
+    const current = Math.round(fillPct * 10) / 10;
+    const offsets = [-3.8, -2.5, -1.2, 0.4, 1.2, 0.8, -0.6, -1.8, -1.2, 0.2, 0.8, 0];
+    return offsets.map(off => Math.max(10, Math.min(100, Math.round((current + off) * 10) / 10)));
+  }, [Math.round(fillPct)]);
 
   const layers = [
-    { id: 'source' as const, label: 'Source Monitoring', icon: <Mountain className="w-4 h-4"/>, color: '#38bdf8' },
-    { id: 'production' as const, label: 'Production & Treatment', icon: <FlaskConical className="w-4 h-4"/>, color: '#818cf8' },
-    { id: 'distribution' as const, label: 'Distribution & Storage', icon: <Droplet className="w-4 h-4"/>, color: '#06b6d4' },
+    { id: 'source' as const, label: 'Source Monitoring', icon: <Mountain className="w-4 h-4" />, color: '#38bdf8' },
+    { id: 'production' as const, label: 'Production & Treatment', icon: <FlaskConical className="w-4 h-4" />, color: '#818cf8' },
+    { id: 'distribution' as const, label: 'Distribution & Storage', icon: <Droplet className="w-4 h-4" />, color: '#06b6d4' },
   ];
 
   return (
@@ -1268,17 +1255,17 @@ export const WaterPage: React.FC = () => {
       {/* ── Header ── */}
       <div className="glass-panel p-5 rounded-2xl border border-polar-border relative overflow-hidden shadow-2xl">
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 15% 50%, #38bdf808 0%, transparent 60%), radial-gradient(ellipse at 85% 50%, #818cf808 0%, transparent 60%)' }}/>
+          style={{ background: 'radial-gradient(ellipse at 15% 50%, #38bdf808 0%, transparent 60%), radial-gradient(ellipse at 85% 50%, #818cf808 0%, transparent 60%)' }} />
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3">
-              <Droplet className="w-8 h-8 text-sky-400"/> Water Domain Digital Twin
+              <Droplet className="w-8 h-8 text-sky-400" /> Water Domain Digital Twin
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-center">
             <button onClick={() => navigate(`/station/${stationId}/decision?domain=water`)}
               className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-gradient-to-r from-purple-500/20 to-indigo-500/20 hover:from-purple-500/30 hover:to-indigo-500/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 flex items-center gap-2 transition-all cursor-pointer">
-              <Brain className="w-4 h-4"/> Decision Intel
+              <Brain className="w-4 h-4" /> Decision Intel
             </button>
           </div>
         </div>
@@ -1286,12 +1273,12 @@ export const WaterPage: React.FC = () => {
         {/* KPI Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mt-5 pt-4 border-t border-polar-border/50">
           {[
-            { label: 'Storage Level', val: `${fillPct.toFixed(1)}%`, sub: `${(storageLiters/1000).toFixed(1)}k / ${(maxStorage/1000).toFixed(0)}k L`, color: fillColor, icon: <Droplet className="w-4 h-4"/> },
-            { label: 'Net Balance', val: `${netDaily >= 0 ? '+' : ''}${netDaily.toFixed(0)} L/d`, sub: `Prod: ${(productionRateHr*24).toFixed(0)} / Cons: ${dailyConsumption}`, color: netColor, icon: <Activity className="w-4 h-4"/> },
-            { label: 'Autonomy Buffer', val: `${daysBuffer} Days`, sub: 'At current consumption', color: daysBuffer > 10 ? '#10b981' : daysBuffer > 5 ? '#f59e0b' : '#ef4444', icon: <Clock className="w-4 h-4"/> },
-            { label: 'Freeze Risk', val: freezeRisk, sub: `Pipe: ${pipeTemp}°C · Trace: ${traceActive ? 'ON' : 'OFF'}`, color: freezeColor, icon: <ThermometerSnowflake className="w-4 h-4"/> },
-            { label: 'Water Quality', val: `${waterQuality}%`, sub: `TDS: ${isMaitri ? '18' : '42'} ppm · pH ${isMaitri ? '7.2' : '7.5'}`, color: waterQuality > 95 ? '#10b981' : '#f59e0b', icon: <ShieldCheck className="w-4 h-4"/> },
-            { label: 'Production Rate', val: `${productionRateHr} L/hr`, sub: `${(productionRateHr * 24).toFixed(0)} L/day capacity`, color: '#818cf8', icon: <Gauge className="w-4 h-4"/> },
+            { label: 'Storage Level', val: `${fillPct.toFixed(1)}%`, sub: `${(storageLiters / 1000).toFixed(1)}k / ${(maxStorage / 1000).toFixed(0)}k L`, color: fillColor, icon: <Droplet className="w-4 h-4" /> },
+            { label: 'Net Balance', val: `${netDaily >= 0 ? '+' : ''}${netDaily.toFixed(0)} L/d`, sub: `Prod: ${(productionRateHr * 24).toFixed(0)} / Cons: ${dailyConsumption}`, color: netColor, icon: <Activity className="w-4 h-4" /> },
+            { label: 'Autonomy Buffer', val: `${daysBuffer} Days`, sub: 'At current consumption', color: daysBuffer > 10 ? '#10b981' : daysBuffer > 5 ? '#f59e0b' : '#ef4444', icon: <Clock className="w-4 h-4" /> },
+            { label: 'Freeze Risk', val: freezeRisk, sub: `Pipe: ${pipeTemp}°C · Trace: ${traceActive ? 'ON' : 'OFF'}`, color: freezeColor, icon: <ThermometerSnowflake className="w-4 h-4" /> },
+            { label: 'Water Quality', val: `${waterQuality}%`, sub: `TDS: ${isMaitri ? '18' : '42'} ppm · pH ${isMaitri ? '7.2' : '7.5'}`, color: waterQuality > 95 ? '#10b981' : '#f59e0b', icon: <ShieldCheck className="w-4 h-4" /> },
+            { label: 'Production Rate', val: `${productionRateHr} L/hr`, sub: `${(productionRateHr * 24).toFixed(0)} L/day capacity`, color: '#818cf8', icon: <Gauge className="w-4 h-4" /> },
           ].map((kpi) => (
             <div key={kpi.label} className="p-3 rounded-xl bg-polar-dark/60 border border-polar-border hover:border-white/20 transition-all">
               <div className="flex items-center justify-between text-[10px] font-mono text-slate-200 font-semibold mb-1">
@@ -1325,7 +1312,7 @@ export const WaterPage: React.FC = () => {
         <div className="space-y-5">
           <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
             <SectionHeader
-              icon={<Mountain className="w-6 h-6"/>}
+              icon={<Mountain className="w-6 h-6" />}
               title={isMaitri ? 'Glacial Lake Dynamics — Lake Priyadarshini' : 'Marine Inlet Monitoring — Quilty Bay'}
               color="#38bdf8"
               rightContent={
@@ -1341,14 +1328,14 @@ export const WaterPage: React.FC = () => {
                       <div className="flex-1">
                         <div className="h-2 bg-white/10 rounded-full overflow-hidden w-24">
                           <div className="h-full rounded-full bg-gradient-to-r from-amber-500/50 to-amber-400"
-                            style={{ width: isMaitri ? '12%' : '31%' }}/>
+                            style={{ width: isMaitri ? '12%' : '31%' }} />
                         </div>
                         <div className="text-[8px] font-mono text-slate-300 mt-0.5">Index 0–1 (alert at 0.5)</div>
                       </div>
                     </div>
                   </div>
-                  <RingGauge value={isMaitri ? 3.2 : 6.0} max={10} unit="m" label={isMaitri ? 'Ice Thickness' : 'Inlet Depth'} color="#38bdf8" size={76}/>
-                  <RingGauge value={isMaitri ? 0.8 : 3.2} max={5} unit="NTU" label="Turbidity" color="#818cf8" size={76} warningAt={4}/>
+                  <RingGauge value={isMaitri ? 3.2 : 6.0} max={10} unit="m" label={isMaitri ? 'Ice Thickness' : 'Inlet Depth'} color="#38bdf8" size={76} />
+                  <RingGauge value={isMaitri ? 0.8 : 3.2} max={5} unit="NTU" label="Turbidity" color="#818cf8" size={76} warningAt={4} />
                 </div>
               }
             />
@@ -1366,8 +1353,8 @@ export const WaterPage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5">
                       <span className="relative flex w-2 h-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60"/>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"/>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500" />
                       </span>
                       <span className="text-[8px] font-mono text-sky-400 uppercase tracking-widest font-bold">LIVE SCAN</span>
                     </div>
@@ -1381,21 +1368,21 @@ export const WaterPage: React.FC = () => {
                     isMaitri={isMaitri}
                     layers={isMaitri
                       ? [
-                          { depth: '0m', temp: -12, color: '#f43f5e' },
-                          { depth: '0.5m', temp: -6, color: '#fb923c' },
-                          { depth: '1m', temp: -2, color: '#eab308' },
-                          { depth: '2m', temp: 1.5, color: '#10b981' },
-                          { depth: '3m', temp: 2.8, color: '#38bdf8' },
-                          { depth: '4m', temp: 3.2, color: '#a855f7' },
-                        ]
+                        { depth: '0m', temp: -12, color: '#f43f5e' },
+                        { depth: '0.5m', temp: -6, color: '#fb923c' },
+                        { depth: '1m', temp: -2, color: '#eab308' },
+                        { depth: '2m', temp: 1.5, color: '#10b981' },
+                        { depth: '3m', temp: 2.8, color: '#38bdf8' },
+                        { depth: '4m', temp: 3.2, color: '#a855f7' },
+                      ]
                       : [
-                          { depth: '0m', temp: -1.8, color: '#f43f5e' },
-                          { depth: '2m', temp: 0.5, color: '#fb923c' },
-                          { depth: '4m', temp: 2.1, color: '#eab308' },
-                          { depth: '6m', temp: 3.5, color: '#10b981' },
-                          { depth: '8m', temp: 4.2, color: '#38bdf8' },
-                          { depth: '10m', temp: 4.8, color: '#a855f7' },
-                        ]
+                        { depth: '0m', temp: -1.8, color: '#f43f5e' },
+                        { depth: '2m', temp: 0.5, color: '#fb923c' },
+                        { depth: '4m', temp: 2.1, color: '#eab308' },
+                        { depth: '6m', temp: 3.5, color: '#10b981' },
+                        { depth: '8m', temp: 4.2, color: '#38bdf8' },
+                        { depth: '10m', temp: 4.8, color: '#a855f7' },
+                      ]
                     }
                   />
                 </div>
@@ -1442,13 +1429,13 @@ export const WaterPage: React.FC = () => {
         <div className="space-y-5">
           <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
             <SectionHeader
-              icon={<FlaskConical className="w-6 h-6"/>}
+              icon={<FlaskConical className="w-6 h-6" />}
               title={isMaitri ? 'UV Filtration & Treatment — Maitri Plant' : 'High-Pressure RO Seawater Filter Plant — Bharati'}
               color="#818cf8"
               rightContent={
                 <div className="flex items-center gap-6">
-                  <RingGauge value={waterQuality} max={100} unit="WQI%" label="Water Quality" color="#10b981" size={76} warningAt={70} warnDirection="below"/>
-                  <RingGauge value={traceDrawKw} max={10} unit="kW" label="Trace Heat" color="#f97316" size={76}/>
+                  <RingGauge value={waterQuality} max={100} unit="WQI%" label="Water Quality" color="#10b981" size={76} warningAt={70} warnDirection="below" />
+                  <RingGauge value={traceDrawKw} max={10} unit="kW" label="Trace Heat" color="#f97316" size={76} />
                 </div>
               }
             />
@@ -1478,7 +1465,7 @@ export const WaterPage: React.FC = () => {
               {/* Chemical Dosing */}
               <div className="p-4 rounded-2xl border border-polar-border bg-polar-dark/60 shadow-xl flex flex-col justify-between h-full">
                 <div className="flex items-center gap-2 pb-2.5 border-b border-white/5">
-                  <Activity className="w-4 h-4 text-purple-400"/>
+                  <Activity className="w-4 h-4 text-purple-400" />
                   <span className="text-[11px] font-mono uppercase tracking-wider text-slate-200 font-bold">
                     {isMaitri ? 'Dosing & Disinfection' : 'Chemical Dosing System'}
                   </span>
@@ -1486,24 +1473,24 @@ export const WaterPage: React.FC = () => {
                 <div className="space-y-3 flex-1 flex flex-col justify-between pt-3">
                   {(isMaitri
                     ? [
-                        { label: 'UV Lamp Status', val: 'ACTIVE', ok: true, sub: '98% intensity' },
-                        { label: 'Chlorination', val: 'AUTO', ok: true, sub: '0.2 mg/L residual' },
-                        { label: 'Coagulant Dose', val: '2.5 mg/L', ok: true, sub: 'Aluminium Sulphate' },
-                        { label: 'pH Correction', val: 'NaOH 0.8 mg/L', ok: true, sub: 'pH 7.2 target' },
-                      ]
+                      { label: 'UV Lamp Status', val: 'ACTIVE', ok: true, sub: '98% intensity' },
+                      { label: 'Chlorination', val: 'AUTO', ok: true, sub: '0.2 mg/L residual' },
+                      { label: 'Coagulant Dose', val: '2.5 mg/L', ok: true, sub: 'Aluminium Sulphate' },
+                      { label: 'pH Correction', val: 'NaOH 0.8 mg/L', ok: true, sub: 'pH 7.2 target' },
+                    ]
                     : [
-                        { label: 'Antiscalant Dose', val: '3.0 mg/L', ok: true, sub: 'Membrane protection' },
-                        { label: 'CaCO₃ Re-min', val: '45 mg/L', ok: true, sub: 'Hardness correction' },
-                        { label: 'CO₂ Dosing', val: '12 mg/L', ok: true, sub: 'pH 7.5 adjustment' },
-                        { label: 'UV Polishing', val: 'ACTIVE', ok: true, sub: '40 mJ/cm² post-RO' },
-                      ]
+                      { label: 'Antiscalant Dose', val: '3.0 mg/L', ok: true, sub: 'Membrane protection' },
+                      { label: 'CaCO₃ Re-min', val: '45 mg/L', ok: true, sub: 'Hardness correction' },
+                      { label: 'CO₂ Dosing', val: '12 mg/L', ok: true, sub: 'pH 7.5 adjustment' },
+                      { label: 'UV Polishing', val: 'ACTIVE', ok: true, sub: '40 mJ/cm² post-RO' },
+                    ]
                   ).map(item => (
                     <div key={item.label} className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-all">
                       <div>
                         <div className="text-[11px] font-mono text-slate-200 font-medium">{item.label}</div>
                         <div className="text-[9px] font-mono text-slate-300 mt-0.5">{item.sub}</div>
                       </div>
-                      <StatusBadge label={item.val} ok={item.ok}/>
+                      <StatusBadge label={item.val} ok={item.ok} />
                     </div>
                   ))}
                 </div>
@@ -1536,18 +1523,18 @@ export const WaterPage: React.FC = () => {
         <div className="space-y-5">
           <div className="glass-panel p-6 rounded-2xl border border-polar-border shadow-xl">
             <SectionHeader
-              icon={<Droplet className="w-6 h-6"/>}
+              icon={<Droplet className="w-6 h-6" />}
               title="Distribution Network & Storage Inventory"
               color="#06b6d4"
               rightContent={
                 <div className="p-2.5 px-4 rounded-xl border flex items-center gap-4"
                   style={{ borderColor: `${freezeColor}44`, background: `${freezeColor}0D` }}>
                   <svg viewBox="0 0 72 72" width="60" height="60">
-                    <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="7"/>
+                    <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="7" />
                     <circle cx="36" cy="36" r="28" fill="none" stroke={freezeColor} strokeWidth="7"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 28 * Math.min(1, Math.max(0, (pipeTemp - 0) / 10))} ${2 * Math.PI * 28}`}
-                      transform="rotate(-90 36 36)"/>
+                      transform="rotate(-90 36 36)" />
                     <text x="36" y="41" textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="monospace">{pipeTemp}°</text>
                   </svg>
                   <div className="text-xs font-mono space-y-1">
@@ -1566,11 +1553,11 @@ export const WaterPage: React.FC = () => {
                   Main Potable Storage Tank
                 </div>
                 <WaterTankSVG pct={fillPct} liters={storageLiters} maxL={maxStorage}
-                  quality={waterQuality} pipeTemp={pipeTemp} freezeRisk={freezeRisk}/>
+                  quality={waterQuality} pipeTemp={pipeTemp} freezeRisk={freezeRisk} />
                 <div className="w-full space-y-1.5">
                   <div className="h-2.5 bg-polar-darker rounded-full overflow-hidden border border-polar-border/40">
                     <div className="h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${fillPct}%`, background: `linear-gradient(to right, ${fillColor}88, ${fillColor})` }}/>
+                      style={{ width: `${fillPct}%`, background: `linear-gradient(to right, ${fillColor}88, ${fillColor})` }} />
                   </div>
                   <div className="flex justify-between text-[9px] font-mono text-slate-300 font-medium">
                     <span>EMPTY</span><span className="text-red-400 font-bold">CRITICAL 20%</span><span className="text-amber-400 font-bold">BUFFER 40%</span><span>FULL</span>
@@ -1593,7 +1580,7 @@ export const WaterPage: React.FC = () => {
                 <div className="text-[10px] font-mono uppercase tracking-wider text-slate-200 font-bold">
                   Consumption Ledger Breakdown
                 </div>
-                <ConsumptionDonut breakdown={consumptionBreakdown} total={dailyConsumption}/>
+                <ConsumptionDonut breakdown={consumptionBreakdown} total={dailyConsumption} />
                 <div className="space-y-2 pt-2 border-t border-polar-border/40">
                   {[
                     { label: 'Galley / Kitchen', val: consumptionBreakdown.galley_kitchen_l_day, color: '#06b6d4' },
@@ -1601,7 +1588,7 @@ export const WaterPage: React.FC = () => {
                     { label: 'Science Labs', val: consumptionBreakdown.science_labs_l_day, color: '#818cf8' },
                     { label: 'Domestic / Habitat', val: consumptionBreakdown.domestic_habitat_l_day, color: '#10b981' },
                   ].map(r => (
-                    <BarMetric key={r.label} label={r.label} value={r.val} max={dailyConsumption} unit="L/d" color={r.color}/>
+                    <BarMetric key={r.label} label={r.label} value={r.val} max={dailyConsumption} unit="L/d" color={r.color} />
                   ))}
                   <div className="flex justify-between text-xs font-mono pt-1 border-t border-polar-border/30">
                     <span className="text-slate-200 font-medium">Total Daily</span>
@@ -1618,14 +1605,14 @@ export const WaterPage: React.FC = () => {
             {/* Wastewater Section */}
             <div className="mt-6 pt-5 border-t border-polar-border/40">
               <div className="text-[10px] font-mono uppercase tracking-wider text-slate-200 font-bold mb-4 flex items-center gap-2">
-                <Recycle className="w-4 h-4 text-emerald-400"/> Wastewater Treatment Loop — Closed-Circuit Recovery
+                <Recycle className="w-4 h-4 text-emerald-400" /> Wastewater Treatment Loop — Closed-Circuit Recovery
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: 'Wastewater Generated', val: `${isMaitri ? '1,080' : '1,485'} L/day`, color: '#38bdf8', icon: <Droplet className="w-4 h-4"/>, sub: '90% of daily intake' },
-                  { label: 'Greywater Recycled', val: `${isMaitri ? '360' : '500'} L/day`, color: '#10b981', icon: <Recycle className="w-4 h-4"/>, sub: `${isMaitri ? '33' : '34'}% recovery rate` },
-                  { label: 'Blackwater to STP', val: `${isMaitri ? '720' : '985'} L/day`, color: '#818cf8', icon: <Filter className="w-4 h-4"/>, sub: isMaitri ? 'Aerobic Digestion' : 'MBR Ultrafiltration' },
-                  { label: 'Effluent Compliance', val: 'Madrid Protocol', color: '#10b981', icon: <ShieldCheck className="w-4 h-4"/>, sub: 'Annex III compliant' },
+                  { label: 'Wastewater Generated', val: `${isMaitri ? '1,080' : '1,485'} L/day`, color: '#38bdf8', icon: <Droplet className="w-4 h-4" />, sub: '90% of daily intake' },
+                  { label: 'Greywater Recycled', val: `${isMaitri ? '360' : '500'} L/day`, color: '#10b981', icon: <Recycle className="w-4 h-4" />, sub: `${isMaitri ? '33' : '34'}% recovery rate` },
+                  { label: 'Blackwater to STP', val: `${isMaitri ? '720' : '985'} L/day`, color: '#818cf8', icon: <Filter className="w-4 h-4" />, sub: isMaitri ? 'Aerobic Digestion' : 'MBR Ultrafiltration' },
+                  { label: 'Effluent Compliance', val: 'Madrid Protocol', color: '#10b981', icon: <ShieldCheck className="w-4 h-4" />, sub: 'Annex III compliant' },
                 ].map(item => (
                   <div key={item.label} className="p-4 rounded-2xl border transition-all hover:scale-[1.02]"
                     style={{ borderColor: `${item.color}33`, background: `${item.color}08` }}>
@@ -1641,12 +1628,52 @@ export const WaterPage: React.FC = () => {
             </div>
 
             {/* Storage Trend */}
-            <div className="mt-4 p-4 rounded-2xl border border-polar-border bg-polar-dark/40">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] font-mono uppercase text-slate-200 font-bold">Storage Level Trend (12h)</span>
-                <span className="text-[10px] font-mono text-sky-300 font-bold">{fillPct.toFixed(1)}% current</span>
+            <div className="mt-4 p-4 rounded-2xl border border-polar-border bg-polar-dark/40 shadow-sm">
+              <div className="flex justify-between items-center mb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                  <span className="text-[10px] font-mono uppercase text-slate-200 font-bold tracking-wider">
+                    Storage Level Trend (12h)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 font-mono">
+                  {storageHover ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[10px] text-slate-400 font-medium">{storageHover.time}:</span>
+                      <span className="text-xs font-black text-white">{storageHover.val.toFixed(1)}%</span>
+                      <span className="text-[10px] text-sky-400 font-bold">
+                        ({Math.round((storageHover.val / 100) * maxStorage).toLocaleString()} L)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xs font-black text-sky-300">{fillPct.toFixed(1)}%</span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        ({Math.round(storageLiters).toLocaleString()} / {maxStorage.toLocaleString()} L)
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <SparklineChart data={storageTrend} color="#38bdf8" height={50}/>
+              <div className="w-full h-16 relative overflow-hidden">
+                <SparklineChart
+                  data={storageTrend}
+                  color="#38bdf8"
+                  height={64}
+                  showArea
+                  interactive
+                  unit="%"
+                  label="Water Storage Level"
+                  timestamps={storageTimestamps}
+                  onHover={(val, time) => {
+                    if (val !== null && time !== null) {
+                      setStorageHover({ val, time });
+                    } else {
+                      setStorageHover(null);
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>

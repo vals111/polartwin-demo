@@ -464,7 +464,7 @@ export const InfrastructurePage: React.FC = () => {
   const infraData = snapshot?.infrastructure;
   const ops = snapshot?.station_ops;
 
-  const [activeLayer, setActiveLayer] = useState<'overview' | 'structural' | 'quarters' | 'medical' | 'labs' | 'vehicles'>('overview');
+  const [activeLayer, setActiveLayer] = useState<'structural' | 'quarters' | 'medical' | 'labs' | 'vehicles'>('structural');
 
   const windSpeed = env?.wind_speed ?? (isMaitri ? 32 : 44);
   const ambientTemp = env?.temperature ?? (isMaitri ? -25.2 : -18.4);
@@ -832,7 +832,7 @@ export const InfrastructurePage: React.FC = () => {
 
   const vd = isMaitri ? {
     desc: 'Maitri Vehicles',
-    garage: { name: 'Main Technical Workshop & Garage', size: '600 m2', capacity: '6 heavy vehicles indoor', heating: 'Diesel-fired forced air, 18C interior' },
+    garage: { name: 'Main Technical Workshop & Garage', size: '600 m2', capacity: '6 heavy vehicles indoor', heating: 'Diesel-fired forced air, 18°C interior' },
     vehicles: [
       { id: 'pb1', name: 'PistenBully 300W Polar', type: 'Snow Groomer / Traverse Tractor', icon: '🚛', status: 'Nominal', health: 94, hours: 2840, detail: 'Primary 100 km Maitri-coast heavy traverse vehicle with 4-crew heated cab.', color: '#06b6d4' },
       { id: 'pb2', name: 'PistenBully 300W Polar #2', type: 'Snow Groomer / Backup Traverse', icon: '🚛', status: 'Watch', health: 78, hours: 4120, detail: 'Backup traverse tractor restricted to base ops pending engine oil cooler service.', color: '#f59e0b' },
@@ -843,7 +843,7 @@ export const InfrastructurePage: React.FC = () => {
     ],
   } : {
     desc: 'Bharati Vehicle Fleet — Coastal marine and helicopter operations. Garage at ground level under elevated structure.',
-    garage: { name: 'Integrated Vehicle & Cargo Apron Garage', size: '1,200 m2', capacity: '8 vehicles + helicopter apron', heating: 'CHP waste-heat floor heating, 15C interior' },
+    garage: { name: 'Integrated Vehicle & Cargo Apron Garage', size: '1,200 m2', capacity: '8 vehicles + helicopter apron', heating: 'CHP waste-heat floor heating, 15°C interior' },
     vehicles: [
       { id: 'heli', name: 'HAL Dhruv ALH / Ka-32 Helipad', type: 'Helicopter Landing & Servicing', icon: '🚁', status: 'Standby', health: 100, hours: 0, detail: 'Rooftop 20×20m helipad with crane and tie-down deck for November aviation assets.', color: '#38bdf8' },
       { id: 'zodiac', name: 'Zodiac Milpro FC470 RIB x3', type: 'Rigid Inflatable Boats (Marine)', icon: '🚤', status: 'Active', health: 97, hours: 245, detail: 'Triple RHIBs equipped with 60HP outboards and GPS for Prydz Bay marine science.', color: '#38bdf8' },
@@ -875,7 +875,6 @@ export const InfrastructurePage: React.FC = () => {
   };
 
   const layers = [
-    { id: 'overview' as const, label: 'Overview', icon: <Compass className="w-4 h-4" />, color: '#06b6d4' },
     { id: 'structural' as const, label: 'Structural', icon: <Building2 className="w-4 h-4" />, color: '#06b6d4' },
     { id: 'quarters' as const, label: 'Living Quarters', icon: <Bed className="w-4 h-4" />, color: '#818cf8' },
     { id: 'medical' as const, label: 'Medical Clinic', icon: <Heart className="w-4 h-4" />, color: '#ef4444' },
@@ -930,7 +929,7 @@ export const InfrastructurePage: React.FC = () => {
       </div>
 
       {/* LAYER NAV */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {layers.map(l => {
           const isActive = activeLayer === l.id;
           return (
@@ -972,70 +971,6 @@ export const InfrastructurePage: React.FC = () => {
           );
         })}
       </div>
-
-
-      {/* OVERVIEW */}
-      {activeLayer === 'overview' && (
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-polar-border shadow-xl space-y-4">
-              <div className="flex items-center justify-between pb-1 border-b border-white/5">
-                <div className="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold flex items-center gap-2">
-                  <Building2 className="w-4 h-4" /> Building Module Health Matrix
-                </div>
-                <div className="flex items-center gap-2 text-xs font-mono text-slate-200 font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>4 Modules Monitored</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {modules.map(m => (
-                  <IntegrityArc key={m.id} name={m.name} integrity={m.integrity} temp={m.temp}
-                    status={m.status} insulation={m.r} pressure={m.pressure} inspected={m.inspected} color={m.color} />
-                ))}
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="glass-panel p-5 rounded-2xl border border-polar-border shadow-xl space-y-3.5">
-                <div className="flex items-center justify-between gap-2 pb-2 border-b border-white/[0.08]">
-                  <div className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-2">
-                    <Wind className="w-4 h-4" /> Environment Stress (24h)
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-mono font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span>{windStress > 70 ? 'CRITICAL' : windStress > 40 ? 'ELEVATED' : 'NOMINAL'}</span>
-                  </div>
-                </div>
-
-                <WindStressChart windSpeed={windSpeed} windStress={windStress} isMaitri={isMaitri} height={190} />
-
-                {/* 2x2 Grid of High-Visibility Micro-KPIs */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  {[
-                    { l: 'Max Wind Today', v: `${isMaitri ? 58 : 72} km/h`, c: '#f59e0b', sub: 'Peak 24h gust' },
-                    { l: 'Critical Limit', v: '85/100', c: '#ef4444', sub: 'Structural ceiling' },
-                    { l: 'Foundation Vib', v: `${isMaitri ? '0.4' : '0.2'} mm/s`, c: '#10b981', sub: 'Bedrock damping' },
-                    { l: 'Snow Drift Status', v: snowDrift > 0.8 ? 'PLOW REQ' : 'CLEAR', c: snowDrift > 0.8 ? '#f59e0b' : '#10b981', sub: `${snowDrift.toFixed(2)}m perimeter` },
-                  ].map(r => (
-                    <div key={r.l} className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
-                      <div className="text-[10px] font-mono text-slate-300 font-bold uppercase truncate">{r.l}</div>
-                      <div className="text-base font-black font-mono my-0.5" style={{ color: r.c }}>{r.v}</div>
-                      <div className="text-[10px] font-mono text-slate-400 font-medium">{r.sub}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="glass-panel p-5 rounded-2xl border border-polar-border shadow-xl flex flex-col items-center gap-3">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-bold self-start flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Station Occupancy
-                </div>
-                <OccupancyDonut current={qd.current} capacity={qd.capacity} label="Personnel on station" />
-                <div className="text-xs font-mono text-center text-slate-200 font-bold">+{sd.totalExtra} summer expansion planned</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* STRUCTURAL */}
       {activeLayer === 'structural' && (
@@ -1533,8 +1468,9 @@ export const InfrastructurePage: React.FC = () => {
                   <div className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1">
                     Climate & Thermal System
                   </div>
-                  <div className="text-base font-bold text-emerald-400">
-                    {vd.garage.heating.split(',')[1] ? vd.garage.heating.split(',')[1].trim() : '18°C Interior'}
+                  <div className="text-base font-bold text-emerald-400 flex items-baseline gap-1.5">
+                    <span className="text-xl font-black font-mono">{isMaitri ? '18°C' : '15°C'}</span>
+                    <span className="text-xs font-mono text-emerald-300/90 font-medium">Interior Temp</span>
                   </div>
                   <div className="text-xs font-mono text-slate-200 mt-1 font-medium truncate">
                     {vd.garage.heating}

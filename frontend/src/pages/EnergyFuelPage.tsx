@@ -349,7 +349,7 @@ const FuelFlowPipeline: React.FC<{
             </div>
 
             {/* 3D Vertical Tank Body */}
-            <div className="relative w-20 h-28 rounded-xl border-2 border-amber-500/50 bg-slate-950/80 p-1 flex flex-col justify-end overflow-hidden shadow-inner">
+            <div className="relative w-20 h-32 rounded-xl border-2 border-amber-500/50 bg-slate-950/80 p-1 flex flex-col justify-end overflow-hidden shadow-inner">
               <div className="absolute right-1 inset-y-1 flex flex-col justify-between text-[8px] font-mono text-amber-200/80 font-bold pointer-events-none z-20">
                 <span>100%</span>
                 <span>75%</span>
@@ -441,7 +441,7 @@ const FuelFlowPipeline: React.FC<{
               Gravity Header
             </div>
 
-            <div className="relative w-18 h-28 rounded-xl border-2 border-cyan-500/50 bg-slate-950/80 p-1 flex flex-col justify-end overflow-hidden shadow-inner">
+            <div className="relative w-20 h-32 rounded-xl border-2 border-cyan-500/50 bg-slate-950/80 p-1 flex flex-col justify-end overflow-hidden shadow-inner">
               <div className="absolute right-1 inset-y-1 flex flex-col justify-between text-[8px] font-mono text-cyan-200/80 font-bold pointer-events-none z-20">
                 <span>Full</span>
                 <span>75%</span>
@@ -518,21 +518,23 @@ const FuelFlowPipeline: React.FC<{
               ● ONLINE &amp; SYNCHRONIZED
             </div>
 
-            <div className="relative w-20 h-28 rounded-xl border-2 border-emerald-500/50 bg-slate-950/90 flex flex-col items-center justify-between p-2 shadow-inner overflow-hidden">
+            <div className="relative w-24 sm:w-26 h-32 rounded-xl border-2 border-emerald-500/50 bg-slate-950/90 flex flex-col items-center justify-between p-2 shadow-inner overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
-              <div className="p-2 rounded-full bg-emerald-500/20 border border-emerald-400/50 mt-1 shadow-lg shadow-emerald-500/20">
-                <Zap className="w-6 h-6 text-emerald-400 animate-pulse" />
+              <div className="p-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 shadow-md shadow-emerald-500/20">
+                <Zap className="w-4 h-4 text-emerald-400 animate-pulse" />
               </div>
               <div className="text-center space-y-0.5 z-10">
-                <div className="text-base font-black font-mono text-white">
+                <div className="text-base font-black font-mono text-white leading-tight">
                   {destinationLoadKw} <span className="text-[10px] text-emerald-400 font-bold">kW</span>
                 </div>
-                <div className="text-[10px] font-mono text-cyan-300 font-extrabold">
+                <div className="text-[10px] font-mono text-cyan-300 font-extrabold leading-tight">
                   {gridFreq.toFixed(2)} Hz
                 </div>
               </div>
-              <div className="text-[9px] font-mono text-emerald-200 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
-                1,500 RPM
+              <div className="w-full flex items-center justify-center gap-1.5 py-1 px-1.5 rounded-md bg-emerald-950/90 border border-emerald-500/40 shadow-sm z-10">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                <span className="text-[10px] font-mono font-bold text-white tracking-wide">1,500</span>
+                <span className="text-[9px] font-mono font-bold text-emerald-300">RPM</span>
               </div>
             </div>
 

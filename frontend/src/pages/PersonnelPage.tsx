@@ -12,13 +12,50 @@ import {
 } from 'lucide-react';
 import * as echarts from 'echarts';
 
+// ── Live Beacon / Indicator Light (Smooth Light Up & Down) ───────────────────
+const LiveBeacon: React.FC<{ color: string; size?: number }> = ({
+  color,
+  size = 10,
+}) => {
+  const coreSize = Math.max(Math.round(size * 0.65), 4);
+  return (
+    <span
+      className="relative inline-flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size }}
+    >
+      {/* Ambient breathing glow that lights up and down */}
+      <span
+        className="absolute inset-0 rounded-full animate-live-glow"
+        style={{
+          backgroundColor: color,
+          color: color,
+        }}
+      />
+      {/* Crisp central LED core that stays solid and visible */}
+      <span
+        className="relative rounded-full"
+        style={{
+          width: coreSize,
+          height: coreSize,
+          backgroundColor: color,
+          boxShadow: `0 0 3px ${color}`,
+        }}
+      />
+    </span>
+  );
+};
+
 // ── Pill Badge ─────────────────────────────────────────────────────────────────
 const Pill: React.FC<{ label: string; color: string; pulse?: boolean }> = ({ label, color, pulse }) => (
   <span
-    className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] rounded-full font-mono font-bold border"
+    className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] rounded-full font-mono font-bold border"
     style={{ background: `${color}14`, borderColor: `${color}44`, color }}
   >
-    <span className={`w-1.5 h-1.5 rounded-full ${pulse ? 'animate-ping' : ''}`} style={{ background: color }} />
+    {pulse ? (
+      <LiveBeacon color={color} size={8} />
+    ) : (
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+    )}
     {label}
   </span>
 );
@@ -66,19 +103,34 @@ const ShiftRotationChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
         trigger: 'axis',
         backgroundColor: 'rgba(15, 23, 42, 0.95)',
         borderColor: 'rgba(255, 255, 255, 0.15)',
-        padding: [8, 12],
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: [10, 14],
         textStyle: { color: '#f8fafc', fontFamily: 'monospace', fontSize: 11 },
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);',
         formatter: (params: any) => {
+          const seriesColors: Record<string, string> = {
+            'Night Watch & Medical': '#10b981',
+            'Logistics & Galley': '#f59e0b',
+            'Engineering & Genset': '#06b6d4',
+            'Science & Labs': '#a855f7',
+          };
           let total = 0;
           let lines = params.map((p: any) => {
-            total += Number(p.value || 0);
-            return `<div style="display:flex; justify-content:space-between; gap:16px;">
-              <span style="color:${p.color}; font-weight:bold;">${p.seriesName}:</span>
-              <span style="font-weight:bold;">${p.value} crew</span>
+            const val = Number(p.value || 0);
+            total += val;
+            const col = seriesColors[p.seriesName] || '#38bdf8';
+            return `<div style="display:flex; justify-content:space-between; align-items:center; gap:20px; padding:3px 0;">
+              <span style="color:${col}; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background-color:${col}; box-shadow:0 0 6px ${col}88;"></span>
+                ${p.seriesName}:
+              </span>
+              <span style="color:${col}; font-weight:800; font-family:monospace;">${val} crew</span>
             </div>`;
           }).join('');
-          return `<div style="font-weight:bold; margin-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:3px; color:#38bdf8;">
-            🕒 ${params[0].axisValue} UTC · Total: ${total} on duty
+          return `<div style="font-weight:700; margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:5px; color:#e2e8f0; display:flex; justify-content:space-between; gap:16px;">
+            <span>🕒 ${params[0].axisValue} UTC</span>
+            <span style="color:#38bdf8; font-weight:800;">Total: ${total} on duty</span>
           </div>${lines}`;
         },
       },
@@ -113,6 +165,7 @@ const ShiftRotationChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
           stack: 'total',
           smooth: true,
           symbol: 'none',
+          color: '#10b981',
           lineStyle: { color: '#10b981', width: 2 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -128,6 +181,7 @@ const ShiftRotationChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
           stack: 'total',
           smooth: true,
           symbol: 'none',
+          color: '#f59e0b',
           lineStyle: { color: '#f59e0b', width: 2 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -143,6 +197,7 @@ const ShiftRotationChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
           stack: 'total',
           smooth: true,
           symbol: 'none',
+          color: '#06b6d4',
           lineStyle: { color: '#06b6d4', width: 2 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -158,6 +213,7 @@ const ShiftRotationChart: React.FC<{ isMaitri: boolean }> = ({ isMaitri }) => {
           stack: 'total',
           smooth: true,
           symbol: 'none',
+          color: '#a855f7',
           lineStyle: { color: '#a855f7', width: 2 },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -467,7 +523,7 @@ export const PersonnelPage: React.FC = () => {
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <LiveBeacon color="#34d399" size={8} />
               <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold">{station.name} · SCADA Life Safety · Live</span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-black text-white flex items-center gap-3 mt-1">
@@ -505,30 +561,64 @@ export const PersonnelPage: React.FC = () => {
       </div>
 
       {/* ── TAB NAVIGATION ─────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2 p-1 rounded-2xl bg-white/[0.03] border border-white/10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {[
           { id: 'personnel' as const, label: 'Personnel & Tasks',         icon: <Users className="w-4 h-4" />,       color: '#a855f7', badge: `${onDuty} Active` },
           { id: 'safety'    as const, label: 'Safety & Remedies',         icon: <ShieldCheck className="w-4 h-4" />, color: '#10b981', badge: '3 Hazards' },
           { id: 'emergency' as const, label: 'Live Emergency Command',    icon: <Siren className="w-4 h-4" />,       color: '#ef4444', badge: '3 Active', pulse: true },
-        ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveSection(tab.id)}
-            className="flex-1 min-w-[200px] px-4 py-2.5 rounded-xl flex items-center justify-between gap-3 border transition-all cursor-pointer"
-            style={activeSection === tab.id
-              ? { background: `${tab.color}18`, borderColor: `${tab.color}60` }
-              : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold flex items-center gap-2"
-                style={{ color: activeSection === tab.id ? '#fff' : '#cbd5e1' }}>
-                <span style={{ color: tab.color }}>{tab.icon}</span>
+        ].map(tab => {
+          const isActive = activeSection === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSection(tab.id)}
+              className="p-3.5 rounded-2xl border text-center cursor-pointer transition-all duration-200 group relative overflow-hidden flex flex-col items-center justify-center gap-1.5"
+              style={isActive
+                ? {
+                  background: `${tab.color}20`,
+                  borderColor: `${tab.color}80`,
+                  boxShadow: `0 0 16px ${tab.color}25, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                }
+                : {
+                  background: `${tab.color}08`,
+                  borderColor: `${tab.color}25`,
+                }
+              }
+            >
+              <div
+                className="flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                style={{ color: tab.color }}
+              >
+                {tab.icon}
+              </div>
+              <div
+                className={`text-xs font-mono font-bold transition-colors ${
+                  isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                }`}
+              >
                 {tab.label}
+              </div>
+              <span
+                className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border transition-all ${
+                  tab.pulse ? 'animate-pulse' : ''
+                }`}
+                style={{
+                  background: `${tab.color}15`,
+                  borderColor: `${tab.color}40`,
+                  color: tab.color,
+                }}
+              >
+                {tab.badge}
               </span>
-            </div>
-            <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${tab.pulse ? 'animate-pulse' : ''}`}
-              style={{ background: `${tab.color}15`, borderColor: `${tab.color}40`, color: tab.color }}>
-              {tab.badge}
-            </span>
-          </button>
-        ))}
+              {isActive && (
+                <div
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
+                  style={{ background: tab.color, boxShadow: `0 0 6px ${tab.color}` }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* ══════════════════════════════════════════════════════════ */}
@@ -845,7 +935,7 @@ export const PersonnelPage: React.FC = () => {
                     {/* Header: Title + Severity */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-2.5 h-2.5 rounded-full animate-ping flex-shrink-0" style={{ background: em.color }} />
+                        <LiveBeacon color={em.color} size={10} />
                         <span className="text-xs font-mono font-bold text-white leading-tight">{em.title}</span>
                       </div>
                       <Pill label={em.severity} color={em.color} pulse />
@@ -914,7 +1004,10 @@ export const PersonnelPage: React.FC = () => {
             <div className="lg:col-span-2 p-4 rounded-2xl border border-red-500/30 bg-red-500/05 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-[10px] font-mono font-bold text-red-400 flex items-center gap-2"><Radio className="w-3.5 h-3.5" /> Exterior Crew GPS Tracking</div>
-                <span className="text-[9px] font-mono text-emerald-300 font-bold">406 MHz Telemetry Active</span>
+                <span className="text-[9px] font-mono text-emerald-300 font-bold flex items-center gap-1.5">
+                  <LiveBeacon color="#10b981" size={7} />
+                  406 MHz Telemetry Active
+                </span>
               </div>
 
               <div className="space-y-2">

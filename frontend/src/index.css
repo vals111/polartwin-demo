@@ -147,6 +147,24 @@ body {
   100% { transform: translateX(100%); }
 }
 
+/* ── Live Beacon / Indicator Light (Smooth Light Up & Down) ────── */
+@keyframes liveLightGlow {
+  0%, 100% {
+    opacity: 0.35;
+    box-shadow: 0 0 3px 0.5px currentColor;
+    filter: brightness(0.85);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12px 3px currentColor;
+    filter: brightness(1.3);
+  }
+}
+
+.animate-live-glow {
+  animation: liveLightGlow 2s ease-in-out infinite;
+}
+
 /* ── Fade-in animation ────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-6px); }
