@@ -29,14 +29,37 @@ def step(state: dict, perturbation: dict = None) -> dict:
     env = state.get("environment", {})
     wind = env.get("wind_speed", 30.0)
 
-    # Wind stress
+    # Base wind stress calculation (0-100)
     stress = min(100.0, max(5.0, round((wind / 120.0) * 100.0, 1)))
-    infra["structural_stress_index"] = stress
+    thermal_eff = infra.get("thermal_insulation_eff", 88.0)
+    snow_drift = infra.get("snow_drift_accumulation_m", 0.42)
 
     if env.get("blizzard_active", False):
-        infra["snow_drift_accumulation_m"] = round(infra.get("snow_drift_accumulation_m", 0.3) + 0.02, 2)
+        snow_drift = round(snow_drift + 0.02, 2)
     else:
-        infra["snow_drift_accumulation_m"] = max(0.1, round(infra.get("snow_drift_accumulation_m", 0.3) - 0.005, 2))
+        snow_drift = max(0.1, round(snow_drift - 0.005, 2))
+
+    # Apply What-If Perturbations
+    if perturbation:
+        p_type = perturbation.get("type", "")
+        if p_type in ["blizzard_stress", "storm", "severe_storm"]:
+            stress = min(98.0, max(stress, 82.0 + (wind * 0.12)))
+            snow_drift = round(snow_drift + 1.25, 2)
+        elif p_type == "thermal_loss":
+            thermal_eff = max(40.0, thermal_eff - 36.0)
+            stress = min(100.0, stress + 18.0)
+        elif p_type == "snow_drift":
+            snow_drift = round(snow_drift + 2.15, 2)
+            stress = min(100.0, stress + 24.0)
+        elif p_type == "foundation_shift":
+            stress = min(100.0, stress + 32.0)
+        elif p_type == "power_outage":
+            thermal_eff = max(35.0, thermal_eff - 42.0)
+
+    infra["structural_stress_index"] = round(stress, 1)
+    infra["thermal_insulation_eff"] = round(thermal_eff, 1)
+    infra["snow_drift_accumulation_m"] = round(snow_drift, 2)
 
     state["infrastructure"] = infra
     return state
+

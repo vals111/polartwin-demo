@@ -451,16 +451,34 @@ def step(state: dict, perturbation: dict = None) -> dict:
 
     weather_delay = round(base_delay + extra_delay, 1)
 
-    # What-If Perturbation Injection (e.g. icebreaker delayed 20 days)
-    if perturbation and perturbation.get("type") == "resupply_delay":
-        scenario_delay = float(perturbation.get("days", 20.0))
-        weather_delay += scenario_delay
+    # What-If Perturbation Injection
+    if perturbation:
+        p_type = perturbation.get("type", "")
+        if p_type in ["resupply_delay", "ship_delay"]:
+            scenario_delay = float(perturbation.get("days", 45.0 if p_type == "ship_delay" else 20.0))
+            weather_delay += scenario_delay
+        elif p_type == "cargo_loss":
+            weather_delay += 12.0
+        elif p_type == "vehicle_fail":
+            weather_delay += 8.0
+        elif p_type == "crevasse_hazard":
+            weather_delay += 14.0
+        elif p_type == "fuel_cache_freeze":
+            weather_delay += 6.0
 
     log["weather_delay_days"] = weather_delay
     log["effective_eta_days"] = round(log["planned_eta_days"] + weather_delay, 1)
 
     # Dynamic delay driver explanation
-    if storm > 0.5 or wind > 70.0:
+    if perturbation and perturbation.get("type") == "crevasse_hazard":
+        log["primary_delay_driver"] = "Sub-Surface Crevasse Fissure Field across Corridor"
+        log["delay_confidence"] = "Low (Ground Radar Surveying)"
+        log["route_impact_level"] = "CRITICAL"
+    elif perturbation and perturbation.get("type") == "vehicle_fail":
+        log["primary_delay_driver"] = "PistenBully Overland Tractor Engine Seizure (+45km out)"
+        log["delay_confidence"] = "Low (Recovery Operation)"
+        log["route_impact_level"] = "HIGH"
+    elif storm > 0.5 or wind > 70.0:
         log["primary_delay_driver"] = f"Severe Katabatic Storm & High Winds ({round(wind)} km/h)"
         log["delay_confidence"] = "Low (Storm Volatility)"
         log["route_impact_level"] = "CRITICAL" if weather_delay > 15.0 else "HIGH"
@@ -480,9 +498,13 @@ def step(state: dict, perturbation: dict = None) -> dict:
     eta_uncertainty = (65.0 if storm > 0.3 else 25.0) * 0.18
     cargo_dep = 45.0 * 0.12
     fleet_risk = 12.0 * 0.08
+    if perturbation and perturbation.get("type") == "vehicle_fail":
+        fleet_risk = 75.0 * 0.08
+    if perturbation and perturbation.get("type") == "crevasse_hazard":
+        route_exposure = 85.0 * 0.24
 
     risk_score = round(delay_component + route_exposure + eta_uncertainty + cargo_dep + fleet_risk, 1)
-    if perturbation and perturbation.get("type") == "resupply_delay":
+    if perturbation and perturbation.get("type") in ["resupply_delay", "ship_delay", "crevasse_hazard"]:
         risk_score = min(96.0, round(risk_score + 25.0, 1))
 
     log["logistics_risk_score"] = risk_score

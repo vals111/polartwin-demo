@@ -525,18 +525,10 @@ export const CrossDomainCausalTree: React.FC<Props> = ({
       {/* ── HEADER ── */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-3 mb-3" style={{ borderBottom: '1px solid var(--border)' }}>
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span
-              className="text-[10px] font-mono px-2.5 py-0.5 rounded"
-              style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-            >
-              {isMaitri ? '70°45′S 11°44′E • Inland Schirmacher' : '69°24′S 76°11′E • Coastal Larsemann'}
-            </span>
-          </div>
-          <h1 className="text-lg lg:text-xl font-bold flex items-center gap-2.5 font-mono" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-lg lg:text-xl font-bold flex items-center gap-2.5 font-mono" style={{ color: 'var(--text-primary)' }}>
             <GitCommit className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-            <span>Inter-Domain Causal Flow Architecture</span>
-          </h1>
+            <span>Dashboard</span>
+          </h2>
         </div>
         <div className="flex items-center gap-3 flex-nowrap overflow-x-auto flex-shrink-0">
           {onOpenCompare && (

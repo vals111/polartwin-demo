@@ -286,7 +286,7 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
                 </span>
                 <span
                   className="text-[10px] font-mono px-2 py-0.5 rounded border"
-                  style={{ backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }}
+                  style={{ backgroundColor: 'rgba(37, 99, 235, 0.15)', borderColor: 'rgba(59, 130, 246, 0.4)', color: '#93c5fd' }}
                 >
                   Real-Time Physics Engine
                 </span>
@@ -300,7 +300,7 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
                 <div className="text-[10px] font-mono uppercase font-bold mb-1" style={{ color: 'var(--text-muted)' }}>
                   Primary Operational State
                 </div>
-                <div className="text-3xl font-black font-mono" style={{ color: 'var(--text-primary)' }}>
+                <div className="text-3xl font-black font-mono text-white">
                   {currentTelemetry?.primaryKpi ?? 'Nominal'}
                 </div>
                 <div className="text-xs font-mono mt-1" style={{ color: activeDomainConfig.color }}>
@@ -314,7 +314,7 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
                   </div>
                   <div className="flex justify-between">
                     <span style={{ color: 'var(--text-muted)' }}>Status:</span>
-                    <span className="font-bold truncate max-w-[150px]" style={{ color: 'var(--text-primary)' }}>
+                    <span className="font-bold truncate max-w-[150px] text-white">
                       {currentTelemetry?.status ?? 'Operational'}
                     </span>
                   </div>
@@ -325,16 +325,16 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
               <div className="mt-4 flex flex-col gap-2">
                 <button
                   onClick={() => { onClose(); navigate(`/station/${stationId}/${activeDomainConfig.route}`); }}
-                  className="w-full py-2.5 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb' }}
+                  className="w-full py-2.5 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:brightness-110"
+                  style={{ backgroundColor: 'rgba(37, 99, 235, 0.22)', border: '1px solid rgba(59, 130, 246, 0.5)', color: '#93c5fd' }}
                 >
                   <span>Launch Full Domain Page</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => { onClose(); navigate(`/station/${stationId}/decision?domain=${activeDomainConfig.id}`); }}
-                  className="w-full py-2 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  style={{ backgroundColor: '#f5f3ff', border: '1px solid #ddd6fe', color: '#7c3aed' }}
+                  className="w-full py-2 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer hover:brightness-110"
+                  style={{ backgroundColor: 'rgba(124, 58, 237, 0.22)', border: '1px solid rgba(139, 92, 246, 0.5)', color: '#c4b5fd' }}
                 >
                   <Brain className="w-3.5 h-3.5" />
                   <span>Decision Intelligence</span>
@@ -346,19 +346,19 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
           {/* Visual Causal Coupling Conduits */}
           <div className="p-4 rounded-2xl space-y-3" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+              <span className="text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-300">
                 <Activity className="w-4 h-4" style={{ color: '#d97706' }} />
                 Cross-Domain Causal Dependency Conduits
               </span>
-              <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+              <span className="text-[10px] font-mono text-slate-400">
                 Causal Drivers &amp; Downstream Consumers
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Upstream Drivers */}
-              <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#f0fdfa', border: '1px solid #5eead4' }}>
-                <div className="text-[10px] font-mono uppercase font-bold mb-2 flex items-center gap-1.5" style={{ color: '#0d9488' }}>
+              <div className="p-3.5 rounded-xl" style={{ backgroundColor: 'rgba(13, 148, 136, 0.12)', border: '1px solid rgba(20, 184, 166, 0.4)' }}>
+                <div className="text-[10px] font-mono uppercase font-bold mb-2 flex items-center gap-1.5 text-teal-300">
                   <ArrowUpRight className="w-3.5 h-3.5" />
                   Upstream Feeder Domains (Drivers)
                 </div>
@@ -370,25 +370,25 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
                         <button
                           key={upId}
                           onClick={() => onSelectDomain ? onSelectDomain(upId) : null}
-                          className="px-2.5 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
-                          style={{ backgroundColor: '#ccfbf1', border: '1px solid #5eead4', color: '#0d9488' }}
+                          className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-colors hover:brightness-125"
+                          style={{ backgroundColor: 'rgba(20, 184, 166, 0.25)', border: '1px solid rgba(45, 212, 191, 0.5)', color: '#5eead4' }}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#0d9488' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                           {upCfg?.name || upId}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-xs font-mono text-slate-400">
                     Root External Driver (No upstream station dependencies)
                   </span>
                 )}
               </div>
 
               {/* Downstream Consumers */}
-              <div className="p-3.5 rounded-xl" style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
-                <div className="text-[10px] font-mono uppercase font-bold mb-2 flex items-center gap-1.5" style={{ color: '#d97706' }}>
+              <div className="p-3.5 rounded-xl" style={{ backgroundColor: 'rgba(217, 119, 6, 0.12)', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+                <div className="text-[10px] font-mono uppercase font-bold mb-2 flex items-center gap-1.5 text-amber-300">
                   <ArrowDownRight className="w-3.5 h-3.5" />
                   Downstream Dependent Domains (Impacted)
                 </div>
@@ -400,17 +400,17 @@ export const DomainTelemetryInspectorModal: React.FC<DomainTelemetryInspectorMod
                         <button
                           key={downId}
                           onClick={() => onSelectDomain ? onSelectDomain(downId) : null}
-                          className="px-2.5 py-1 rounded-lg text-xs font-mono flex items-center gap-1.5 cursor-pointer transition-colors"
-                          style={{ backgroundColor: '#fef9c3', border: '1px solid #fde68a', color: '#d97706' }}
+                          className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-colors hover:brightness-125"
+                          style={{ backgroundColor: 'rgba(245, 158, 11, 0.25)', border: '1px solid rgba(251, 191, 36, 0.5)', color: '#fde047' }}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#d97706' }} />
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                           {downCfg?.name || downId}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-xs font-mono text-slate-400">
                     Terminal Telemetry Sink (Feeds Mission Control Oversight)
                   </span>
                 )}

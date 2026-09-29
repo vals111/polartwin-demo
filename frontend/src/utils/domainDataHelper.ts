@@ -25,18 +25,24 @@ export const CAUSAL_EDGES: TreeEdgeDef[] = [
 
 // Mapping from 3D building IDs to Domain IDs
 export const FACILITY_TO_DOMAIN_MAP: Record<string, { domainId: string; subType?: string }> = {
-  main_station:     { domainId: 'main_station' },
-  power_house:      { domainId: 'energy', subType: 'diesel' },
-  solar_array:      { domainId: 'energy', subType: 'solar' },
-  fuel_depot:       { domainId: 'fuel' },
+  infrastructure:   { domainId: 'infrastructure' },
+  energy_fuel:      { domainId: 'energy_fuel' },
+  logistics:        { domainId: 'logistics' },
+  environment:      { domainId: 'environment' },
+  communication:    { domainId: 'communication' },
+  water:            { domainId: 'water' },
+  personnel:        { domainId: 'personnel' },
+  // Backward-compat keys
+  main_station:     { domainId: 'infrastructure' },
+  power_house:      { domainId: 'energy_fuel', subType: 'diesel' },
+  solar_array:      { domainId: 'energy_fuel', subType: 'solar' },
+  fuel_depot:       { domainId: 'energy_fuel' },
   water_facility:   { domainId: 'water' },
   waste_management: { domainId: 'water', subType: 'waste' },
-  research_lab:     { domainId: 'equipment', subType: 'lab' },
-  communication:    { domainId: 'communication' },
+  research_lab:     { domainId: 'infrastructure', subType: 'lab' },
   personnel_area:   { domainId: 'personnel' },
-  storage:          { domainId: 'inventory' },
+  storage:          { domainId: 'logistics' },
   logistics_area:   { domainId: 'logistics' },
-  environment:      { domainId: 'environment' },
 };
 
 // Complete set of domain card nodes including Main Station

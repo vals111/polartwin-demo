@@ -83,6 +83,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
     const base: React.CSSProperties = {
       backgroundColor: 'var(--bg-surface)',
       border: '1px solid var(--border)',
+      color: '#f8fafc',
       transition: 'all 0.2s ease',
       ...style,
     };
@@ -413,7 +414,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
               <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'var(--bg-elevated)' }}>
                 <div className="bg-blue-500 h-full rounded-full shadow-sm" style={{ width: `${t?.percentage ?? 82}%` }} />
               </div>
-              <div className="flex justify-between text-[11px] pt-0.5">
+              <div className="flex justify-between text-[11px] pt-0.5 text-slate-300">
                 <span>Trace Line: <strong className="text-emerald-400 font-bold">+{t?.pipeTempC ?? 3.8}°C</strong></span>
                 <span>Freeze Risk: <strong className="text-cyan-300 font-bold">{t?.freezeRisk ?? 'LOW'}</strong></span>
               </div>
@@ -482,8 +483,7 @@ export const OperationalDomainCard: React.FC<Props> = ({
         >
           <div className="flex items-center gap-2">
             <span
-              className="text-[9px] font-bold uppercase tracking-wide flex-shrink-0"
-              style={{ color: '#2563eb' }}
+              className="text-[9px] font-bold uppercase tracking-wide flex-shrink-0 text-cyan-400 font-mono"
             >
               ▲ Drivers:
             </span>
@@ -496,25 +496,24 @@ export const OperationalDomainCard: React.FC<Props> = ({
                       e.stopPropagation();
                       causalConduits.onFocusDomain?.(d);
                     }}
-                    className="text-[9px] px-2 py-0.5 rounded cursor-pointer transition-colors"
+                    className="text-[9px] px-2 py-0.5 rounded cursor-pointer transition-colors font-mono font-semibold hover:border-cyan-400"
                     style={{
-                      backgroundColor: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      color: '#2563eb',
+                      backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                      border: '1px solid rgba(6, 182, 212, 0.45)',
+                      color: '#67e8f9',
                     }}
                   >
                     {d.shortName || d.name}
                   </button>
                 ))
               ) : (
-                <span className="text-[9px] italic" style={{ color: 'var(--text-muted)' }}>Root Primary Driver</span>
+                <span className="text-[9px] italic text-slate-400">Root Primary Driver</span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span
-              className="text-[9px] font-bold uppercase tracking-wide flex-shrink-0"
-              style={{ color: '#d97706' }}
+              className="text-[9px] font-bold uppercase tracking-wide flex-shrink-0 text-amber-400 font-mono"
             >
               ▼ Impacts:
             </span>
@@ -527,18 +526,18 @@ export const OperationalDomainCard: React.FC<Props> = ({
                       e.stopPropagation();
                       causalConduits.onFocusDomain?.(d);
                     }}
-                    className="text-[9px] px-2 py-0.5 rounded cursor-pointer transition-colors"
+                    className="text-[9px] px-2 py-0.5 rounded cursor-pointer transition-colors font-mono font-semibold hover:border-amber-400"
                     style={{
-                      backgroundColor: '#fffbeb',
-                      border: '1px solid #fde68a',
-                      color: '#d97706',
+                      backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                      border: '1px solid rgba(245, 158, 11, 0.45)',
+                      color: '#fde047',
                     }}
                   >
                     {d.shortName || d.name}
                   </button>
                 ))
               ) : (
-                <span className="text-[9px] italic" style={{ color: 'var(--text-muted)' }}>Terminal Telemetry Sink</span>
+                <span className="text-[9px] italic text-slate-400">Terminal Telemetry Sink</span>
               )}
             </div>
           </div>

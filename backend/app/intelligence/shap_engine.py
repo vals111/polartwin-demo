@@ -107,6 +107,19 @@ def compute_weighted_contribution_explanation(
             "description": f"Fast-ice maritime passage delay of {delay_days} days"
         })
 
+        # 7. Infrastructure Structural Shear & Thermal Envelope
+        infra = station_state.get("infrastructure", {})
+        stress_idx = infra.get("structural_stress_index", 18.0)
+        phi_infra = round((stress_idx - 16.0) * 0.35, 2)
+        features.append({
+            "name": "Structural Wind Shear & Drift",
+            "feature_value": f"{stress_idx}/100 stress",
+            "shap_value": phi_infra,
+            "domain": "infrastructure",
+            "direction": "increases_risk" if phi_infra > 0 else "decreases_risk",
+            "description": f"Aerodynamic module shear & stanchion strain ({stress_idx}/100)"
+        })
+
     else:
         # Energy load SHAP decomposition
         base_value = 45.0  # Base hotel load in kW
@@ -156,6 +169,7 @@ def compute_weighted_contribution_explanation(
         "target": target,
         "base_value": base_value,
         "model_output": model_output,
+        "output_value": model_output,
         "features": features,
         "waterfall": waterfall,
         "top_positive_driver": next((f for f in features if f["shap_value"] > 0), None),

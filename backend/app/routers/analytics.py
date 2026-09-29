@@ -18,21 +18,32 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
 def _query_recent_telemetry(
-    db: Session, station_id: str, param: str, hours: int = 24
+    db: Session, station_id: str, param: str, hours: int = 24, max_points: int = 48
 ) -> List[tuple]:
-    """Return (timestamp, value) tuples from the real DB for the given param."""
+    """Return at most max_points (timestamp, value) tuples from the real DB for responsive analytics."""
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-    rows = (
-        db.query(Telemetry.timestamp, Telemetry.value)
-        .filter(
-            Telemetry.station_id == station_id,
-            Telemetry.parameter == param,
-            Telemetry.timestamp >= cutoff,
+    try:
+        rows = (
+            db.query(Telemetry.timestamp, Telemetry.value)
+            .filter(
+                Telemetry.station_id == station_id,
+                Telemetry.parameter == param,
+                Telemetry.timestamp >= cutoff,
+            )
+            .order_by(Telemetry.timestamp.desc())
+            .limit(max_points * 4)
+            .all()
         )
-        .order_by(Telemetry.timestamp)
-        .all()
-    )
-    return rows
+        if not rows:
+            return []
+        rows.reverse()
+        if len(rows) > max_points:
+            step = max(1, len(rows) // max_points)
+            rows = rows[::step]
+        return rows
+    except Exception as e:
+        logger.warning(f"Error querying recent telemetry for {param}: {e}")
+        return []
 
 
 def _compute_kpis(
@@ -107,29 +118,22 @@ def get_analytics(
         # Build actual vs predicted from real DB history
         from app.intelligence.forecasting import get_forecast
         forecast_data = get_forecast(station_id, state)
-
-        # Align by index — both series same cadence
-        fuel_vals = {r[0]: r[1] for r in fuel_rows}
-        solar_vals = {r[0]: r[1] for r in solar_rows}
-        temp_vals = {r[0]: r[1] for r in temp_rows}
-
         predicted_series = forecast_data.get("generator_load_kw", [])
-        pred_idx = 0
 
-        for ts, actual_load in gen_rows:
-            # Match predicted to this row by index (same tick cadence)
-            predicted_load = predicted_series[pred_idx] if pred_idx < len(predicted_series) else actual_load
-            pred_idx += 1
+        for i, (ts, actual_load) in enumerate(gen_rows):
+            pred_load = predicted_series[i % len(predicted_series)] if predicted_series else actual_load
+            f_val = fuel_rows[i][1] if i < len(fuel_rows) else (fuel_rows[-1][1] if fuel_rows else 0.0)
+            s_val = solar_rows[i][1] if i < len(solar_rows) else (solar_rows[-1][1] if solar_rows else 0.0)
+            t_val = temp_rows[i][1] if i < len(temp_rows) else (temp_rows[-1][1] if temp_rows else -25.0)
 
-            closest_ts = min(fuel_vals.keys(), key=lambda t: abs((t - ts).total_seconds())) if fuel_vals else None
             data.append({
                 "timestamp": ts.isoformat(),
                 "generator_load_actual": round(actual_load, 1),
-                "generator_load_predicted": round(predicted_load, 1),
-                "fuel_burn_actual": round(fuel_vals.get(closest_ts, 0.0), 1),
-                "fuel_burn_predicted": round(fuel_vals.get(closest_ts, 0.0) + 0.6, 1),
-                "solar_generation": round(solar_vals.get(closest_ts, 0.0), 1),
-                "ambient_temp": round(temp_vals.get(closest_ts, -25.0), 1),
+                "generator_load_predicted": round(pred_load, 1),
+                "fuel_burn_actual": round(f_val, 1),
+                "fuel_burn_predicted": round(f_val + 0.6, 1),
+                "solar_generation": round(s_val, 1),
+                "ambient_temp": round(t_val, 1),
             })
 
         # Compute real KPIs from measured actual vs predicted
@@ -165,11 +169,33 @@ def get_analytics(
         ml_evaluation = _compute_kpis(actuals, preds)
         ml_evaluation["note"] = "Computed from live-state projection; real metrics accumulate after 24h of simulation."
 
+    vals = [r.get("generator_load_actual", 0.0) for r in data]
+    mean_val = round(sum(vals) / len(vals), 1) if vals else 0.0
+    variance = sum((v - mean_val) ** 2 for v in vals) / len(vals) if vals else 0.0
+    std_val = round(math.sqrt(variance), 2)
+
+    series = [
+        {
+            "label": f"-{len(data)-i}h",
+            "value": r.get("generator_load_actual", 0.0),
+            "predicted_value": r.get("generator_load_predicted", 0.0)
+        }
+        for i, r in enumerate(data)
+    ]
+
     return {
         "station_id": station_id,
         "metric": metric,
         "history": data,
+        "series": series,
         "kpis": ml_evaluation,
+        "stats": {
+            "mean": mean_val,
+            "std": std_val,
+            "min": min(vals) if vals else 0.0,
+            "max": max(vals) if vals else 0.0,
+        },
+        "trend": "STABLE" if abs(vals[-1] - vals[0]) < 4.0 else ("UPWARD" if vals[-1] > vals[0] else "DOWNWARD")
     }
 
 

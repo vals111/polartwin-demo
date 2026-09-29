@@ -68,32 +68,43 @@ def step(state: dict, perturbation: dict = None) -> dict:
     eng["solar_output"] = max(0.0, round((solar_rad / 1000.0) * pv_capacity * solar_deg, 1))
 
     # Apply scenario perturbation
-    if perturbation and perturbation.get("type") == "solar_drop":
-        eng["solar_output"] = round(eng["solar_output"] * (1.0 - perturbation.get("drop_fraction", 0.4)), 1)
+    p_type = perturbation.get("type", "") if perturbation else ""
+    if p_type in ["solar_drop", "solar_loss"]:
+        drop_frac = 1.0 if p_type == "solar_loss" else perturbation.get("drop_fraction", 0.4)
+        eng["solar_output"] = round(eng["solar_output"] * (1.0 - drop_frac), 1)
+
+    if p_type == "grid_overload":
+        eng["total_demand"] = round(eng["total_demand"] + 38.0, 1)
 
     # 3. Generator Load & Dispatch
     gen_required = max(0.0, eng["total_demand"] - eng["solar_output"])
     
     # Check if a generator is offline in perturbation
     gen_offline = False
-    if perturbation and perturbation.get("type") == "generator_failure":
+    if p_type in ["generator_failure", "gen1_offline"]:
         gen_offline = True
         eng["generator_count_active"] = 1
-        # Generator 1 down, backup takes load or load-shedding occurs
         eng["status"] = "Generator Trip - Backup Overload"
+        gen_required = min(110.0, gen_required * 1.15)
+    elif p_type == "power_outage":
+        gen_offline = True
+        eng["generator_count_active"] = 0
+        gen_required = 0.0
+        eng["battery_level"] = max(5.0, round(eng.get("battery_level", 90.0) - 2.5, 1))
+        eng["status"] = "TOTAL STATION BLACKOUT"
 
     eng["generator_load"] = round(gen_required, 1)
     
     # Battery buffer logic
-    if gen_required > (180.0 if st_id == "bharati" else 130.0):
+    if gen_required > (180.0 if st_id == "bharati" else 130.0) or p_type == "grid_overload":
         # Deficit
-        eng["battery_level"] = max(15.0, round(eng.get("battery_level", 90.0) - 0.4, 1))
+        eng["battery_level"] = max(15.0, round(eng.get("battery_level", 90.0) - 0.8, 1))
         eng["status"] = "High Demand Peak - Discharging Battery"
-    else:
+    elif p_type != "power_outage":
         eng["battery_level"] = min(100.0, round(eng.get("battery_level", 90.0) + 0.1, 1))
         if not gen_offline:
             eng["status"] = "Nominal"
 
-    eng["grid_frequency"] = round(50.0 + random.uniform(-0.06, 0.06), 2)
+    eng["grid_frequency"] = round(50.0 + (random.uniform(-0.18, 0.18) if gen_offline else random.uniform(-0.04, 0.04)), 2)
     state["energy"] = eng
     return state

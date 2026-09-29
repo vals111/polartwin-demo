@@ -100,10 +100,21 @@ def run_monte_carlo_simulation(
         for j in range(len(hist))
     ]
 
+    final_reserves = fuel_arr[:, -1] if len(fuel_arr) > 0 else [0.0]
+    p5_res = round(float(np.percentile(final_reserves, 5)), 1)
+    p50_res = round(float(np.percentile(final_reserves, 50)), 1)
+    p95_res = round(float(np.percentile(final_reserves, 95)), 1)
+    std_res = round(float(np.std(final_reserves)), 1)
+
     return {
         "station_id": station_id,
         "iterations": iterations,
         "horizon_days": horizon_days,
+        "p5_value": f"{p5_res}% reserve",
+        "p50_value": f"{p50_res}% reserve",
+        "p95_value": f"{p95_res}% reserve",
+        "std_deviation": f"±{std_res}%",
+        "critical_probability": round((blackout_occurred_count / iterations) * 100, 1),
         "blackout_probability_pct": round((blackout_occurred_count / iterations) * 100, 1),
         "mean_survival_days": round(float(np.mean(survival_days_list)), 1),
         "min_survival_days": round(float(np.min(survival_days_list)), 1),
@@ -128,3 +139,4 @@ def run_monte_carlo_simulation(
             f"Expected median fuel reserve at horizon boundary is {round(p50_fuel[-1], 1)}%."
         )
     }
+

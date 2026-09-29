@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TelemetrySnapshot } from '../../types';
@@ -7,10 +7,13 @@ import { TelemetrySnapshot } from '../../types';
 // Domain Color Palette
 // =============================================================================
 export const DOMAIN_COLORS: Record<string, string> = {
-  main_station:     '#00E5FF', communication:    '#00D4FF', solar_array:      '#FFC107',
-  environment:      '#80EFFF', research_lab:     '#A855F7', personnel_area:   '#EF4444',
-  power_house:      '#F4C430', fuel_depot:       '#FF5555', storage:          '#22C55E',
-  waste_management: '#22C55E', water_facility:   '#3882F6', logistics_area:   '#F97316',
+  infrastructure:   '#06b6d4',
+  energy_fuel:      '#f59e0b',
+  logistics:        '#f97316',
+  environment:      '#00e5ff',
+  communication:    '#3b82f6',
+  water:            '#38bdf8',
+  personnel:        '#a855f7',
 };
 
 interface FacilityDef {
@@ -21,48 +24,33 @@ interface FacilityDef {
 }
 
 const MAITRI_FACILITIES: FacilityDef[] = [
-  { id:'main_station',     label:'Main Station',          subLabel:'98% | Operational',      icon:'🏛',  color:'#00E5FF', glowHex:0x00e5ff, position:[0,0,0],     buildType:'main'      },
-  { id:'research_lab',     label:'Research Lab',          subLabel:'92% | Active',           icon:'🔬',  color:'#A855F7', glowHex:0xa855f7, position:[-26,0,-18], buildType:'lab'       },
-  { id:'power_house',      label:'Power House',           subLabel:'95% | 2 Generators',    icon:'⚡',  color:'#F4C430', glowHex:0xf4c430, position:[26,0,-16],  buildType:'power'     },
-  { id:'solar_array',      label:'Solar Array',           subLabel:'68% | Generating',       icon:'☀️',  color:'#FFC107', glowHex:0xffc107, position:[10,0,-32],  buildType:'solar'     },
-  { id:'fuel_depot',       label:'Fuel Depot',            subLabel:'77% | 19 days',          icon:'🛢',  color:'#FF5555', glowHex:0xff5555, position:[40,0,-8],   buildType:'tanks'     },
-  { id:'communication',    label:'Communication',         subLabel:'96% | Online',           icon:'📡',  color:'#00D4FF', glowHex:0x00d4ff, position:[-40,0,-10], buildType:'comms'     },
-  { id:'personnel_area',   label:'Personnel Area',        subLabel:'100% | 42 Persons',      icon:'👥',  color:'#EF4444', glowHex:0xef4444, position:[-28,0,16],  buildType:'housing'   },
-  { id:'water_facility',   label:'Water Facility',        subLabel:'88% | 1200 L',           icon:'💧',  color:'#3882F6', glowHex:0x3882f6, position:[18,0,16],   buildType:'small'     },
-  { id:'waste_management', label:'Waste Management',      subLabel:'82% | Normal',           icon:'♻️',  color:'#22C55E', glowHex:0x22c55e, position:[-14,0,30],  buildType:'small'     },
-  { id:'storage',          label:'Storage',               subLabel:'96% | Stable',           icon:'📦',  color:'#22C55E', glowHex:0x22c55e, position:[36,0,14],   buildType:'warehouse' },
-  { id:'logistics_area',   label:'Logistics Area',        subLabel:'Next resupply: 88 days', icon:'🚛',  color:'#F97316', glowHex:0xf97316, position:[38,0,28],   buildType:'small'     },
-  { id:'environment',      label:'Environment & Weather', subLabel:'-27.5°C | Clear',        icon:'❄️',  color:'#80EFFF', glowHex:0x80efff, position:[28,0,-30],  buildType:'tower'     },
+  { id:'infrastructure', label:'Infrastructure',             subLabel:'94% | Structural Nominal',    icon:'🏛',  color:'#06b6d4', glowHex:0x06b6d4, position:[0,0,0],      buildType:'main'      },
+  { id:'environment',    label:'Environment & Weather',      subLabel:'-27.5°C | Clear',             icon:'❄️',  color:'#00e5ff', glowHex:0x00e5ff, position:[0,0,-22],    buildType:'tower'     },
+  { id:'communication',  label:'Communication',              subLabel:'96% | LEO Synced',           icon:'📡',  color:'#3b82f6', glowHex:0x3b82f6, position:[-24,0,-16],  buildType:'comms'     },
+  { id:'energy_fuel',    label:'Energy & Fuel',              subLabel:'95% | 2 Gens • 77% Fuel',    icon:'⚡',  color:'#f59e0b', glowHex:0xf59e0b, position:[24,0,-16],   buildType:'power'     },
+  { id:'water',          label:'Water',                      subLabel:'88% | 18.5k L Potable',      icon:'💧',  color:'#38bdf8', glowHex:0x3882f6, position:[26,0,2],     buildType:'small'     },
+  { id:'logistics',      label:'Transportation & Logistics', subLabel:'88d Resupply ETA',           icon:'🚛',  color:'#f97316', glowHex:0xf97316, position:[24,0,20],    buildType:'warehouse' },
+  { id:'personnel',      label:'Personnel & Safety',         subLabel:'100% | 42 Crew Safe',        icon:'👥',  color:'#a855f7', glowHex:0xa855f7, position:[-24,0,16],   buildType:'housing'   },
 ];
 
 const BHARATI_FACILITIES: FacilityDef[] = [
-  { id:'main_station',     label:'Main Station',          subLabel:'96% | Operational',      icon:'🏛',  color:'#00E5FF', glowHex:0x00e5ff, position:[0,0,0],     buildType:'main'                },
-  { id:'research_lab',     label:'Research Lab',          subLabel:'90% | Active',           icon:'🔬',  color:'#A855F7', glowHex:0xa855f7, position:[-24,0,-16], buildType:'lab',       scale:0.95 },
-  { id:'power_house',      label:'Power House',           subLabel:'92% | CHP Online',       icon:'⚡',  color:'#F4C430', glowHex:0xf4c430, position:[24,0,-14],  buildType:'power',     scale:0.9  },
-  { id:'solar_array',      label:'Solar Array',           subLabel:'71% | Generating',       icon:'☀️',  color:'#FFC107', glowHex:0xffc107, position:[9,0,-30],   buildType:'solar',     scale:0.95 },
-  { id:'fuel_depot',       label:'Fuel Depot',            subLabel:'74% | 22 days',          icon:'🛢',  color:'#FF5555', glowHex:0xff5555, position:[36,0,-6],   buildType:'tanks',     scale:0.9  },
-  { id:'communication',    label:'Communication',         subLabel:'94% | Online',           icon:'📡',  color:'#00D4FF', glowHex:0x00d4ff, position:[-36,0,-8],  buildType:'comms'               },
-  { id:'personnel_area',   label:'Personnel Area',        subLabel:'100% | 35 Persons',      icon:'👥',  color:'#EF4444', glowHex:0xef4444, position:[-26,0,14],  buildType:'housing',   scale:0.9  },
-  { id:'water_facility',   label:'Water Facility',        subLabel:'91% | RO Active',        icon:'💧',  color:'#3882F6', glowHex:0x3882f6, position:[16,0,14],   buildType:'small'               },
-  { id:'waste_management', label:'Waste Management',      subLabel:'79% | Normal',           icon:'♻️',  color:'#22C55E', glowHex:0x22c55e, position:[-12,0,28],  buildType:'small'               },
-  { id:'storage',          label:'Storage',               subLabel:'88% | Stable',           icon:'📦',  color:'#22C55E', glowHex:0x22c55e, position:[32,0,12],   buildType:'warehouse', scale:0.9  },
-  { id:'logistics_area',   label:'Logistics Area',        subLabel:'Next resupply: 62 days', icon:'🚛',  color:'#F97316', glowHex:0xf97316, position:[34,0,26],   buildType:'small'               },
-  { id:'environment',      label:'Environment & Weather', subLabel:'-20.6°C | Coastal Wind', icon:'❄️',  color:'#80EFFF', glowHex:0x80efff, position:[26,0,-28],  buildType:'tower'               },
+  { id:'infrastructure', label:'Infrastructure',             subLabel:'97% | Structural Nominal',    icon:'🏛',  color:'#06b6d4', glowHex:0x06b6d4, position:[0,0,0],      buildType:'main'      },
+  { id:'environment',    label:'Environment & Weather',      subLabel:'-20.6°C | Coastal Wind',      icon:'❄️',  color:'#00e5ff', glowHex:0x00e5ff, position:[0,0,-22],    buildType:'tower'     },
+  { id:'communication',  label:'Communication',              subLabel:'98% | LEO Synced',           icon:'📡',  color:'#3b82f6', glowHex:0x3b82f6, position:[-24,0,-16],  buildType:'comms'     },
+  { id:'energy_fuel',    label:'Energy & Fuel',              subLabel:'92% | CHP Online • 74% Fuel', icon:'⚡',  color:'#f59e0b', glowHex:0xf59e0b, position:[24,0,-16],   buildType:'power', scale:0.95 },
+  { id:'water',          label:'Water',                      subLabel:'91% | RO Desal Active',      icon:'💧',  color:'#38bdf8', glowHex:0x3882f6, position:[26,0,2],     buildType:'small'     },
+  { id:'logistics',      label:'Transportation & Logistics', subLabel:'62d Resupply ETA',           icon:'🚛',  color:'#f97316', glowHex:0xf97316, position:[24,0,20],    buildType:'warehouse', scale:0.9 },
+  { id:'personnel',      label:'Personnel & Safety',         subLabel:'100% | 35 Crew Safe',        icon:'👥',  color:'#a855f7', glowHex:0xa855f7, position:[-24,0,16],   buildType:'housing', scale:0.9 },
 ];
 
 const RELATIONSHIPS: Record<string,Array<{target:string;severity:'info'|'warning'|'high'|'critical'}>> = {
-  power_house:      [{target:'main_station',severity:'critical'},{target:'research_lab',severity:'high'},{target:'water_facility',severity:'high'},{target:'fuel_depot',severity:'warning'}],
-  solar_array:      [{target:'power_house',severity:'info'},{target:'main_station',severity:'info'}],
-  fuel_depot:       [{target:'power_house',severity:'critical'},{target:'logistics_area',severity:'high'}],
-  water_facility:   [{target:'main_station',severity:'high'},{target:'personnel_area',severity:'high'}],
-  communication:    [{target:'main_station',severity:'warning'},{target:'environment',severity:'info'}],
-  main_station:     [{target:'personnel_area',severity:'high'},{target:'research_lab',severity:'warning'}],
-  environment:      [{target:'main_station',severity:'info'},{target:'logistics_area',severity:'warning'}],
-  research_lab:     [{target:'main_station',severity:'info'}],
-  personnel_area:   [{target:'main_station',severity:'info'}],
-  logistics_area:   [{target:'storage',severity:'info'},{target:'fuel_depot',severity:'warning'}],
-  storage:          [{target:'logistics_area',severity:'info'}],
-  waste_management: [{target:'main_station',severity:'info'}],
+  infrastructure: [{target:'personnel',severity:'high'}],
+  energy_fuel:    [{target:'infrastructure',severity:'critical'},{target:'water',severity:'high'},{target:'communication',severity:'high'},{target:'personnel',severity:'high'}],
+  logistics:      [{target:'energy_fuel',severity:'high'},{target:'infrastructure',severity:'warning'}],
+  environment:    [{target:'infrastructure',severity:'high'},{target:'energy_fuel',severity:'high'},{target:'water',severity:'warning'},{target:'communication',severity:'info'},{target:'logistics',severity:'warning'}],
+  communication:  [{target:'infrastructure',severity:'info'}],
+  water:          [{target:'personnel',severity:'critical'}],
+  personnel:      [{target:'infrastructure',severity:'info'}],
 };
 const REL_COLORS:Record<string,number>={info:0x00d4ff,warning:0xffc107,high:0xf97316,critical:0xff4444};
 
@@ -816,20 +804,15 @@ function createJaggedMountainMesh(
 function buildTerrain(isMaitri:boolean):THREE.Group{
   const g=new THREE.Group();
 
-  // Spaced-out building footprints for soft ambient occlusion
+  // Spaced-out building footprints for soft ambient occlusion (7 domains)
   const bldFootprints:Array<[number,number,number]> = [
-    [0,0,12],        // Main Station
-    [-26,-18,9],     // Research Lab
-    [26,-16,9],      // Power House
-    [10,-32,8],      // Solar Array
-    [40,-8,10],      // Fuel Depot
-    [-40,-10,8],     // Comms
-    [-28,16,9],      // Personnel
-    [18,16,8],       // Water Facility
-    [-14,30,8],      // Waste Management
-    [36,14,9],       // Storage
-    [38,28,9],       // Logistics
-    [28,-30,8],      // Environment Met
+    [0,0,12],        // Infrastructure (Main Station)
+    [0,-22,9],       // Environment & Weather
+    [-24,-16,10],    // Communication
+    [24,-16,11],     // Energy & Fuel
+    [26,2,8],        // Water
+    [24,20,10],      // Logistics
+    [-24,16,10],     // Personnel & Safety
   ];
 
   // Expansive terrain plane for the grand spaced-out campus
@@ -917,10 +900,10 @@ function buildTerrain(isMaitri:boolean):THREE.Group{
   // Natural snow drifts banked against outer perimeter
   const driftMat=new THREE.MeshStandardMaterial({color:0xf8fbff,roughness:0.75,metalness:0.01});
   const perimeterDrifts:Array<[number,number,number,number,number]> = [
-    [-46, 0, 0, 1.8, 80],      // West outer drift bank
-    [46,  0, 0, 1.8, 80],      // East outer drift bank
-    [0,   0,-38, 88, 1.8],     // North outer drift bank
-    [0,   0, 44, 88, 1.8],     // South outer drift bank
+    [-38, 0, 7, 1.8, 76],      // West outer drift bank
+    [38,  0, 7, 1.8, 76],      // East outer drift bank
+    [0,   0,-30, 78, 1.8],     // North outer drift bank
+    [0,   0, 44, 78, 1.8],     // South outer drift bank
   ];
   for(const [dx,dy,dz,dw,dd] of perimeterDrifts){
     const dMesh=new THREE.Mesh(new THREE.CylinderGeometry(dw/2,dw/2+0.8,0.25,16),driftMat);
@@ -973,12 +956,12 @@ function buildPerimeterBoundary():THREE.Group{
 
   // Outlines the outer boundaries of the spacious station platform
   const segments:Array<{x1:number;z1:number;x2:number;z2:number}> = [
-    {x1:-46, z1:-36, x2:-46, z2:42},   // West perimeter boundary
-    {x1:46,  z1:-36, x2:46,  z2:42},   // East perimeter boundary
-    {x1:-46, z1:-36, x2:-4.0,z2:-36},  // North-West boundary (service entry gap)
-    {x1:4.0, z1:-36, x2:46,  z2:-36},  // North-East boundary
-    {x1:-46, z1:42,  x2:-5.5,z2:42},   // South-West boundary (helipad gap)
-    {x1:5.5, z1:42,  x2:46,  z2:42},   // South-East boundary
+    {x1:-38, z1:-30, x2:-38, z2:44},   // West perimeter boundary
+    {x1:38,  z1:-30, x2:38,  z2:44},   // East perimeter boundary
+    {x1:-38, z1:-30, x2:-4.0,z2:-30},  // North-West boundary (service entry gap)
+    {x1:4.0, z1:-30, x2:38,  z2:-30},  // North-East boundary
+    {x1:-38, z1:44,  x2:-5.5,z2:44},   // South-West boundary (helipad gap)
+    {x1:5.5, z1:44,  x2:38,  z2:44},   // South-East boundary
   ];
 
   for(const {x1,z1,x2,z2} of segments){
@@ -1027,14 +1010,12 @@ function buildElevatedPipeRuns():THREE.Group{
   const pipeMat=mat(0xc0d0e0,0.25,0.85);
   const frameMat=mat(0x1e293b,0.4,0.75);
 
-  // Pipe line runs connecting Power House [26,-16] -> Spine -> Main Station [0,0] -> Water [18,16] & Fuel [40,-8]
+  // Pipe line runs connecting Energy & Fuel [24,-16] -> Central Spine -> Main Station [0,0] -> Water [26,2]
   for(const {x1,z1,x2,z2} of [
-    {x1:22, z1:-16, x2:6,  z2:-16}, // Power to Main Spine
-    {x1:6,  z1:-16, x2:6,  z2:0},   // Along Spine towards Main Station
-    {x1:6,  z1:0,   x2:6,  z2:16},  // Towards Water Facility
-    {x1:6,  z1:16,  x2:15, z2:16},  // Into Water Facility
-    {x1:26, z1:-16, x2:36, z2:-16}, // Power towards Fuel Depot
-    {x1:36, z1:-16, x2:36, z2:-8},  // Down to Fuel Depot
+    {x1:22, z1:-16, x2:4,  z2:-16}, // Energy to Central Spine
+    {x1:4,  z1:-16, x2:4,  z2:0},   // Along Spine towards Main Station
+    {x1:4,  z1:0,   x2:22, z2:0},   // From Spine east towards Water Facility
+    {x1:22, z1:0,   x2:24, z2:2},   // Into Water Facility
   ]){
     const dx=x2-x1; const dz=z2-z1;
     const len=Math.hypot(dx,dz);
@@ -1084,49 +1065,29 @@ function buildStationDetails():THREE.Group{
 
   // Primary Roads (Connecting Spaced Facilities without Congestion)
   const primaryRoads:Array<{x:number;z:number;w:number;d:number}> = [
-    // Central North-South Main Highway (from Solar to Helipad)
-    {x:0,   z:2,   w:4.0, d:74},
-    // Central East-West Main Artery (from Comms to Fuel Depot)
-    {x:0,   z:0,   w:84,  d:4.0},
+    // 1. Central North-South Main Highway (from Met Tower [0,-22] through Main Hub [0,0] to Helipad [0,36])
+    {x:0,   z:7,   w:4.0, d:60},  // extends from z = -23 to z = +37
 
-    // North-West Branch towards Research Lab [-26,-18]
-    {x:-13, z:-18, w:26,  d:3.6},
-    {x:-26, z:-9,  w:3.6, d:18},
+    // 2. North Cross Artery (connects Comms [-24,-16] to Spine [0,-16] to Energy [24,-16])
+    {x:0,   z:-16, w:52,  d:4.0}, // covers x = -26 to +26
 
-    // Far West Spur towards Comms Station [-40,-10]
-    {x:-33, z:-10, w:16,  d:3.4},
+    // 3. Central Cross Artery (Main Hub front boulevard connecting West and East corridors)
+    {x:0,   z:0,   w:52,  d:4.0}, // covers x = -26 to +26
 
-    // South-West Branch towards Personnel Quarters [-28,16]
-    {x:-14, z:16,  w:28,  d:3.6},
-    {x:-28, z:8,   w:3.6, d:16},
+    // 4. South Cross Artery (connects Personnel [-24,16] across Spine [0,18] to Logistics [24,20])
+    {x:0,   z:18,  w:52,  d:4.0}, // covers x = -26 to +26
 
-    // South Branch towards Waste Management [-14,30]
-    {x:-14, z:23,  w:3.4, d:16},
+    // 5. West North-South Connector (connecting Comms [-24,-16] down to Personnel [-24,16])
+    {x:-24, z:0,   w:4.0, d:38},  // covers z = -19 to +19
 
-    // North-East Branch towards Power House [26,-16]
-    {x:13,  z:-16, w:26,  d:3.8},
-    {x:26,  z:-8,  w:3.8, d:16},
+    // 6. East North-South Connector (connecting Energy [24,-16] down past Water [26,2] to Logistics [24,20])
+    {x:24,  z:2,   w:4.0, d:42},  // covers z = -19 to +23
 
-    // Far East Road connecting Power to Fuel Depot [40,-8]
-    {x:33,  z:-16, w:16,  d:3.6},
-    {x:40,  z:-12, w:3.6, d:10},
-    {x:20,  z:-8,  w:40,  d:3.6},
+    // 7. Water Facility Spur (from East Connector into Water Facility at [26,2])
+    {x:25.5,z:2,   w:5.0, d:4.0},
 
-    // South-East Branch towards Water Facility [18,16]
-    {x:9,   z:16,  w:18,  d:3.6},
-
-    // East Branch towards Storage [36,14] & Logistics [38,28]
-    {x:27,  z:14,  w:20,  d:3.8},
-    {x:37,  z:21,  w:3.8, d:16},
-
-    // Far North Spur towards Solar Array [10,-32] & Environment [28,-30]
-    {x:5,   z:-32, w:12,  d:3.4},
-    {x:19,  z:-31, w:18,  d:3.4},
-    {x:10,  z:-24, w:3.4, d:16},
-    {x:28,  z:-23, w:3.4, d:16},
-
-    // Helipad South Approach Plaza [0,38]
-    {x:0,   z:38,  w:12,  d:12},
+    // 8. Helipad Approach Plaza (at [0,36])
+    {x:0,   z:35,  w:12,  d:6.0},
   ];
 
   const ROAD_Y=0.095; // Cleanly elevated above undulating terrain
@@ -1219,12 +1180,24 @@ function buildStationDetails():THREE.Group{
 
   // Junction Corner Fillets (Dark asphalt rounded transition discs)
   const junctions:Array<[number,number,number]> = [
-    [0,0,3.2], [0,-17,3.0], [0,15,3.0], [0,38,3.4],
-    [-26,0,3.0], [-26,-18,3.0], [-40,-10,2.8],
-    [-14,16,2.8], [-28,16,3.0], [-14,30,2.8],
-    [26,0,3.0], [26,-16,3.0], [40,-8,3.0], [40,-16,2.8],
-    [18,16,2.8], [27,14,3.0], [36,14,3.0], [37,28,3.2],
-    [10,-32,2.8], [28,-30,2.8],
+    // Central Spine Junctions
+    [0, -22, 3.2], // Met Tower North terminus
+    [0, -16, 3.2], // Spine x North Artery
+    [0, 0,   3.6], // Spine x Central Artery (Main Station Front)
+    [0, 18,  3.2], // Spine x South Artery
+    [0, 35,  3.4], // Spine x Helipad Approach Plaza
+
+    // West Wing Junctions
+    [-24, -16, 3.2], // Comms Station & North-West corner
+    [-24, 0,   3.2], // West Connector x Central Artery
+    [-24, 16,  3.2], // Personnel Quarters & South-West corner
+
+    // East Wing Junctions
+    [24, -16, 3.2],  // Energy & Fuel & North-East corner
+    [24, 0,   3.2],  // East Connector x Central Artery
+    [26, 2,   3.0],  // Water Facility Spur & Apron
+    [24, 18,  3.2],  // East Connector x South Artery
+    [24, 20,  3.2],  // Logistics Staging Depot
   ];
   for(const [jx,jz,jr] of junctions){
     const jp=new THREE.Mesh(new THREE.CylinderGeometry(jr,jr,0.086,32),roadMat.clone());
@@ -1233,33 +1206,48 @@ function buildStationDetails():THREE.Group{
     g.add(jp);
   }
 
-  // Helipad (Elevated with plowed snow safety border)
+  // Helipad (Elevated with plowed snow safety border at z=36)
   const hpad=new THREE.Mesh(new THREE.CylinderGeometry(5.8,5.8,0.14,64),new THREE.MeshStandardMaterial({color:0x12161e,roughness:0.82,metalness:0.08}));
-  hpad.position.set(0,0.11,38); hpad.receiveShadow=true; g.add(hpad);
+  hpad.position.set(0,0.11,36); hpad.receiveShadow=true; g.add(hpad);
   const hr=new THREE.Mesh(new THREE.RingGeometry(5.2,5.7,64),new THREE.MeshStandardMaterial({color:0xf59e0b,emissive:new THREE.Color(0xf59e0b),emissiveIntensity:0.65,side:THREE.DoubleSide}));
-  hr.rotation.x=-Math.PI/2; hr.position.set(0,0.185,38); g.add(hr);
+  hr.rotation.x=-Math.PI/2; hr.position.set(0,0.185,36); g.add(hr);
   const hm=new THREE.MeshStandardMaterial({color:0xf8fafc,emissive:new THREE.Color(0xf8fafc),emissiveIntensity:0.55});
-  const hb=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,4.8),hm.clone()); hb.position.set(0,0.19,38); g.add(hb);
-  const hl=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,3.4),hm.clone()); hl.position.set(-2.2,0.19,38); hl.rotation.y=Math.PI/2; g.add(hl);
-  const hri=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,3.4),hm.clone()); hri.position.set(2.2,0.19,38); hri.rotation.y=Math.PI/2; g.add(hri);
+  const hb=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,4.8),hm.clone()); hb.position.set(0,0.19,36); g.add(hb);
+  const hl=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,3.4),hm.clone()); hl.position.set(-2.2,0.19,36); hl.rotation.y=Math.PI/2; g.add(hl);
+  const hri=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,3.4),hm.clone()); hri.position.set(2.2,0.19,36); hri.rotation.y=Math.PI/2; g.add(hri);
   for(let i=0;i<24;i++){
     const a=(i/24)*Math.PI*2;
     const pl=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.24,6),new THREE.MeshStandardMaterial({color:0xfde68a,emissive:new THREE.Color(0xfde68a),emissiveIntensity:2.4}));
-    pl.position.set(Math.cos(a)*5.6,0.22,38+Math.sin(a)*5.6); g.add(pl);
+    pl.position.set(Math.cos(a)*5.6,0.22,36+Math.sin(a)*5.6); g.add(pl);
   }
 
-  // Antarctic Route Marker Wands
+  // Antarctic Route Marker Wands along active road shoulders
   const wandMat=new THREE.MeshStandardMaterial({color:0xf97316,roughness:0.4,metalness:0.6});
   const flagMat=new THREE.MeshStandardMaterial({color:0xef4444,roughness:0.5,metalness:0.1,emissive:new THREE.Color(0xff3300),emissiveIntensity:1.5});
   const wandPositions:Array<[number,number]>=[
-    [-22,2.0],[-18,2.0],[-10,2.0],[-5,2.0],[5,2.0],[10,2.0],[18,2.0],[22,2.0],
-    [-22,5.2],[-18,5.2],[-10,5.2],[-5,5.2],[5,5.2],[10,5.2],[18,5.2],[22,5.2],
-    [-2.2,-15],[-2.2,-10],[-2.2,-5],[-2.2,10],[-2.2,15],[-2.2,20],
-    [2.2,-15],[2.2,-10],[2.2,-5],[2.2,10],[2.2,15],[2.2,20],
-    [-12.2,-10],[-15.8,-10],[-18.5,-8],[-18.5,-12],[-21.5,-8],
-    [12.2,-8],[15.8,-8],[18,-4.5],[18,-7.5],[23.5,-4],
-    [-14.5,7],[-17.5,7],[-17.5,12],[-14.5,12],[-7.5,15],[-4.5,15],
-    [9.5,8],[6.5,8],[18.5,8],[22.5,8],[18.5,14],[23.5,14],[23.5,21],[18.5,21],
+    // Central Spine (x = ±2.3)
+    [-2.3,-18],[-2.3,-10],[-2.3,-4],[-2.3,6],[-2.3,12],[-2.3,24],[-2.3,30],
+    [2.3,-18],[2.3,-10],[2.3,-4],[2.3,6],[2.3,12],[2.3,24],[2.3,30],
+
+    // North Artery (z = -14.2 & -17.8)
+    [-18,-14.2],[-12,-14.2],[-6,-14.2],[6,-14.2],[12,-14.2],[18,-14.2],
+    [-18,-17.8],[-12,-17.8],[-6,-17.8],[6,-17.8],[12,-17.8],[18,-17.8],
+
+    // Central Artery (z = 2.2 & -2.2)
+    [-18,2.2],[-12,2.2],[-6,2.2],[6,2.2],[12,2.2],[18,2.2],
+    [-18,-2.2],[-12,-2.2],[-6,-2.2],[6,-2.2],[12,-2.2],[18,-2.2],
+
+    // South Artery (z = 16.2 & 19.8)
+    [-18,16.2],[-12,16.2],[-6,16.2],[6,16.2],[12,16.2],[18,16.2],
+    [-18,19.8],[-12,19.8],[-6,19.8],[6,19.8],[12,19.8],[18,19.8],
+
+    // West Connector (x = -25.8 & -22.2)
+    [-25.8,-10],[-25.8,-4],[-25.8,6],[-25.8,11],
+    [-22.2,-10],[-22.2,-4],[-22.2,6],[-22.2,11],
+
+    // East Connector (x = 22.2 & 25.8)
+    [22.2,-10],[22.2,-4],[22.2,8],[22.2,14],
+    [25.8,-10],[25.8,-4],[25.8,8],[25.8,14],
   ];
   for(const [wx,wz] of wandPositions){
     const wand=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.03,1.1,6),wandMat.clone());
@@ -1272,10 +1260,23 @@ function buildStationDetails():THREE.Group{
   const pm2=mat(0xc8d6e5,0.35,0.65);
   const lm=new THREE.MeshStandardMaterial({color:0xfef3c7,emissive:new THREE.Color(0xfde68a),emissiveIntensity:2.5});
   const poles:Array<[number,number]>=[
-    [2.4,-5],[-2.4,-5],[2.4,9],[-2.4,9],[-7,4.8],[-7,1.8],[7,4.8],[7,1.8],
-    [-12,-6],[-16,-4],[-19,-10],[12,-5],[16,-9],[13,-16],
-    [14,8],[15,13],[19,10],[-13,4],[-16,8],
-    [5,25],[-5,25],[0,21],[21,15],[21,18],
+    // Central Spine & Main Station Hub
+    [2.5, -4], [-2.5, -4], [2.5, 4], [-2.5, 4],
+    [2.5, 12], [-2.5, 12], [2.5, 24], [-2.5, 24],
+    // Met Tower North approach
+    [2.5, -20], [-2.5, -20],
+    // Comms Station West approach
+    [-21.5, -14], [-26.5, -14],
+    // Personnel Habitat South-West approach
+    [-21.5, 14], [-26.5, 14],
+    // Energy & Fuel North-East approach
+    [21.5, -14], [26.5, -14],
+    // Water Facility Mid-East approach
+    [23.5, 4], [28.5, 4],
+    // Logistics Depot South-East approach
+    [21.5, 20], [26.5, 20],
+    // Helipad South approach
+    [2.5, 32], [-2.5, 32],
   ];
   for(const [lx,lz] of poles){
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.09,5.5,8),pm2.clone());
@@ -1291,12 +1292,12 @@ function buildStationDetails():THREE.Group{
   // Vehicles on Paths & Staging Areas (Arctic Tracked Transporter & Snowcats)
   const trm=mat(0xef4444,0.55,0.35); const twm=mat(0x111111,0.95,0.05);
   const vList:Array<[number,number,number,number]> = [
-    [19,0,19,0.3],     // Logistics freight carrier
-    [22,0,17,0.0],     // Supply snow transporter
-    [24,0,20,0.5],     // Cargo tug
-    [17,0,20,-0.2],    // Equipment transporter
-    [14,0,-5,0.0],     // Fuel tanker vehicle on Power <-> Fuel road
-    [-12,0,-7,-0.4],   // Science crew transporter on Lab road
+    [21,0,21,0.3],     // Logistics freight carrier (Logistics staging yard)
+    [26,0,21,-0.2],    // Heavy cargo hauler (Logistics yard)
+    [23,0,4,0.0],      // Water tanker vehicle near Water Facility
+    [21,0,-14,0.2],    // Fuel service snowcat at Energy Depot
+    [-21,0,-14,-0.4],  // Scientific comms repair snowcat
+    [-21,0,14,0.1],    // Crew personnel shuttle at Habitat
   ];
   for(const [vx,vy,vz,vr] of vList){
     const cab=new THREE.Mesh(new THREE.BoxGeometry(1.9,1.3,1.0),trm.clone());
@@ -1312,7 +1313,12 @@ function buildStationDetails():THREE.Group{
 
   // Cargo Containers in Staging Yards
   const cc=[0x1e40af,0xb91c1c,0x166534,0x92400e,0x4c1d95];
-  for(const [cx,cy,cz,cr] of [[18,0,12.5,0],[20.5,0,12.5,0],[19.2,1.05,12.5,0],[23,0,7,0.4],[23,0,9.2,0.4],[-13,0,-14.5,0.3],[-15,0,-14.5,0.3],[-16,0,8,0.1]] as [number,number,number,number][]){
+  for(const [cx,cy,cz,cr] of [
+    [21,0,18,0], [23.5,0,18,0], [22.2,1.05,18,0], // Logistics container stack 1
+    [27,0,19,0.2], [27,0,21.5,0.2],                // Logistics container stack 2
+    [22,0,-18.5,0], [24.5,0,-18.5,0],             // Energy & Fuel spare parts container
+    [-22,0,18.5,0]                                 // Habitat supplies container
+  ] as [number,number,number,number][]){
     const ci=Math.floor(Math.abs(cx+cz))%cc.length;
     const cont=new THREE.Mesh(new THREE.BoxGeometry(2.6,1.1,1.3),mat(cc[ci],0.6,0.45));
     cont.position.set(cx,cy+0.55,cz); cont.rotation.y=cr; cont.castShadow=true; g.add(cont);
@@ -1370,15 +1376,13 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     if(!snapshot) return def;
     try{
       switch(id){
-        case 'power_house': return `${Math.round(snapshot.station_ops?.domain_readiness?.energy??95)}% | ${snapshot.energy?.generator_count_active??2} Generators`;
-        case 'fuel_depot': return `${Math.round(snapshot.fuel?.fuel_percentage??77)}% | ${snapshot.fuel?.days_remaining??19} days`;
-        case 'water_facility': return `${Math.round(snapshot.water?.percentage??88)}% | ${(Math.round((snapshot.water?.storage_liters??1200)/100)/10).toFixed(1)}k L`;
-        case 'main_station': return `${Math.round(snapshot.station_ops?.overall_readiness??98)}% | Operational`;
+        case 'infrastructure': return `${Math.round(snapshot.station_ops?.domain_readiness?.infrastructure??94)}% | Structural Nominal`;
+        case 'energy_fuel': return `${Math.round(snapshot.station_ops?.domain_readiness?.energy??95)}% | ${snapshot.energy?.generator_count_active??2} Gens • ${Math.round(snapshot.fuel?.fuel_percentage??77)}% Fuel`;
+        case 'logistics': return `${snapshot.logistics?.days_to_resupply??88}d Resupply ETA`;
         case 'environment': return `${snapshot.environment?.temperature?.toFixed(1)??'-27.5'}°C | ${snapshot.environment?.condition??'Clear'}`;
-        case 'solar_array': return `${Math.min(100,Math.round((snapshot.energy?.solar_output??28)/50*100))}% | Generating`;
-        case 'personnel_area': return `100% | ${snapshot.personnel?.headcount??42} Persons`;
-        case 'research_lab': return `${Math.round(snapshot.station_ops?.domain_readiness?.research??92)}% | Active`;
         case 'communication': return `${Math.round(snapshot.communication?.data_completeness_pct??96)}% | ${snapshot.communication?.primary_status??'Online'}`;
+        case 'water': return `${Math.round(snapshot.water?.percentage??88)}% | ${(Math.round((snapshot.water?.storage_liters??18500)/100)/10).toFixed(1)}k L`;
+        case 'personnel': return `100% | ${snapshot.personnel?.headcount??42} Crew Safe`;
         default: return def;
       }
     }catch{return def;}
@@ -1416,14 +1420,14 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     const skyDome=createPolarSky();
     scene.add(skyDome);
 
-    // Camera positioned to view the spacious, sprawling campus comfortably
-    const cam=new THREE.PerspectiveCamera(48,el.clientWidth/el.clientHeight,0.1,800);
-    // Low front-facing south view: station fills frame, mountains as backdrop
-    cam.position.set(2,36,95); cam.lookAt(0,2,4); camRef.current=cam;
+    // Camera positioned to view the spacious, balanced 7-domain campus comfortably
+    const cam=new THREE.PerspectiveCamera(46,el.clientWidth/el.clientHeight,0.1,800);
+    // Well-balanced front-facing south view: campus fills frame naturally
+    cam.position.set(0,38,72); cam.lookAt(0,2,2); camRef.current=cam;
     const ctrl=new OrbitControls(cam,renderer.domElement);
     ctrl.enableDamping=true; ctrl.dampingFactor=0.07;
     ctrl.maxPolarAngle=Math.PI/2.04; ctrl.minDistance=10; ctrl.maxDistance=280;
-    ctrl.target.set(0,2,4); ctrlRef.current=ctrl;
+    ctrl.target.set(0,2,2); ctrlRef.current=ctrl;
 
     // Touch gesture configuration:
     //  1 finger  = orbit / rotate the view
@@ -1471,7 +1475,7 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     // Facility Buildings
     facGrps.current.clear(); beacons.current=[];
     const bColorMap:Record<string,number>={
-      water_facility:0x3882f6,waste_management:0x22c55e,logistics_area:0xf97316,
+      water:0x38bdf8,logistics:0xf97316,infrastructure:0x06b6d4,energy_fuel:0xf59e0b,
     };
     for(const fac of FACILITIES){
       const sc=fac.scale??1;
@@ -1645,18 +1649,13 @@ export const StationScene:React.FC<Props>=({snapshot,onSelectAsset,selectedAsset
     // Fixed pin heights per facility — tuned so no labels overlap
     // (defined once here, not re-created every animation frame)
     const PIN_Y: Record<string,number> = {
-      solar_array:     14,  // Z=-32, far back centre
-      environment:     11,  // Z=-30, far back right
-      research_lab:    10,  // Z=-18, back left
-      power_house:      9,  // Z=-16, back right
-      communication:    8,  // Z=-10, mid left
-      fuel_depot:       7,  // Z=-8,  mid right
-      main_station:     6,  // Z=0,   centre hub
-      storage:          6,  // Z=14,  front right
-      water_facility:   5,  // Z=16,  front centre-right
-      personnel_area:   5,  // Z=16,  front left
-      logistics_area:   4,  // Z=28,  far front right
-      waste_management: 4,  // Z=30,  far front left
+      environment:     12,  // Z=-22, Met tower peak
+      communication:    8,  // Z=-16, West comms array
+      energy_fuel:      8,  // Z=-16, East generator stack
+      infrastructure:   7,  // Z=0,   Central Command Hub
+      water:            6,  // Z=2,   Mid-East facility
+      personnel:        6,  // Z=16,  South-West habitat
+      logistics:        6,  // Z=20,  South-East depot
     };
 
     // Animation Loop

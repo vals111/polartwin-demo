@@ -218,8 +218,51 @@ def run_whatif_scenario(
             "projected": curr_proj.get("inventory", {}).get("stockout_count", 1),
             "delta": curr_proj.get("inventory", {}).get("stockout_count", 1) - curr_base.get("inventory", {}).get("stockout_count", 0),
             "unit": "items"
+        },
+        "structural_stress_index": {
+            "baseline": curr_base.get("infrastructure", {}).get("structural_stress_index", 18.0),
+            "projected": curr_proj.get("infrastructure", {}).get("structural_stress_index", 22.0),
+            "delta": round(curr_proj.get("infrastructure", {}).get("structural_stress_index", 22.0) - curr_base.get("infrastructure", {}).get("structural_stress_index", 18.0), 1),
+            "unit": "/ 100"
+        },
+        "thermal_efficiency_pct": {
+            "baseline": curr_base.get("infrastructure", {}).get("thermal_insulation_eff", 88.0),
+            "projected": curr_proj.get("infrastructure", {}).get("thermal_insulation_eff", 88.0),
+            "delta": round(curr_proj.get("infrastructure", {}).get("thermal_insulation_eff", 88.0) - curr_base.get("infrastructure", {}).get("thermal_insulation_eff", 88.0), 1),
+            "unit": "%"
+        },
+        "snow_drift_accumulation_m": {
+            "baseline": curr_base.get("infrastructure", {}).get("snow_drift_accumulation_m", 0.42),
+            "projected": curr_proj.get("infrastructure", {}).get("snow_drift_accumulation_m", 0.42),
+            "delta": round(curr_proj.get("infrastructure", {}).get("snow_drift_accumulation_m", 0.42) - curr_base.get("infrastructure", {}).get("snow_drift_accumulation_m", 0.42), 2),
+            "unit": "m"
+        },
+        "wind_speed_kmh": {
+            "baseline": curr_base.get("environment", {}).get("wind_speed", 32.0),
+            "projected": curr_proj.get("environment", {}).get("wind_speed", 32.0),
+            "delta": round(curr_proj.get("environment", {}).get("wind_speed", 32.0) - curr_base.get("environment", {}).get("wind_speed", 32.0), 1),
+            "unit": "km/h"
+        },
+        "apparent_wind_chill_c": {
+            "baseline": curr_base.get("environment", {}).get("apparent_wind_chill", -34.0),
+            "projected": curr_proj.get("environment", {}).get("apparent_wind_chill", -34.0),
+            "delta": round(curr_proj.get("environment", {}).get("apparent_wind_chill", -34.0) - curr_base.get("environment", {}).get("apparent_wind_chill", -34.0), 1),
+            "unit": "°C"
+        },
+        "storm_severity_index": {
+            "baseline": curr_base.get("environment", {}).get("storm_severity", 0.22),
+            "projected": curr_proj.get("environment", {}).get("storm_severity", 0.22),
+            "delta": round(curr_proj.get("environment", {}).get("storm_severity", 0.22) - curr_base.get("environment", {}).get("storm_severity", 0.22), 2),
+            "unit": "idx"
+        },
+        "traverse_route_risk_index": {
+            "baseline": curr_base.get("logistics", {}).get("logistics_risk_score", 14.0),
+            "projected": curr_proj.get("logistics", {}).get("logistics_risk_score", 18.0),
+            "delta": round(curr_proj.get("logistics", {}).get("logistics_risk_score", 18.0) - curr_base.get("logistics", {}).get("logistics_risk_score", 14.0), 1),
+            "unit": "/ 100"
         }
     }
+
 
     # 5. Factor Attribution — computed from real per-domain risk deltas
     # Compare baseline vs projected across key domains, normalise to 100%.

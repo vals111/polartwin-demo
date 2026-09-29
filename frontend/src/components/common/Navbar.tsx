@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { useStationStore } from '../../store/stationStore';
 import { useAuthStore } from '../../store/authStore';
@@ -70,13 +70,14 @@ export const Navbar: React.FC = () => {
             if (window.history.length > 1) navigate(-1);
             else navigate(`/station/${selectedStationId}`);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer group"
+          className="flex items-center justify-center p-2 rounded-lg text-xs font-semibold transition-all cursor-pointer group"
           style={{
             backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border)',
             color: 'var(--text-secondary)',
           }}
-          title="Navigate Back"
+          title="Back"
+          aria-label="Back"
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
             (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)';
@@ -86,8 +87,7 @@ export const Navbar: React.FC = () => {
             (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)';
           }}
         >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" style={{ color: 'var(--accent)' }} />
-          <span className="hidden sm:inline">Back</span>
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" style={{ color: 'var(--accent)' }} />
         </button>
 
         {/* Brand Logo + Title */}
@@ -137,7 +137,7 @@ export const Navbar: React.FC = () => {
             <button
               key={st.station_id}
               onClick={() => handleStationChange(st.station_id)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center cursor-pointer"
               style={
                 selectedStationId === st.station_id
                   ? {
@@ -149,9 +149,6 @@ export const Navbar: React.FC = () => {
               }
             >
               <span>{st.name.replace(' Research Station', '').replace(' Antarctic Station', '')}</span>
-              <span className="text-[9px] opacity-70 font-mono capitalize">
-                ({st.location_type})
-              </span>
             </button>
           ))}
         </div>
@@ -167,29 +164,27 @@ export const Navbar: React.FC = () => {
       >
         <NavLink
           to={`/station/${selectedStationId}`}
-          end
-          className={({ isActive }) => navLinkClass(isActive)}
+          className={() => {
+            const isDash =
+              location.pathname === `/station/${selectedStationId}` ||
+              location.pathname === `/station/${selectedStationId}/dashboard` ||
+              location.pathname === `/station/${selectedStationId}/domains`;
+            return navLinkClass(isDash);
+          }}
           title="Dashboard"
         >
-          {({ isActive }) => (
-            <>
-              <LayoutDashboard className="w-4 h-4" style={{ color: navIconColor(isActive) }} />
-              <span className="hidden md:inline">Dashboard</span>
-            </>
-          )}
-        </NavLink>
-
-        <NavLink
-          to={`/station/${selectedStationId}/domains`}
-          className={({ isActive }) => navLinkClass(isActive)}
-          title="Domains"
-        >
-          {({ isActive }) => (
-            <>
-              <Layers className="w-4 h-4" style={{ color: navIconColor(isActive) }} />
-              <span className="hidden md:inline">Domains</span>
-            </>
-          )}
+          {() => {
+            const isDash =
+              location.pathname === `/station/${selectedStationId}` ||
+              location.pathname === `/station/${selectedStationId}/dashboard` ||
+              location.pathname === `/station/${selectedStationId}/domains`;
+            return (
+              <>
+                <LayoutDashboard className="w-4 h-4" style={{ color: navIconColor(isDash) }} />
+                <span className="hidden md:inline">Dashboard</span>
+              </>
+            );
+          }}
         </NavLink>
 
         <NavLink

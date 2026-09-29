@@ -446,19 +446,23 @@ def step(state: dict, perturbation: dict = None) -> dict:
     
     if perturbation:
         p_type = perturbation.get("type", "")
-        if p_type == "storm":
+        if p_type in ["storm", "blizzard", "severe_storm"]:
             total_hourly_consumption *= 1.35 # Cold and dark surges heating
-        elif p_type == "extreme_cold":
+        elif p_type in ["extreme_cold", "temp_drop"]:
             total_hourly_consumption *= 1.25 # Cold surges trace heating & fuel preheaters
         elif p_type == "fuel_leak":
-            total_hourly_consumption *= 2.5 # Sudden volumetric drop
+            total_hourly_consumption *= 2.8 # Sudden volumetric drop
             leak_detected = True
-        elif p_type == "generator_failure":
-            total_hourly_consumption *= 1.15 # Secondary generator less optimal point
-        elif p_type == "solar_drop":
-            total_hourly_consumption *= 1.12 # Lost solar offset shifts to generator
-        elif p_type == "resupply_delay":
-            resupply_delay_days = perturbation.get("days", 20)
+        elif p_type in ["generator_failure", "gen1_offline"]:
+            total_hourly_consumption *= 1.18 # Secondary generator less optimal point
+        elif p_type in ["solar_drop", "solar_loss"]:
+            total_hourly_consumption *= 1.22 # Lost solar offset shifts to generator
+        elif p_type in ["resupply_delay", "ship_delay"]:
+            resupply_delay_days = perturbation.get("days", 30 if p_type == "resupply_delay" else 45)
+        elif p_type == "grid_overload":
+            total_hourly_consumption *= 1.45
+        elif p_type == "fuel_cache_freeze":
+            total_hourly_consumption *= 1.20
 
     fuel["consumption_rate_l_per_hr"] = round(total_hourly_consumption, 2)
     fuel["fuel_leak_detected"] = leak_detected

@@ -77,19 +77,39 @@ def step(state: dict, perturbation: dict = None) -> dict:
         env["visibility"] = round(min(25.0, env.get("visibility", 15.0) + 0.5), 1)
 
     # Apply scenario perturbation if active
-    if perturbation and perturbation.get("type") == "storm":
-        env["storm_severity"] = min(1.0, env["storm_severity"] + perturbation.get("intensity", 0.4))
-        env["wind_speed"] = max(85.0, env["wind_speed"] + 35.0)
-        env["wind_gust"] = env["wind_speed"] * 1.45
-        env["temperature"] -= 6.5
-        env["visibility"] = 0.2
-        env["blizzard_active"] = True
-        env["condition"] = "Major Antarctic Storm (What-If)"
-        env["solar_radiation"] = round(env["solar_radiation"] * 0.15, 1)
+    if perturbation:
+        p_type = perturbation.get("type", "")
+        if p_type in ["storm", "blizzard", "blizzard_stress", "severe_storm"]:
+            env["storm_severity"] = min(1.0, env.get("storm_severity", 0.2) + perturbation.get("intensity", 0.55))
+            env["wind_speed"] = max(105.0, env.get("wind_speed", 30.0) + 45.0)
+            env["wind_gust"] = round(env["wind_speed"] * 1.48, 1)
+            env["temperature"] -= 8.5
+            env["visibility"] = 0.1
+            env["blizzard_active"] = True
+            env["condition"] = "Category-4 Katabatic Blizzard (What-If)"
+            env["solar_radiation"] = round(env.get("solar_radiation", 100.0) * 0.05, 1)
+            env["pressure"] = round(env.get("pressure", 984.0) - 18.0, 1)
 
-    if perturbation and perturbation.get("type") == "extreme_cold":
-        env["temperature"] -= perturbation.get("drop_c", 15.0)
-        env["condition"] = "Extreme Polar Freeze Wave"
+        elif p_type in ["extreme_cold", "temp_drop"]:
+            drop = float(perturbation.get("drop_c", 22.0))
+            env["temperature"] = round(env.get("temperature", -25.0) - drop, 1)
+            env["wind_gust"] = round(env.get("wind_speed", 25.0) * 1.35, 1)
+            env["condition"] = "Polar Vortex Deep Freeze Wave (-58°C)"
+            env["apparent_wind_chill"] = round(env["temperature"] - (env.get("wind_speed", 25.0) * 0.6), 1)
+
+        elif p_type == "whiteout":
+            env["visibility"] = 0.05
+            env["condition"] = "Total Optical Whiteout (Ground Halt)"
+            env["storm_severity"] = min(1.0, env.get("storm_severity", 0.2) + 0.45)
+            env["blizzard_active"] = True
+
+        elif p_type == "storm_surge":
+            env["wind_speed"] = max(75.0, env.get("wind_speed", 30.0) + 30.0)
+            env["condition"] = "Coastal Ice-Shelf Pressure Squall"
+            env["pressure"] = round(env.get("pressure", 984.0) - 24.0, 1)
+
+        elif p_type == "geomagnetic_storm":
+            env["condition"] = "Kp-8 Severe Solar Flare & Ionospheric Storm"
 
     state["environment"] = env
     return state
